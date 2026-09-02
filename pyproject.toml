@@ -1,0 +1,31 @@
+[project]
+name = "reasonstyle"
+version = "0.1.0"
+description = "Reason or the Language of Reason? Content vs. explicit reasoning style in LLM pushback response."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+# Dependencies are added at the stage that first requires them, so the lockfile
+# stays justified. Stages are named descriptively because their numbering may
+# still change. Deferred:
+#   pandas, numpy          -> backend-independent scoring and run tables
+#   torch, transformers    -> model-adapter smoke test
+#   scikit-learn           -> controlled linear probes
+#   scipy / statsmodels    -> factorial analysis (final package not yet chosen)
+dependencies = [
+    "pydantic>=2.7,<3",
+    "pyyaml>=6.0,<7",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<9"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reasonstyle"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,35 @@
+# --- OS ---
+.DS_Store
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# --- Runtime outputs (regenerable; never a source of truth) ---
+runs/
+logs/
+
+# --- Activation caches and large tensors ---
+caches/
+*.pt
+*.safetensors
+*.npy
+*.npz
+
+# --- Downloaded model weights ---
+models/
+.cache/
+
+# --- Scratch / temporary ---
+scratch/
+tmp/
+*.tmp
+
+# --- Versioned research data: never ignored, whatever matched above ---
+!data/**
