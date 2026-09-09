@@ -3,4 +3,4 @@
 __version__ = "0.1.0"
 
 # Bumped when the on-disk shapes of configs/scenarios/annotations change.
-SCHEMA_VERSION = "v1"
+SCHEMA_VERSION = "v2"

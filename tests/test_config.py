@@ -18,8 +18,11 @@ import pytest
 import yaml
 
 from reasonstyle.config import ConfigError, load_config
+from reasonstyle.hashing import file_sha256
 
-CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "experiment_v1.yaml"
+CONFIGS = Path(__file__).resolve().parents[1] / "configs"
+CONFIG_PATH = CONFIGS / "experiment_v1.yaml"
+CONFIG_V2_PATH = CONFIGS / "experiment_v2.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -654,3 +657,210 @@ def test_mechanistic_subset_cannot_reference_a_non_core_condition(tmp_path, raw)
     raw["mechanistic"]["subset"]["contrasts"].append(["RS", "NC"])
     with pytest.raises(ConfigError, match="non-core condition"):
         load_mutated(tmp_path, raw)
+
+
+# ===========================================================================
+# Config v2 (Implementation Stage 2a)
+# ===========================================================================
+
+
+@pytest.fixture(scope="module")
+def cfg2():
+    return load_config(CONFIG_V2_PATH)
+
+
+@pytest.fixture
+def raw2(cfg2):
+    return copy.deepcopy(cfg2.raw)
+
+
+def load_mutated_v2(tmp_path: Path, raw: dict):
+    return load_mutated(tmp_path, raw, name="experiment_v2.yaml")
+
+
+def test_v1_is_untouched_by_v2(cfg):
+    """v2 is a new file; v1 keeps the hash it was approved and committed with."""
+    assert cfg.content_hash.startswith("fef78db7aa64")   # as committed at bd7c897
+    assert cfg.config_version == "v1"
+    assert cfg.raw.get("segmentation") is None
+
+
+def test_v2_loads_and_is_a_distinct_artefact(cfg, cfg2):
+    assert cfg2.config_version == "v2"
+    assert cfg2.content_hash != cfg.content_hash
+
+
+def test_v2_pins_the_segmenter(cfg2):
+    seg = cfg2.raw["segmentation"]
+    assert seg["library"] == "pysbd"
+    assert seg["version"] and seg["version_spec"]
+    assert seg["clean"] is False
+    assert seg["authority"] == "machine_count_authoritative"
+    assert seg["human_override"]["permitted"] is False
+    assert seg["human_override"]["requires_recorded_annotation"] is True
+
+
+def test_v2_enforces_word_ratio_on_full_text_and_body(cfg2):
+    assert cfg2.parsed.matching.words.applies_to == ["full_text", "body"]
+
+
+def test_v2_realization_registry_covers_every_marker_family(cfg2):
+    registry = cfg2.marker_realizations()
+    assert len(registry) == 8
+    assert {e["family"] for e in registry.values()} == set(cfg2.marker_families())
+    assert cfg2.raw["markers"]["realization"]["recorded_per"] == "group"
+
+
+def test_v2_model_selection_is_not_frozen(cfg2):
+    """No model identity is committed until the compatibility test."""
+    models = cfg2.raw["models"]
+    assert models["selection_status"] == "unfrozen"
+    for variant in ("base", "instruct"):
+        assert models[variant]["repo_id"] is None
+        assert models[variant]["revision"] is None
+
+
+def test_no_vendor_model_identity_appears_in_v2(cfg2):
+    """Model choice is frozen after a compatibility test, not assumed here."""
+    text = CONFIG_V2_PATH.read_text().lower()
+    for name in ("llama", "gemma", "qwen", "mistral", "hookedtransformer", "transformerbridge"):
+        assert name not in text
+
+
+def test_v2_source_references_are_an_open_extensible_list(cfg2):
+    src = cfg2.raw["corpus_provenance"]["source_references"]
+    assert src["cardinality"] == "zero_or_more"
+    assert src["open_vocabulary"] is True
+    assert src["constructed_allows_empty_list"] is True
+    assert "constructed" in src["scenario_level_type_values"]
+    for field in ("dataset_name", "dataset_version", "source_item_id",
+                  "source_url", "access_date", "reuse_licence"):
+        assert field in src["fields"]
+    assert src["fields"]["dataset_name"]["required"] is True
+
+
+def test_v2_keeps_generation_metadata_separate_from_provenance(cfg2):
+    gen = cfg2.raw["corpus_provenance"]["generation_metadata"]
+    src = cfg2.raw["corpus_provenance"]["source_references"]
+    assert gen["separate_from_source_references"] is True
+    for field in ("generator_model", "generator_model_revision", "prompt_hash",
+                  "generation_parameters", "seed", "generated_at"):
+        assert field in gen["fields"]
+    assert set(gen["fields"]) & set(src["fields"]) == set()
+
+
+def test_v2_adds_support_direction_confirmed(cfg2):
+    item = cfg2.raw["annotation"]["levels"]["item"]["ratings"]
+    assert "support_direction_confirmed" in item
+    assert len(item) == 12
+    assert cfg2.raw["annotation"]["rating_provenance"]["additions_v2"] == ["support_direction_confirmed"]
+
+
+# --- v2 mutation tests ------------------------------------------------------
+
+
+def test_a_v2_section_may_not_be_backported_into_v1(tmp_path, raw, cfg2):
+    """Adding a v2 section to v1 in place is exactly what the bump exists to stop."""
+    raw["segmentation"] = copy.deepcopy(cfg2.raw["segmentation"])
+    with pytest.raises(ConfigError, match="introduced in v2"):
+        load_mutated(tmp_path, raw)
+
+
+def test_v2_without_a_segmentation_block_is_rejected(tmp_path, raw2):
+    del raw2["segmentation"]
+    with pytest.raises(ConfigError, match="must declare 'segmentation'"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_dropping_the_semicolon_guarantee_is_rejected(tmp_path, raw2):
+    raw2["segmentation"]["guarantees"]["semicolon_does_not_terminate_sentence"] = False
+    with pytest.raises(ConfigError, match="explicit framing inside one sentence"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_a_silent_segmentation_override_is_rejected(tmp_path, raw2):
+    raw2["segmentation"]["human_override"]["requires_recorded_annotation"] = False
+    with pytest.raises(ConfigError, match="never silent"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_letting_the_segmenter_rewrite_text_is_rejected(tmp_path, raw2):
+    raw2["segmentation"]["clean"] = True
+    with pytest.raises(ConfigError, match="never rewrite"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_measuring_the_word_ratio_on_full_text_alone_is_rejected(tmp_path, raw2):
+    raw2["matching"]["words"]["applies_to"] = ["full_text"]
+    with pytest.raises(ConfigError, match="cannot dilute"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_a_realization_for_an_unknown_family_is_rejected(tmp_path, raw2):
+    raw2["markers"]["realization"]["registry"]["sentence_initial_hedge_v1"] = {
+        "family": "hedging", "position": "sentence_initial", "description": "x"}
+    with pytest.raises(ConfigError, match="unknown marker family"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_a_family_with_no_realization_is_rejected(tmp_path, raw2):
+    registry = raw2["markers"]["realization"]["registry"]
+    for rid in [r for r, e in registry.items() if e["family"] == "concession_contrast"]:
+        del registry[rid]
+    with pytest.raises(ConfigError, match="no realization"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_duplicating_the_realization_per_cell_is_rejected(tmp_path, raw2):
+    raw2["markers"]["realization"]["recorded_per"] = "styled_cell"
+    with pytest.raises(ConfigError, match="never duplicated per cell"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_claiming_a_frozen_model_selection_without_pinning_it_is_rejected(tmp_path, raw2):
+    raw2["models"]["selection_status"] = "frozen"
+    with pytest.raises(ConfigError, match="must pin repo_id and revision"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_pinning_a_model_while_selection_is_unfrozen_is_rejected(tmp_path, raw2):
+    raw2["models"]["base"]["repo_id"] = "some-org/some-model"
+    with pytest.raises(ConfigError, match="must stay null"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_closing_the_source_reference_vocabulary_is_rejected(tmp_path, raw2):
+    raw2["corpus_provenance"]["source_references"]["open_vocabulary"] = False
+    with pytest.raises(ConfigError, match="not an enum"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_forbidding_a_constructed_scenario_from_citing_nothing_is_rejected(tmp_path, raw2):
+    raw2["corpus_provenance"]["source_references"]["constructed_allows_empty_list"] = False
+    with pytest.raises(ConfigError, match="may cite no source"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_conflating_generation_metadata_with_provenance_is_rejected(tmp_path, raw2):
+    raw2["corpus_provenance"]["generation_metadata"]["fields"]["dataset_name"] = {"required": False}
+    with pytest.raises(ConfigError, match="must not overlap"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_a_rating_added_without_provenance_is_rejected_in_v2(tmp_path, raw2):
+    raw2["annotation"]["levels"]["item"]["ratings"].append("perceived_vibes")
+    with pytest.raises(ConfigError, match="missing provenance"):
+        load_mutated_v2(tmp_path, raw2)
+
+
+def test_v2_provenance_tracks_the_current_research_plan():
+    """Catch silent drift: an edit to the plan must be followed by a config
+    bump (or, before the config is committed, a provenance update). v1 keeps
+    the hash of the plan revision it was frozen against and is not checked."""
+    cfg2 = load_config(CONFIG_V2_PATH)
+    plan = CONFIGS.parent / cfg2.raw["provenance"]["research_plan"]
+    assert cfg2.raw["provenance"]["research_plan_sha256"] == file_sha256(plan), (
+        "Research_Plan_v6.md has changed since this config recorded its hash. "
+        "Update the provenance and regenerate any artefacts that embed the "
+        "config hash (data/fixtures/tiny_corpus.jsonl)."
+    )

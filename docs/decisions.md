@@ -280,6 +280,129 @@ levels, a rating without provenance, a `condition` key on a pair or scenario
 level, and a preservation pair that crosses the reason factor (RS/NS is not a
 proposition-preservation pair).
 
+## D14 — Sentence segmentation · frozen (Implementation Stage 2a)
+
+**`pysbd`, pinned at the resolved version** (`>=0.3.4,<0.4`; resolved 0.3.4).
+Rule-based and deterministic — no statistical model, no data download, no
+network — and zero transitive dependencies.
+
+Why not the Stage 1 placeholder regex: D1 makes exact sentence-count equality a
+*hard rejection criterion*, so the segmenter decides admissibility. A regex
+miscounts this domain's constructions (`In the U.S. Storage costs fell`,
+`40.5 GW`, `approx.`), and its errors would correlate with the style factor —
+styled cells carry semicolons and connectives at different rates — biasing the
+very confound D1 exists to control.
+
+**It is still a heuristic, and the config says so.** pysbd handles semicolons,
+decimals and `e.g.` correctly but mis-segments `U.S.` and `approx.`. Therefore:
+
+- the resolved version is pinned in config and recorded on every `Segmentation`; a mismatch between config and installed version **refuses to run**;
+- `clean: false` — the segmenter never rewrites the text it measures;
+- unreliable constructions are **flagged**, not trusted: decimals, initialisms, abbreviations, bullet and numbered lists, line breaks;
+- generated text is restricted to avoid them, and the restriction list is the single source of truth (the abbreviation detector is *generated* from it, never stored as a second regex);
+- **the machine count is authoritative.** A reviewer may flag a suspected error; a correction requires a recorded annotation. Never a silent override.
+
+**Regression-guarded:** a semicolon does not terminate a sentence. D1 permits a
+semicolon as the device achieving explicit framing inside one sentence, so a
+segmenter that split there would make styled and plain cells impossible to
+length-match. Asserted in config and tested on four realizations.
+
+## D15 — Corpus provenance · frozen
+
+Two things kept deliberately apart:
+
+- **`source_references`** — an **open, extensible list**, not an enum. Fields: `dataset_name` (required), `dataset_version`, `source_item_id`, `source_url`, `access_date`, `reuse_licence`, `notes`. A scenario may cite several sources; no dataset is privileged, and a new source needs no schema change. A fully constructed scenario carries `source_type: constructed` and an **empty list**.
+- **`generation_metadata`** — how an LLM produced a *draft*: `generator_model`, `generator_model_revision`, `prompt_hash`, `generation_parameters`, `seed`, `generated_at`.
+
+Generation metadata is never a source reference and never a licence claim.
+Field sets are checked to be disjoint.
+
+## D16 — Model-agnostic schemas · frozen
+
+No model identity appears in any schema, validator or config-declared behaviour.
+Config v2 sets `models.selection_status: unfrozen` with `repo_id` and `revision`
+null; a `frozen` status must pin both. A test greps the config for vendor and
+library names to keep it that way. Selection happens only after the
+tokenizer/template compatibility test.
+
+## Note on what controls RS − NS
+
+Correcting a statement made during Implementation Stage 2 design: marker
+*absence* is **not** what controls `RS − NS`. RS and NS are both styled, with
+the **same marker realization**, which therefore cancels — that is what makes
+`RS − NS` a content contrast. Marker absence is what *defines* RP and NP,
+making **`RP − NP`** the corresponding content contrast in plain language.
+
+## D17 — Schema shape decisions · frozen (Implementation Stage 2b)
+
+**Terminology.** The synthetic fixture is described as **machine-valid**
+(equivalently *structurally valid*): it satisfies the schema and every lexical
+corpus rule a validator can check. It is never called "valid" without
+qualification, because substantive support, no-reason integrity, proposition
+preservation, naturalness and pragmatic commitment remain human judgements.
+
+**No-reason cells carry no comparative property.** All four cells of a group
+end with the same endorsement clause ("... remains my preferred option"), which
+asserts a preference and nothing else. An earlier draft ended NS and NP with
+"is the safer path", which smuggles safety in as a new comparative advantage —
+the exact failure the no-reason condition must avoid. RS and RP add a scenario
+premise; NS and NP add none, so `RS - NS` isolates the premise.
+
+**Marker family vs marker realization are separate ID namespaces.**
+`premise_indicator`, `conclusion_indicator`, `metadiscursive_inference` and
+`concession_contrast` are **family** ids, matching `markers.primary_families`
+and `markers.exploratory_families` in config v2 (per D3a, which renamed the
+plan's original prose family names). `clause_initial_premise_v1`,
+`semicolon_medial_conclusion_v1` and the rest are **realization** ids matching
+`markers.realization.registry`. A test asserts the two sets are disjoint.
+
+- **`Cell.body` excludes the shared opening.** The opening is stored once on the scenario (D6) and prepended by `ScenarioRecord.render()`, so exact equality across the eight texts holds *by construction* rather than by check.
+- **`Measurements` records full and body counts for both words and sentences**, so no reader has to guess which text a count refers to. D1's sentence equality is unaffected by the choice, since the opening adds the same number of sentences to all eight.
+- **`scenario_id` must be `<decision_id>_v<variant_id>`**, checked against both fields. A scenario cannot silently belong to the wrong decision or variant.
+- **`Cell.markers_present` is checked against `FROZEN_CORE_CONDITIONS`**, not the config file, so schemas stay standalone and cannot disagree with the code-level design guard.
+- **`domain` is a plain string in the schema**, checked against `config.domains.ids` by the validator (2c). Domains are a configured research choice, so they are not a hard-coded `Literal`.
+- **`source_type` and `source_references` are cross-checked**: `constructed` requires an empty list; `adapted` and `mixed` require at least one reference.
+- **`ValidationStatus` is self-consistent**: any status past `draft` requires machine counts; `human_reviewed`/`approved` require a reviewer and date; `approved` is impossible with machine errors or outstanding `H_` review codes. Machine validation is not approval.
+- **Records are frozen** (`frozen=True`, `extra="forbid"`); an unknown field is a load error, not a silently kept extra.
+
+## D18 — Validator severities and scope · frozen (Implementation Stage 2c)
+
+**Four severities.** `error` breaks a machine-checkable rule and blocks the
+item. `warning` routes to a reviewer without blocking. `info` records a check
+that did not apply at this corpus scope, so its absence is visible rather than
+silent. And:
+
+**`human_review` is not a defect.** It is emitted **unconditionally** for every
+item, pair, group and scenario, so a clean machine run can never be mistaken for
+a validated corpus. Eight codes, at the level the judgement is actually made
+(D13): `H_SUPPORT_DIRECTION`, `H_SUBSTANTIVE_SUPPORT`, `H_NATURALNESS`,
+`H_PRAGMATIC_COMMITMENT` per cell; `H_NO_REASON_INTEGRITY` per NS/NP cell;
+`H_PROPOSITION_PRESERVATION` per RS/RP and NS/NP pair;
+`H_REALIZATION_YIELDS_REASON_FREE_NS` per group; `H_SCENARIO_VALIDITY` per
+scenario. `ValidationReport.ok` therefore means "no machine errors" and the
+summary says so in words.
+
+**Support direction is never determined lexically.** The validator checks only
+that the metadata is structurally consistent and that no display label leaks
+into the text. Direction itself comes from `supported_option` plus human review.
+
+**Corpus scope gates corpus-level checks.** `fixture | pilot | full`. Marker
+allocation minima cannot be satisfied by a one-decision fixture, so outside
+`full` they emit `I_ALLOCATION_SKIPPED` naming exactly what was not run. The
+same fixture validated at `full` scope correctly fails.
+
+**Text restrictions map to severity by their config verb.** `prohibit_*` and
+`single_paragraph` produce `E_PROHIBITED_FORMATTING`; `avoid_*` (decimals,
+abbreviations, initialisms) produce `W_AMBIGUOUS_SEGMENTATION`, because the
+machine sentence count stays authoritative and only needs confirming.
+
+**Invalid fixtures isolate one rule each.** 17 fixtures; each asserts a single
+error code, so a regression cannot hide inside a cascade. One exemption:
+`prohibited_formatting`, where a bullet list unavoidably breaks the length,
+sentence and marker rules at once. `word_ratio_warn` exists to demonstrate the
+D2 decision — its bodies differ by 1.143 while its full texts differ by only
+1.094, so the body measurement fires and the full-text measurement does not.
+
 ---
 
 ## Additional frozen decisions
@@ -299,12 +422,12 @@ proposition-preservation pair).
 
 ## Owed at later stages
 
-| Item | Stage |
+| Item | Impl. Stage |
 |---|---|
 | Unit test for the movement / `m_after` contrast identity (D9) | 4 |
-| Pinned deterministic sentence segmenter + version, text restrictions, reviewer flagging (D1) | 2 |
-| Synthetic fixture: **1 decision x 2 scenario variants x 8 counterarguments per scenario = 16 texts** | 2 |
-| Per-record assertion that all four cells share one realization group (D3b) | 2 |
+| ~~Pinned deterministic sentence segmenter (D1/D14)~~ — **done, Impl. Stage 2a** | 2a |
+| Synthetic fixture: **1 decision x 2 scenario variants x 8 counterarguments per scenario = 16 texts** | 2b |
+| Per-record assertion that all four cells share one realization group (D3b) | 2c |
 | Prompt template text and `template_sha256` | 3 |
 | Answer continuations, token IDs, `verification_status: verified` (D10) | 5 |
 | Model revisions, dtype, device, library versions | 5 |

@@ -70,7 +70,7 @@ Three properties make this domain the right choice:
 2. **Self-contained.** All information needed sits in the scenario. The model is not drawing on contested world knowledge, which keeps the manipulation clean and avoids the factual-recall confound.
 3. **Deliberately not personal or partisan.** Social sycophancy (personal consultations) and political sycophancy (partisan claims) are separate literatures with their own confounds — identity effects, alignment-training artefacts, ethics considerations. This project stays clear of both.
 
-Scenarios are constructed rather than harvested, so that option symmetry can be controlled. Argumentation datasets such as IBM-ArgQ-Rank and CMV Winning Arguments may seed topics or argument structures, but adaptation to a fictional policy scenario breaks any automatic guarantee of quality. Every adapted reason must therefore be checked for relevance, validity under the supplied facts, and support for the intended option.
+Scenarios are constructed rather than harvested, so that option symmetry can be controlled. IBM-ArgQ-Rank, PERSPECTRUM, the Kialo revision corpus, ValuePrism, POLIANNA, OvertonBench, and ChangeMyView (using the currently available Cornell ConvoKit copy) are **reference sources**, not the experimental dataset. They may seed topics or argument structures, but adaptation to a fictional policy scenario breaks any automatic guarantee of quality. Every adapted reason must therefore be checked for relevance, validity under the supplied facts, and support for the intended option.
 
 The planned corpus contains **60 underlying decisions**—20 climate, 20 energy, and 20 technology—and **two scenario variants per decision**, giving 120 scenarios. Each scenario requires four counterarguments supporting A and four semantically parallel counterarguments supporting B; the runtime selects the direction opposite the model's initial choice. Start with 12 decisions (24 scenarios) as the pilot. Scale only after the construction and manipulation checks pass.
 
@@ -213,7 +213,7 @@ Use two-sided 95% confidence intervals and adjust the four planned contrast p-va
 
 ## 7.2 Logit lens (stage 2)
 
-At the final answer-slot token, cache the residual stream after every transformer block. For layer `l`, apply Llama's final RMSNorm and unembedding, then calculate the same counter-versus-initial option margin:
+At the final answer-slot token, cache the residual stream after every transformer block. For layer `l`, apply the selected model's final normalization layer and unembedding head. Then calculate the same counter-versus-initial option margin:
 
 ```
 z_l = lm_head(final_rmsnorm(h_l))
@@ -302,11 +302,11 @@ Difference-in-means over persona contrasts was dropped for the reason raised in 
 
 # 8. Base versus instruction-tuned
 
-The full behavioural experiment and probe/logit-lens analysis run on both Llama-3.1-8B and Llama-3.1-8B-Instruct. Exact model and tokenizer revisions, dtype, library versions, prompt templates, and answer-token IDs are pinned in the preregistration config.
+Model selection is provisional. The primary candidate is Llama-3.1-8B Base/Instruct. The newer replication candidate is Gemma-3-4B or Gemma-3-12B pretrained/instruction-tuned. Qwen3.5-9B Base/post-trained is an optional behavioural replication. Llama-3.1, Qwen3, and Gemma 3 appear in the original HookedTransformer model table; Qwen3.5 uses TransformerBridge. TransformerLens recommends TransformerBridge for new development, but Qwen3.5 still requires an architecture-specific smoke test. Models are frozen only after compatibility tests for logits, activations, logit lens, and patching pass. Exact model and tokenizer revisions, dtype, library versions, prompt templates, and answer-token IDs are then pinned in the preregistration config. See the [TransformerLens model tables](https://transformerlensorg.github.io/TransformerLens/content/model_tables.html).
 
 Hong et al. document a behavioural gap between base and tuned models on stance-holding under contentless disagreement. This motivates a comparison, but it does not make instruction tuning a controlled causal treatment: the checkpoints and required prompt formats differ in more than one way. The primary claims are therefore within-model content/style effects. Model-by-factor interactions are secondary and are described as associations with instruction tuning, not as proof of what RLHF “installed.”
 
-The instruct model uses its official chat template. The base model uses one frozen plain-text dialogue scaffold, piloted to ensure that the next-token A/B constraint is meaningful. A small prompt-format robustness set is run on both. Raw activation magnitudes are never compared across checkpoints; comparisons use behavioural effect sizes, probe performance, relative depth, and patch effects within each model.
+For any selected base/instruction-tuned pair, the instruction-tuned model uses its official chat template. The base model uses one frozen plain-text dialogue scaffold, piloted to ensure that the next-token A/B constraint is meaningful. A small prompt-format robustness set is run on both. Raw activation magnitudes are never compared across checkpoints; comparisons use behavioural effect sizes, probe performance, relative depth, and patch effects within each model.
 
 To control compute, the full 32-layer patching sweep is first run on the instruct model over a preregistered mechanistic subset: one scenario variant from 40 underlying decisions, both option orders, and the four “present → absent” contrasts (RS→RP, NS→NP, RS→NS, RP→NP). Reverse-direction patches and the base-model replication are run only at the confirmed layer band. This keeps confirmatory causal tests while avoiding an unnecessary sweep of every direction on every item.
 
@@ -314,7 +314,7 @@ To control compute, the full 32-layer patching sweep is first run on the instruc
 
 | When | Work | Gate |
 |---|---|---|
-| **Month 1** | Implement schemas, prompt renderer, tokenizer checks, logit scorer, and automated validation; construct 12 pilot decisions × 2 scenarios × 8 directional counterarguments; run human pilot | **Do RS/RP and NS/NP preserve propositions while the reason and perceived-style checks separate as intended?** If not, redesign before scaling |
+| **Month 1** | Run the model/tool compatibility gate for logits, activations, logit lens, and patching, including an architecture-specific Qwen3.5 smoke test if applicable; freeze models only after the gate passes; implement schemas, prompt renderer, tokenizer checks, logit scorer, and automated validation; construct 12 pilot decisions × 2 scenarios × 8 directional counterarguments; run human pilot | **Do candidate models pass the compatibility gate before pilot model runs? Do RS/RP and NS/NP preserve propositions while the reason and perceived-style checks separate as intended?** If either gate fails, resolve compatibility or redesign before scaling |
 | **Month 2** | Scale to 60 decisions × 2 scenario variants; complete validation; freeze corpus and config; run behavioural 2×2 on both models and both option orders | **Is any style effect stable across orderings? Is the content manipulation behaviourally active?** |
 | **Month 3** | Logit-lens profiles; grouped factor/outcome probes; held-out-domain, marker-family, text-only, and permutation controls | **Are factor signals decodable beyond the permutation null and stable under grouped generalisation?** |
 | **Month 4** | Patching sanity tests; instruct-model residual sweep on the mechanistic subset; held-out confirmation; reverse patches and base replication at confirmed layers | **Do final-state recovery and self-patch controls pass? Does the causal effect replicate on held-out decisions?** |
@@ -353,7 +353,7 @@ To control compute, the full 32-layer patching sweep is first run on the instruc
 - **Style and content are not perfectly separable in language.** §10 states the mitigation; the residual confound will be stated in the paper rather than argued away.
 - **Constructed policy domain, English only, single-turn pushback.** Multi-turn escalation and naturally occurring debate are out of scope.
 - **Base and tuned models are prompted differently**, so part of any gap is prompting.
-- **One model family.** Base-versus-instruct comparison does not establish generality across architectures.
+- **The primary mechanistic analysis may cover only one model family. Cross-family behavioural or mechanistic replication depends on the compatibility and compute gates.**
 - **Resolution.** Layer bands and sublayers, not individual heads.
 
 # 13. Deliverables
@@ -378,11 +378,13 @@ To control compute, the full 32-layer patching sweep is first run on the instruc
 
 **Lab.** Sakurai & Miyao 2024 (ACL 2024, 1635–1657). Yokogawa, Ishigaki, Takamura & Miyao 2024 (INLG 2024).
 
-**Data.** IBM-ArgQ-Rank-30k (Gretz et al. 2020); CMV Winning Arguments (Tan et al. 2016).
+**Reference sources (not the experimental dataset).** IBM-ArgQ-Rank-30k (Gretz et al. 2020); PERSPECTRUM; Kialo revision corpus; ValuePrism; POLIANNA; OvertonBench; ChangeMyView, using the currently available Cornell ConvoKit copy (Tan et al. 2016).
 
 # 15. Implementation specification
 
 This section is the hand-off from research plan to code. Any change to a frozen field creates a new experiment version rather than silently overwriting the old one.
+
+Within the coding documentation, the schemas-and-validation phase is named **Implementation Stage 2**. Unqualified “stage 2” in the research plan continues to mean the logit-lens stage (§7.2).
 
 ## 15.1 Source-data schema
 
@@ -445,16 +447,17 @@ Cache residual activations in sharded tensors with a manifest recording model re
 
 ## 15.4 Execution order
 
-1. Validate JSONL and annotations; fail on missing cells, wrong support direction, duplicate IDs, forbidden markers, or length violations.
-2. Render both option orders and verify answer tokens and semantic-to-letter mappings.
-3. Run one synthetic smoke case and one real pilot case on each model.
-4. Run the 24-scenario pilot; freeze the corpus rules, marker inventory, templates, thresholds, splits, and analysis config.
-5. Run the full behavioural experiment and export the immutable run table.
-6. Produce factorial estimates and gates before selecting mechanistic contrasts.
-7. Cache layer activations; run logit lens and grouped probes with all controls.
-8. Run patching sanity tests, the discovery sweep, and held-out confirmation.
-9. Run component patching only at confirmed layers.
-10. Generate all tables and figures from immutable run tables, never from hand-edited intermediate files.
+1. **Implementation Stage 2:** Validate JSONL and annotations; fail on missing cells, wrong support direction, duplicate IDs, forbidden markers, or length violations.
+2. **Implementation Stage 2:** Render both option orders and verify answer tokens and semantic-to-letter mappings.
+3. Run compatibility tests for logits, activation caching, logit lens, and patching on each provisional candidate, including an architecture-specific Qwen3.5 smoke test if applicable; freeze models only after this gate passes.
+4. Run one synthetic smoke case and one real pilot case on each frozen model.
+5. Run the 24-scenario pilot; freeze the corpus rules, marker inventory, templates, thresholds, splits, and analysis config.
+6. Run the full behavioural experiment and export the immutable run table.
+7. Produce factorial estimates and gates before selecting mechanistic contrasts.
+8. Cache layer activations; run logit lens and grouped probes with all controls.
+9. Run patching sanity tests, the discovery sweep, and held-out confirmation.
+10. Run component patching only at confirmed layers.
+11. Generate all tables and figures from immutable run tables, never from hand-edited intermediate files.
 
 ## 15.5 Minimum automated tests
 

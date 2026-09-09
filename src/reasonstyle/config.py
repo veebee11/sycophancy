@@ -133,6 +133,10 @@ class WordMatchSpec(_Base):
     word_regex: str
     ratio_warn: float
     ratio_fail: float
+    # v2+: the measurements the ratio is enforced on. The scenario-level
+    # opening is shared by all eight texts, so measuring only the full text
+    # would let a long prefix dilute a real imbalance in the manipulated body.
+    applies_to: list[str] | None = None
 
 
 class SentenceMatchSpec(_Base):
@@ -201,6 +205,10 @@ class RawConfig(_Base):
     splits: dict[str, Any]
     probe_evaluation: dict[str, Any]
     near_tie: NearTieSpec
+    # Sections introduced in v2. Optional so that v1 still loads unchanged;
+    # required from v2 onward by `_validate_version_requirements`.
+    segmentation: dict[str, Any] | None = None
+    corpus_provenance: dict[str, Any] | None = None
     analysis: dict[str, Any]
     mechanistic: dict[str, Any]
     annotation: dict[str, Any]
@@ -307,6 +315,15 @@ class ExperimentConfig:
     def compiled_leakage(self) -> list[tuple[str, re.Pattern[str]]]:
         flags = re.IGNORECASE if self.raw["leakage"]["case_insensitive"] else 0
         return [(src, re.compile(src, flags)) for src in self.raw["leakage"]["patterns"]]
+
+    # -- segmentation (v2+) -------------------------------------------------
+    @property
+    def segmentation(self) -> dict[str, Any] | None:
+        return self.parsed.segmentation
+
+    def marker_realizations(self) -> dict[str, dict[str, Any]]:
+        """The realization registry, empty for configs that predate it."""
+        return dict(self.raw["markers"]["realization"].get("registry", {}))
 
     def __repr__(self) -> str:
         return (
@@ -798,14 +815,17 @@ def _validate_invariants(cfg: ExperimentConfig) -> None:
         required_additions.issubset(set(prov["additions_v1"])),
         f"D8: annotations must include {sorted(required_additions)}",
     )
+    buckets = {name: set(values) for name, values in prov.items()}
+    for a, b in ((x, y) for x in buckets for y in buckets if x < y):
+        overlap = buckets[a] & buckets[b]
+        _check(not overlap, f"ratings claimed by both {a!r} and {b!r}: {sorted(overlap)}")
+    declared: set[str] = set().union(*buckets.values()) if buckets else set()
     _check(
-        not (set(prov["plan_specified"]) & set(prov["additions_v1"])),
-        "a rating cannot be both plan-specified and a v1 addition",
-    )
-    _check(
-        set(prov["plan_specified"]) | set(prov["additions_v1"]) == set(seen_rating),
+        declared == set(seen_rating),
         "every declared rating must have provenance, and every rating with "
-        "provenance must be declared at exactly one level",
+        "provenance must be declared at exactly one level "
+        f"(missing provenance: {sorted(set(seen_rating) - declared)}; "
+        f"provenance without a level: {sorted(declared - set(seen_rating))})",
     )
     _check(
         ann["agreement"]["expected_value_preset"] is False,
@@ -828,6 +848,135 @@ def _validate_invariants(cfg: ExperimentConfig) -> None:
     )
 
 
+def _config_version_number(version: str) -> int:
+    """``"v2"`` -> ``2``. Used only to gate which sections are required."""
+    m = re.fullmatch(r"v(\d+)", version)
+    _check(m is not None, f"config_version must look like 'v<n>'; got {version!r}")
+    assert m is not None
+    return int(m.group(1))
+
+
+def _validate_v2_sections(cfg: ExperimentConfig) -> None:
+    """Checks for sections introduced in config v2 (Implementation Stage 2a)."""
+    raw, p = cfg.raw, cfg.parsed
+
+    # -- segmentation (D14) -------------------------------------------------
+    seg = raw["segmentation"]
+    _check(bool(seg["library"]) and bool(seg["version"]), "the segmenter library and version must be pinned")
+    _check(
+        seg["authority"] == "machine_count_authoritative",
+        "the machine sentence count is authoritative (D1)",
+    )
+    _check(
+        seg["human_override"]["permitted"] is False
+        and seg["human_override"]["requires_recorded_annotation"] is True,
+        "a segmentation correction requires a recorded annotation; it is never silent",
+    )
+    _check(
+        seg["guarantees"]["semicolon_does_not_terminate_sentence"] is True,
+        "D1 relies on a semicolon achieving explicit framing inside one sentence",
+    )
+    _check(seg["clean"] is False, "the segmenter must never rewrite the text it measures")
+    for kind, pattern in seg["ambiguity_patterns"].items():
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            raise ConfigError(f"ambiguity pattern {kind!r} does not compile: {exc}") from exc
+    restrictions = seg["text_restrictions"]
+    for flag in ("single_paragraph", "prohibit_bullet_lists", "prohibit_numbered_lists"):
+        _check(restrictions[flag] is True, f"text restriction {flag!r} must be enabled")
+    _check(bool(restrictions["known_abbreviations"]), "the known-abbreviation list must not be empty")
+
+    # -- word ratio scope ---------------------------------------------------
+    _check(
+        p.matching.words.applies_to == ["full_text", "body"],
+        "the word-count ratio is enforced on both the complete counterargument "
+        "and the manipulated body, so a shared opening cannot dilute it",
+    )
+
+    # -- marker realization registry (D3b) ----------------------------------
+    realization = raw["markers"]["realization"]
+    _check(
+        realization["recorded_per"] == "group",
+        "the realization is stored once per (scenario_id, supported_option) group "
+        "and inherited; it is never duplicated per cell",
+    )
+    id_pattern = re.compile(realization["id_pattern"])
+    registry = realization["registry"]
+    _check(bool(registry), "the realization registry must not be empty")
+    families = set(cfg.marker_families())
+    covered: set[str] = set()
+    for rid, entry in registry.items():
+        _check(id_pattern.fullmatch(rid) is not None, f"realization id {rid!r} does not match the id pattern")
+        _check(entry["family"] in families, f"realization {rid!r} names unknown marker family {entry['family']!r}")
+        _check(bool(entry["description"]), f"realization {rid!r} needs a description")
+        covered.add(entry["family"])
+    missing = families - covered
+    _check(not missing, f"marker families with no realization: {sorted(missing)}")
+
+    # -- model selection is not frozen yet ----------------------------------
+    models = raw["models"]
+    _check(
+        models["selection_status"] in {"unfrozen", "frozen"},
+        "models.selection_status must be 'unfrozen' or 'frozen'",
+    )
+    for variant in ("base", "instruct"):
+        entry = models[variant]
+        _check(entry["role"] == variant, f"model {variant} must declare role: {variant}")
+        if models["selection_status"] == "unfrozen":
+            _check(
+                entry["repo_id"] is None and entry["revision"] is None,
+                f"model {variant}: selection is unfrozen, so repo_id and revision "
+                f"must stay null until the compatibility test freezes them",
+            )
+        else:
+            _check(
+                entry["repo_id"] is not None and entry["revision"] is not None,
+                f"model {variant}: a frozen selection must pin repo_id and revision",
+            )
+
+    # -- corpus provenance (D15) --------------------------------------------
+    prov = raw["corpus_provenance"]
+    src = prov["source_references"]
+    _check(src["cardinality"] == "zero_or_more", "a scenario may cite several sources, or none")
+    _check(src["open_vocabulary"] is True, "source references are an open structure, not an enum")
+    _check(src["constructed_allows_empty_list"] is True, "a constructed scenario may cite no source")
+    _check(
+        "constructed" in src["scenario_level_type_values"],
+        "a scenario must be able to declare itself constructed",
+    )
+    _check("dataset_name" in src["fields"], "a source reference must name its dataset")
+    for field in ("dataset_version", "source_item_id", "source_url", "access_date", "reuse_licence"):
+        _check(field in src["fields"], f"the source-reference structure must carry {field!r}")
+    gen = prov["generation_metadata"]
+    _check(
+        gen["separate_from_source_references"] is True,
+        "LLM generation metadata is not a source reference and not a licence claim",
+    )
+    for field in ("generator_model", "generator_model_revision", "prompt_hash",
+                  "generation_parameters", "seed", "generated_at"):
+        _check(field in gen["fields"], f"generation metadata must carry {field!r}")
+    _check(
+        set(src["fields"]) & set(gen["fields"]) == set(),
+        "source-reference and generation-metadata fields must not overlap",
+    )
+
+
+def _validate_version_requirements(cfg: ExperimentConfig) -> None:
+    version = _config_version_number(cfg.parsed.config_version)
+    if version >= 2:
+        for section in ("segmentation", "corpus_provenance"):
+            _check(cfg.raw.get(section) is not None, f"config {cfg.parsed.config_version} must declare {section!r}")
+        _validate_v2_sections(cfg)
+    else:
+        for section in ("segmentation", "corpus_provenance"):
+            _check(
+                cfg.raw.get(section) is None,
+                f"section {section!r} was introduced in v2; it may not appear in "
+                f"{cfg.parsed.config_version} — create a new config version instead",
+            )
+
+
 def load_config(path: str | Path) -> ExperimentConfig:
     """Load, type-check and invariant-check a versioned experiment config."""
     path = Path(path)
@@ -837,4 +986,5 @@ def load_config(path: str | Path) -> ExperimentConfig:
     parsed = RawConfig.model_validate(raw)
     cfg = ExperimentConfig(raw=raw, parsed=parsed, path=path)
     _validate_invariants(cfg)
+    _validate_version_requirements(cfg)
     return cfg

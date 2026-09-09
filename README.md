@@ -40,13 +40,18 @@ support. It does not by itself establish irrationality, because markers such as
 ratings of perceived speaker commitment and perceived unstated support are
 collected to address that alternative.
 
-## Stage status
+## Implementation stage status
+
+*(Distinct from the Analysis stages in the research plan — Analysis Stage 2 is the logit lens.)*
 
 | Stage | Scope | Status |
 |---|---|---|
 | 0 | Repository audit | done |
-| 1 | Skeleton, frozen config, hashing, decision log | **current** |
-| 2 | Scenario schema and validator (fixture: 1 decision x 2 variants x 8 = **16 texts**) | not started |
+| 1 | Skeleton, frozen config, hashing, decision log | done |
+| 2a | Pinned sentence segmenter, config v2 | done |
+| 2b | Scenario schema + machine-valid fixture (1 decision x 2 variants x 8 = **16 texts**) | done |
+| 2c | Validator, findings, invalid fixtures | done |
+
 | 3 | Prompt renderer | not started |
 | 4 | Backend-independent logit scoring | not started |
 | 5 | One-model smoke test | not started |
@@ -80,8 +85,10 @@ uv run pytest
 
 ## Configuration is immutable
 
-`configs/experiment_v1.yaml` must never be edited in place once it has produced
-an artefact; a change creates `experiment_v2.yaml`. `null` fields are
+A config must never be edited in place once it has produced an artefact; a
+change creates a new version. `configs/experiment_v1.yaml` is frozen as
+committed; `configs/experiment_v2.yaml` supersedes it from Implementation
+Stage 2a onward. `null` fields are
 *unresolved*, not empty — each is pinned by a later config version at the stage
 named in its comment. Every generated artefact records the config hash, the
 prompt hash and the model revision.
