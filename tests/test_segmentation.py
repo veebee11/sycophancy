@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from reasonstyle.config import load_config
+from reasonstyle.config import latest_config_path, load_config
 from reasonstyle.segmentation import (
     PysbdSegmenter,
     Segmentation,
@@ -28,7 +28,7 @@ CONFIGS = Path(__file__).resolve().parents[1] / "configs"
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config(CONFIGS / "experiment_v2.yaml")
+    return load_config(latest_config_path(CONFIGS))
 
 
 @pytest.fixture(scope="module")

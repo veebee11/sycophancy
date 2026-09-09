@@ -33,3 +33,7 @@ tmp/
 
 # --- Versioned research data: never ignored, whatever matched above ---
 !data/**
+
+# --- Generated review output (derived; never edited by hand) ---
+review/
+!review/frozen/

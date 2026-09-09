@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from reasonstyle.config import load_config
+from reasonstyle.config import latest_config_path, load_config
 from reasonstyle.corpus import corpus_content_hash, load_corpus
 from reasonstyle.findings import Finding
 from reasonstyle.segmentation import segmenter_from_config
@@ -25,7 +25,7 @@ INVALID = ROOT / "data" / "fixtures" / "invalid"
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config(ROOT / "configs" / "experiment_v2.yaml")
+    return load_config(latest_config_path(ROOT / "configs"))
 
 
 @pytest.fixture(scope="module")
@@ -104,7 +104,7 @@ def test_outstanding_review_is_reported_per_scenario(report):
 
 def test_report_carries_its_provenance(report, records, cfg, segmenter):
     assert report.config_content_hash == cfg.content_hash
-    assert report.config_version == "v2"
+    assert report.config_version == cfg.config_version
     assert report.corpus_content_hash == corpus_content_hash(records)
     assert report.segmenter == segmenter.info.as_dict()
     assert (report.n_scenarios, report.n_texts) == (2, 16)

@@ -19,11 +19,19 @@ no-reason cells introduces a new comparative advantage.
 
 All four marker families and four realizations are exercised.
 """
+import argparse
+
 from reasonstyle.config import load_config
 from reasonstyle.corpus import save_corpus
 from reasonstyle.schemas import Cell, DirectionBlock, ScenarioRecord, ValidationStatus
 
-cfg = load_config("configs/experiment_v2.yaml")
+# --config is required: the fixture embeds the config hash, so the version must
+# be chosen deliberately rather than inherited from whichever file is newest.
+_ap = argparse.ArgumentParser(description=__doc__)
+_ap.add_argument("--config", required=True)
+_ap.add_argument("--out", default="data/fixtures/tiny_corpus.jsonl")
+_args = _ap.parse_args()
+cfg = load_config(_args.config)
 
 OPENING = "I have read the scenario and I would weigh it differently."
 
@@ -113,5 +121,7 @@ records = [
         counterarguments={"opt_1": v2_opt1, "opt_2": v2_opt2}, **COMMON),
 ]
 
-save_corpus(records, "data/fixtures/tiny_corpus.jsonl")
-print(f"wrote {len(records)} scenarios, {sum(r.counterargument_count for r in records)} texts")
+save_corpus(records, _args.out)
+print(f"wrote {len(records)} scenarios, "
+      f"{sum(r.counterargument_count for r in records)} texts "
+      f"under config {cfg.config_version} {cfg.content_hash[:12]}")

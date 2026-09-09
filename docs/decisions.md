@@ -403,6 +403,66 @@ sentence and marker rules at once. `word_ratio_warn` exists to demonstrate the
 D2 decision — its bodies differ by 1.143 while its full texts differ by only
 1.094, so the body measurement fires and the full-text measurement does not.
 
+## D19 — Human-review export · frozen (Implementation Stage 3b)
+
+A deterministic, **read-only** Markdown view of the canonical JSONL. It exists so
+the corpus can be read and verified without inspecting raw JSONL, and it is not a
+second source of truth: judgements go to `data/annotations/`, and nothing written
+into the Markdown is ever read back.
+
+**Determinism.** No generated file — `MANIFEST.json` included — carries a
+wall-clock timestamp; the only permitted time value is `corpus.freeze_timestamp`,
+itself frozen configuration. `--check` regenerates into a temp directory and
+exits non-zero on any drift, so a hand edit is detected rather than absorbed.
+
+**Corpus identity.** The hash printed in every file is the hash of the corpus
+**as stored**, taken from the validation report. Derived measurements must never
+change it, or the hash shown in the review would not match the JSONL reviewed.
+`MANIFEST.json` also records the source file's byte sha256.
+
+**Two audiences.** The *curator view* is fully labelled: RS/RP/NS/NP shown
+plainly with marker family, string and realization, measurements, machine
+findings and outstanding human-review codes. Only the *reliability packets* are
+blinded.
+
+**Blinding, at all three levels.** Item packets show one counterargument at a
+time and ask which option it supports — **P, Q or unclear** — plus whether it
+supplies a premise, a question answerable without knowing the condition. Pair
+packets show two texts in randomised left/right order with no condition labels.
+Scenario packets show the scenario and both options with no counterarguments.
+Hidden throughout: condition, marker metadata, measurements, sibling cells,
+machine findings and the intended supported option. Option labels are **P/Q**,
+never A/B, so blinded review can never be confused with the experiment's display
+labels. The unblinding key lives in `blind_key/`, a separate directory.
+
+**Sibling separation.** Two cells of one group differ only by a connective, so an
+annotator seeing them close together can infer the design.
+`min_sibling_separation: 20` is enforced during the seeded shuffle. When it is
+infeasible — as on the 16-text fixture — the exporter **reports it in the packet,
+in the manifest and on stdout, and never silently relaxes it**.
+
+**Reliability packets.** Same items for every annotator, as Cohen's κ requires;
+independently seeded order per annotator to control order effects.
+
+**Corpus-independent.** The exporter groups whatever records it is given by
+`decision_id`; a test adds a second decision in a second domain and asserts it
+appears with no code change.
+
+## D20 — Configuration resolution is explicit · frozen
+
+`latest_config_path()` is a **development convenience**, used by general tests so
+a version bump does not require editing every call site. Any command that
+generates pilot, full-corpus or experimental artefacts takes a **required
+`--config` path** and prints the resolved version and hash: those artefacts embed
+the config hash, so the version must be chosen deliberately rather than inherited
+from whichever file is newest. A test greps `scripts/` and fails if any script
+resolves the config implicitly.
+
+Superseded configurations stay on disk, loadable and byte-stable. Their content
+hashes are pinned in `FROZEN_CONFIG_HASHES`, and a test fails if any of them
+changes — a config that produced an artefact is the record of what that artefact
+was made under.
+
 ---
 
 ## Additional frozen decisions

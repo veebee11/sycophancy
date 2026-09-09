@@ -34,7 +34,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .hashing import content_hash, file_sha256
 
-__all__ = ["ConfigError", "ExperimentConfig", "load_config"]
+__all__ = ["ConfigError", "ExperimentConfig", "latest_config_path", "load_config"]
 
 
 class ConfigError(ValueError):
@@ -204,6 +204,7 @@ class RawConfig(_Base):
     determinism: dict[str, Any]
     splits: dict[str, Any]
     probe_evaluation: dict[str, Any]
+    review: dict[str, Any] | None = None
     near_tie: NearTieSpec
     # Sections introduced in v2. Optional so that v1 still loads unchanged;
     # required from v2 onward by `_validate_version_requirements`.
@@ -968,6 +969,13 @@ def _validate_version_requirements(cfg: ExperimentConfig) -> None:
         for section in ("segmentation", "corpus_provenance"):
             _check(cfg.raw.get(section) is not None, f"config {cfg.parsed.config_version} must declare {section!r}")
         _validate_v2_sections(cfg)
+        if version >= 3:
+            _check(cfg.raw.get("review") is not None,
+                   f"config {cfg.parsed.config_version} must declare 'review'")
+            _validate_v3_sections(cfg)
+        else:
+            _check(cfg.raw.get("review") is None,
+                   "section 'review' was introduced in v3; create a new config version")
     else:
         for section in ("segmentation", "corpus_provenance"):
             _check(
@@ -975,6 +983,76 @@ def _validate_version_requirements(cfg: ExperimentConfig) -> None:
                 f"section {section!r} was introduced in v2; it may not appear in "
                 f"{cfg.parsed.config_version} — create a new config version instead",
             )
+
+
+def latest_config_path(configs_dir: str | Path = "configs") -> Path:
+    """The highest-numbered ``experiment_v<n>.yaml``.
+
+    **Development convenience only.** General tests use it so a config bump does
+    not require editing every call site. It must never be used by a command that
+    generates pilot, full-corpus or experimental artefacts: those record the
+    config hash, so the version has to be chosen deliberately with an explicit
+    ``--config`` path rather than inherited from whichever file happens to be
+    newest. Superseded versions stay on disk and stay loadable.
+    """
+    paths = {}
+    for path in Path(configs_dir).glob("experiment_v*.yaml"):
+        m = re.fullmatch(r"experiment_v(\d+)", path.stem)
+        if m:
+            paths[int(m.group(1))] = path
+    if not paths:
+        raise ConfigError(f"no experiment config found in {configs_dir}")
+    return paths[max(paths)]
+
+
+def _validate_v3_sections(cfg: ExperimentConfig) -> None:
+    """Checks for sections introduced in config v3 (Implementation Stage 3b)."""
+    raw = cfg.raw
+    review = raw["review"]
+    _check(
+        review["markdown_is_read_only"] is True,
+        "the Markdown review view is read-only; judgements go to the annotation tables",
+    )
+    _check(
+        review["determinism"]["include_generation_timestamp"] is False,
+        "no generated review file may carry a wall-clock timestamp: it would make "
+        "the export irreproducible from one day to the next",
+    )
+    _check(
+        review["determinism"]["timestamp_source"] == "corpus.freeze_timestamp",
+        "the only permitted time value is the frozen corpus timestamp",
+    )
+    _check(review["curator_view"]["shows_condition_labels"] is True,
+           "the curator view must show RS/RP/NS/NP so every cell can be verified")
+    _check(review["curator_view"]["marker_highlighting"] == "display_only",
+           "marker highlighting must never alter the canonical experimental text")
+
+    blinded = review["blinded_view"]
+    _check(blinded["applies_to"] == "reliability_sample_only",
+           "only the independent reliability packets are blinded")
+    _check(blinded["option_labels"] == ["P", "Q"],
+           "blinded option labels are P and Q, never the experiment's A and B")
+    _check(set(blinded["support_direction_answers"]) == {"P", "Q", "unclear"},
+           "a blinded annotator must be able to answer 'unclear'")
+    _check(set(blinded["levels"]) == {"item", "pair", "scenario"},
+           "blinded packets are produced for all three annotation levels")
+    for field in ("condition", "marker_family", "marker_string", "marker_realization_id",
+                  "markers_present", "measurements", "sibling_cells",
+                  "intended_supported_option"):
+        _check(field in blinded["hides"], f"the blinded view must hide {field!r}")
+    _check(blinded["key_stored_separately"] is True and blinded["key_directory"] == "blind_key",
+           "the unblinding key lives in its own directory, never beside the packets")
+
+    sub = raw["annotation"]["reliability_subsample"]
+    _check(sub["same_items_for_all_annotators"] is True,
+           "reliability requires the annotators to rate identical items")
+    _check(sub["per_annotator_independent_order"] is True,
+           "packet order is seeded independently per annotator to control order effects")
+    _check(isinstance(sub["min_sibling_separation"], int) and sub["min_sibling_separation"] >= 0,
+           "min_sibling_separation must be a non-negative integer")
+    _check(sub["on_infeasible_separation"] == "report_and_continue",
+           "an infeasible separation constraint is reported, never silently relaxed")
+    _check("freeze_timestamp" in raw["corpus"], "corpus.freeze_timestamp must be declared")
 
 
 def load_config(path: str | Path) -> ExperimentConfig:

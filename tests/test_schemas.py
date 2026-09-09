@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from reasonstyle.config import load_config
+from reasonstyle.config import latest_config_path, load_config
 from reasonstyle.corpus import CorpusError, corpus_content_hash, dumps_record, load_corpus, save_corpus
 from reasonstyle.schemas import (
     CORE_CONDITIONS,
@@ -37,7 +37,7 @@ from reasonstyle.schemas import (
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "data" / "fixtures" / "tiny_corpus.jsonl"
-CONFIG_V2 = ROOT / "configs" / "experiment_v2.yaml"
+CONFIG_V2 = latest_config_path(ROOT / "configs")
 
 
 @pytest.fixture(scope="module")

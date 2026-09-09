@@ -17,12 +17,13 @@ from pathlib import Path
 import pytest
 import yaml
 
-from reasonstyle.config import ConfigError, load_config
+from reasonstyle.config import ConfigError, latest_config_path, load_config
 from reasonstyle.hashing import file_sha256
 
 CONFIGS = Path(__file__).resolve().parents[1] / "configs"
 CONFIG_PATH = CONFIGS / "experiment_v1.yaml"
 CONFIG_V2_PATH = CONFIGS / "experiment_v2.yaml"
+LATEST_PATH = latest_config_path(CONFIGS)
 
 
 @pytest.fixture(scope="module")
@@ -853,14 +854,78 @@ def test_a_rating_added_without_provenance_is_rejected_in_v2(tmp_path, raw2):
         load_mutated_v2(tmp_path, raw2)
 
 
-def test_v2_provenance_tracks_the_current_research_plan():
+def test_the_latest_config_tracks_the_current_research_plan():
     """Catch silent drift: an edit to the plan must be followed by a config
-    bump (or, before the config is committed, a provenance update). v1 keeps
-    the hash of the plan revision it was frozen against and is not checked."""
-    cfg2 = load_config(CONFIG_V2_PATH)
+    bump. Superseded versions keep the hash of the plan revision they were
+    frozen against and are not checked."""
+    cfg2 = load_config(LATEST_PATH)
     plan = CONFIGS.parent / cfg2.raw["provenance"]["research_plan"]
     assert cfg2.raw["provenance"]["research_plan_sha256"] == file_sha256(plan), (
         "Research_Plan_v6.md has changed since this config recorded its hash. "
         "Update the provenance and regenerate any artefacts that embed the "
         "config hash (data/fixtures/tiny_corpus.jsonl)."
     )
+
+
+# ===========================================================================
+# Historical configuration integrity
+#
+# Every superseded version must stay loadable and byte-stable. A config that
+# produced an artefact is a record of what that artefact was made under; if it
+# drifts, the provenance chain of everything derived from it is broken.
+# ===========================================================================
+
+#: Content hashes as frozen. Changing one means a config was edited in place.
+FROZEN_CONFIG_HASHES = {
+    "v1": "fef78db7aa64bb2be51b23b9283fd00ac8c485d1c5db511d6241f54595199bd4",
+    "v2": "357ec0c9d9cce6c73fe6f0da3df74e3df88f29edefb0805abbb9a83030fd9ce4",
+    "v3": "dad39605ac5f0bfdd827783f045387e0254a386d15431af1d98339ddd0d6f344",
+}
+
+
+@pytest.mark.parametrize("version", sorted(FROZEN_CONFIG_HASHES))
+def test_every_historical_config_still_loads(version):
+    cfg = load_config(CONFIGS / f"experiment_{version}.yaml")
+    assert cfg.config_version == version
+    assert cfg.core_condition_ids() == ["RS", "RP", "NS", "NP"]
+
+
+@pytest.mark.parametrize("version", sorted(FROZEN_CONFIG_HASHES))
+def test_every_historical_config_is_unchanged(version):
+    cfg = load_config(CONFIGS / f"experiment_{version}.yaml")
+    assert cfg.content_hash == FROZEN_CONFIG_HASHES[version], (
+        f"experiment_{version}.yaml has changed. A config that produced an "
+        f"artefact must never be edited in place — create a new version instead."
+    )
+
+
+def test_no_config_version_is_missing_from_the_frozen_record():
+    on_disk = {p.stem.split("_")[1] for p in CONFIGS.glob("experiment_v*.yaml")}
+    assert on_disk == set(FROZEN_CONFIG_HASHES), (
+        "a new config version exists but is not pinned in FROZEN_CONFIG_HASHES"
+    )
+
+
+def test_latest_config_path_resolves_to_the_newest_version():
+    assert latest_config_path(CONFIGS) == CONFIGS / "experiment_v3.yaml"
+
+
+# ===========================================================================
+# Artefact-generating commands must name their configuration
+# ===========================================================================
+
+
+def test_artefact_scripts_never_default_to_the_latest_config():
+    """`latest_config_path` is a development convenience. A command that writes
+    artefacts recording a config hash must take an explicit --config path."""
+    scripts = CONFIGS.parent / "scripts"
+    for path in sorted(scripts.glob("*.py")):
+        assert "latest_config_path" not in path.read_text(), (
+            f"{path.name} resolves the config implicitly; require --config instead"
+        )
+
+
+@pytest.mark.parametrize("script", ["build_review_export", "build_tiny_corpus"])
+def test_artefact_scripts_require_an_explicit_config(script):
+    source = (CONFIGS.parent / "scripts" / f"{script}.py").read_text()
+    assert 'add_argument("--config", required=True' in source, script

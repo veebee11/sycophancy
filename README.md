@@ -51,6 +51,8 @@ collected to address that alternative.
 | 2a | Pinned sentence segmenter, config v2 | done |
 | 2b | Scenario schema + machine-valid fixture (1 decision x 2 variants x 8 = **16 texts**) | done |
 | 2c | Validator, findings, invalid fixtures | done |
+| 3b | Annotation schemas + deterministic review exporter | **current** |
+| 3a | Prompt renderer (transcripts, A/B labels, four branches) | not started |
 
 | 3 | Prompt renderer | not started |
 | 4 | Backend-independent logit scoring | not started |
@@ -76,6 +78,20 @@ justified. Stage 1 installs `pydantic`, `pyyaml` and `pytest` only.
 | `torch`, `transformers` | model-adapter smoke test |
 | `scikit-learn` | controlled linear probes |
 | `scipy` / `statsmodels` | factorial analysis (package not yet chosen) |
+
+## Reviewing the corpus
+
+```bash
+uv run python scripts/build_review_export.py --config configs/experiment_v3.yaml
+```
+
+`--config` is required. A command that writes artefacts recording a config hash
+must never inherit whichever version happens to be newest.
+
+Writes a read-only Markdown view to `review/` — an index, one file per decision,
+a combined searchable file, and blinded packets for the reliability annotators.
+`--check` verifies it still matches the corpus. Judgements are recorded in
+`data/annotations/`, never in the generated Markdown.
 
 ## Tests
 
