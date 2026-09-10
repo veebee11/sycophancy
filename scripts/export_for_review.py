@@ -1,9 +1,9 @@
 """Generate the human-review export from a canonical JSONL corpus.
 
-    uv run python scripts/build_review_export.py --config configs/experiment_v3.yaml
-    uv run python scripts/build_review_export.py --config configs/experiment_v3.yaml \
+    uv run python scripts/export_for_review.py --config configs/experiment.yaml
+    uv run python scripts/export_for_review.py --config configs/experiment.yaml \
         --corpus data/pilot/corpus.jsonl --scope pilot
-    uv run python scripts/build_review_export.py --config configs/experiment_v3.yaml --check
+    uv run python scripts/export_for_review.py --config configs/experiment.yaml --check
 
 --config is REQUIRED. An artefact-generating command must never silently pick up
 whichever configuration happens to be newest: the export records the config hash,
@@ -22,15 +22,13 @@ import tempfile
 from pathlib import Path
 
 from reasonstyle.config import load_config
-from reasonstyle.corpus import load_corpus
-from reasonstyle.review import build_review_export
-from reasonstyle.segmentation import segmenter_from_config
-from reasonstyle.validate import validate_corpus, with_measurements
+from reasonstyle.corpus import load_corpus, segmenter_from_config, validate_corpus, with_measurements
+from reasonstyle.corpus.review import build_review_export
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--corpus", default="data/fixtures/tiny_corpus.jsonl")
+    ap.add_argument("--corpus", default="data/fixtures/corpus.jsonl")
     ap.add_argument("--config", required=True,
                     help="explicit path to the frozen experiment config; never defaulted, "
                          "because the generated artefacts record its hash")
@@ -64,7 +62,7 @@ def main(argv: list[str] | None = None) -> int:
             print("review export is out of date or was edited by hand:", file=sys.stderr)
             for name in differing:
                 print(f"  {name}", file=sys.stderr)
-            print("\nregenerate with: uv run python scripts/build_review_export.py",
+            print("\nregenerate with: uv run python scripts/export_for_review.py",
                   file=sys.stderr)
             return 1
         print(f"review export matches the corpus ({len(export.files)} files).")

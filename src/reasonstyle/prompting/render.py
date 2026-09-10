@@ -43,9 +43,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from .config import ExperimentConfig
-from .hashing import content_hash
-from .schemas import CORE_CONDITIONS, Condition, ScenarioRecord, SemanticOption
+from ..config import ExperimentConfig
+from ..hashing import content_hash
+from ..corpus.schemas import CORE_CONDITIONS, Condition, ScenarioRecord, SemanticOption
 
 __all__ = [
     "AnswerContinuationUnresolved",

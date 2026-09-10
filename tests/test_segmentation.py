@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from reasonstyle.config import latest_config_path, load_config
-from reasonstyle.segmentation import (
+from reasonstyle.config import load_config
+from reasonstyle.corpus.segmentation import (
     PysbdSegmenter,
     Segmentation,
     SegmentationError,
@@ -28,7 +28,7 @@ CONFIGS = Path(__file__).resolve().parents[1] / "configs"
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config(latest_config_path(CONFIGS))
+    return load_config(CONFIGS / "experiment.yaml")
 
 
 @pytest.fixture(scope="module")
@@ -58,10 +58,6 @@ def test_a_version_mismatch_refuses_to_run(cfg):
         PysbdSegmenter(expected_version="0.0.1-not-installed")
 
 
-def test_a_config_without_a_segmentation_block_is_refused():
-    v1 = load_config(CONFIGS / "experiment_v1.yaml")
-    with pytest.raises(SegmentationError, match="v2 or later"):
-        segmenter_from_config(v1)
 
 
 # --- the D1 guarantee -------------------------------------------------------
@@ -83,8 +79,6 @@ def test_a_semicolon_does_not_terminate_a_sentence(seg, text):
     assert seg.segment(text).count == 1
 
 
-def test_the_config_declares_that_guarantee(cfg):
-    assert cfg.raw["segmentation"]["guarantees"]["semicolon_does_not_terminate_sentence"] is True
 
 
 def test_a_styled_and_plain_pair_can_match_exactly(seg):

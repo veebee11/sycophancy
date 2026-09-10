@@ -37,7 +37,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .config import FROZEN_CORE_CONDITIONS
+from ..config import FROZEN_CORE_CONDITIONS
 
 __all__ = [
     "Cell",

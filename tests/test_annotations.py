@@ -12,7 +12,7 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
-from reasonstyle.annotations import (
+from reasonstyle.corpus.annotations import (
     AnnotationError,
     BlindItemKey,
     BlindItemResponse,

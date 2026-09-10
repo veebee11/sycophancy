@@ -12,30 +12,17 @@ from pathlib import Path
 
 import pytest
 
-from reasonstyle.config import latest_config_path, load_config
-from reasonstyle.corpus import corpus_content_hash, load_corpus
-from reasonstyle.findings import Finding
-from reasonstyle.segmentation import segmenter_from_config
-from reasonstyle.validate import HUMAN_REVIEW_CODES, validate_corpus, with_measurements
+from reasonstyle.config import load_config
+from reasonstyle.corpus.store import corpus_content_hash, load_corpus
+from reasonstyle.corpus.findings import Finding
+from reasonstyle.corpus.segmentation import segmenter_from_config
+from reasonstyle.corpus.validate import HUMAN_REVIEW_CODES, validate_corpus, with_measurements
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "data" / "fixtures" / "tiny_corpus.jsonl"
-INVALID = ROOT / "data" / "fixtures" / "invalid"
+FIXTURE = ROOT / "data" / "fixtures" / "corpus.jsonl"
 
 
-@pytest.fixture(scope="module")
-def cfg():
-    return load_config(latest_config_path(ROOT / "configs"))
 
-
-@pytest.fixture(scope="module")
-def segmenter(cfg):
-    return segmenter_from_config(cfg)
-
-
-@pytest.fixture(scope="module")
-def records():
-    return load_corpus(FIXTURE)
 
 
 @pytest.fixture(scope="module")
@@ -153,31 +140,31 @@ EXPECTED_WARNING = {
 }
 
 
-def _validate(name, cfg, segmenter):
-    return validate_corpus(load_corpus(INVALID / f"{name}.jsonl"), cfg, segmenter, "fixture")
+def _validate(name, cfg, segmenter, invalid_corpus):
+    return validate_corpus(load_corpus(invalid_corpus(name)), cfg, segmenter, "fixture")
 
 
 @pytest.mark.parametrize(("name", "code"), sorted(EXPECTED_ERROR.items()))
-def test_invalid_fixtures_are_rejected(name, code, cfg, segmenter):
-    report = _validate(name, cfg, segmenter)
+def test_invalid_fixtures_are_rejected(name, code, cfg, segmenter, invalid_corpus):
+    report = _validate(name, cfg, segmenter, invalid_corpus)
     assert report.ok is False, f"{name} should not be machine-valid"
     assert code in report.codes("error"), f"{name}: expected {code}, got {sorted(report.codes('error'))}"
 
 
 @pytest.mark.parametrize(("name", "code"), sorted(EXPECTED_WARNING.items()))
-def test_warning_fixtures_are_flagged_but_not_rejected(name, code, cfg, segmenter):
+def test_warning_fixtures_are_flagged_but_not_rejected(name, code, cfg, segmenter, invalid_corpus):
     """A warning routes to a reviewer; it does not block on its own."""
-    report = _validate(name, cfg, segmenter)
+    report = _validate(name, cfg, segmenter, invalid_corpus)
     assert report.ok is True, f"{name} produced errors: {sorted(report.codes('error'))}"
     assert code in report.codes("warning")
 
 
 @pytest.mark.parametrize("name", sorted(set(EXPECTED_ERROR) - {"prohibited_formatting"}))
-def test_each_invalid_fixture_isolates_one_rule(name, cfg, segmenter):
+def test_each_invalid_fixture_isolates_one_rule(name, cfg, segmenter, invalid_corpus):
     """One broken rule, one error code — so a regression cannot hide behind a
     cascade. `prohibited_formatting` is exempt: a bullet list unavoidably breaks
     the length, sentence and marker rules at the same time."""
-    codes = set(_validate(name, cfg, segmenter).codes("error"))
+    codes = set(_validate(name, cfg, segmenter, invalid_corpus).codes("error"))
     expected = {EXPECTED_ERROR[name]}
     if name == "word_ratio_fail":
         expected.add("E_WORD_RATIO_FULL_TEXT")      # both measurements exceed the cap
@@ -186,11 +173,11 @@ def test_each_invalid_fixture_isolates_one_rule(name, cfg, segmenter):
     assert codes == expected
 
 
-def test_the_body_ratio_catches_what_the_full_text_ratio_misses(cfg, segmenter):
+def test_the_body_ratio_catches_what_the_full_text_ratio_misses(cfg, segmenter, invalid_corpus):
     """The point of measuring both. Here the manipulated bodies differ by
     1.143 while the full texts differ by only 1.094, because the shared opening
     dilutes the difference — so the full-text measurement stays silent."""
-    report = _validate("word_ratio_warn", cfg, segmenter)
+    report = _validate("word_ratio_warn", cfg, segmenter, invalid_corpus)
     assert "W_WORD_RATIO_BODY" in report.codes("warning")
     assert "W_WORD_RATIO_FULL_TEXT" not in report.codes("warning")
     finding = next(f for f in report.warnings if f.code == "W_WORD_RATIO_BODY")
@@ -198,9 +185,9 @@ def test_the_body_ratio_catches_what_the_full_text_ratio_misses(cfg, segmenter):
     assert 1.10 < finding.detail["ratio"] <= 1.15
 
 
-def test_forbidden_severity_decides_error_versus_warning(cfg, segmenter):
-    hard = _validate("forbidden_hard_fail", cfg, segmenter)
-    soft = _validate("forbidden_warning", cfg, segmenter)
+def test_forbidden_severity_decides_error_versus_warning(cfg, segmenter, invalid_corpus):
+    hard = _validate("forbidden_hard_fail", cfg, segmenter, invalid_corpus)
+    soft = _validate("forbidden_warning", cfg, segmenter, invalid_corpus)
     hard_finding = next(f for f in hard.errors if f.code == "E_FORBIDDEN")
     soft_finding = next(f for f in soft.warnings if f.code == "W_FORBIDDEN")
     assert hard_finding.detail["pattern_id"] == "ev_studies"
@@ -208,16 +195,16 @@ def test_forbidden_severity_decides_error_versus_warning(cfg, segmenter):
     assert hard.ok is False and soft.ok is True
 
 
-def test_findings_locate_the_offending_cell(cfg, segmenter):
-    report = _validate("marker_in_plain_cell", cfg, segmenter)
+def test_findings_locate_the_offending_cell(cfg, segmenter, invalid_corpus):
+    report = _validate("marker_in_plain_cell", cfg, segmenter, invalid_corpus)
     finding = next(f for f in report.errors if f.code == "E_MARKER_IN_PLAIN_CELL")
     assert (finding.scenario_id, finding.supported_option, finding.condition) == (
         "fixture_001_v1", "opt_1", "RP")
     assert "given that" in finding.detail["markers_found"]
 
 
-def test_sentence_mismatch_reports_all_four_counts(cfg, segmenter):
-    report = _validate("sentence_count_mismatch", cfg, segmenter)
+def test_sentence_mismatch_reports_all_four_counts(cfg, segmenter, invalid_corpus):
+    report = _validate("sentence_count_mismatch", cfg, segmenter, invalid_corpus)
     finding = next(f for f in report.errors if f.code == "E_SENTENCE_COUNT_MISMATCH")
     assert finding.scope == "group"
     assert set(finding.detail["counts"]) == {"RS", "RP", "NS", "NP"}

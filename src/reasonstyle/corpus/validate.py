@@ -23,8 +23,8 @@ from collections import Counter, defaultdict
 from collections.abc import Sequence
 from typing import Literal
 
-from .config import ExperimentConfig
-from .corpus import corpus_content_hash
+from ..config import ExperimentConfig
+from .store import corpus_content_hash
 from .findings import Finding, ValidationReport
 from .schemas import CORE_CONDITIONS, SEMANTIC_OPTIONS, Condition, Measurements
 from .schemas import ScenarioRecord, SegmenterRef

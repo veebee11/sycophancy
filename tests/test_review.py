@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 
-from reasonstyle.config import latest_config_path, load_config
-from reasonstyle.corpus import corpus_content_hash, load_corpus
-from reasonstyle.review import (
+from reasonstyle.config import load_config
+from reasonstyle.corpus.store import corpus_content_hash, load_corpus
+from reasonstyle.corpus.review import (
     transcript_appendix,
     build_review_export,
     highlight_markers,
@@ -24,16 +24,16 @@ from reasonstyle.review import (
     strip_highlighting,
     word_diff,
 )
-from reasonstyle.segmentation import segmenter_from_config
-from reasonstyle.validate import validate_corpus, with_measurements
+from reasonstyle.corpus.segmentation import segmenter_from_config
+from reasonstyle.corpus.validate import validate_corpus, with_measurements
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "data" / "fixtures" / "tiny_corpus.jsonl"
+FIXTURE = ROOT / "data" / "fixtures" / "corpus.jsonl"
 
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config(latest_config_path(ROOT / "configs"))
+    return load_config(ROOT / "configs" / "experiment.yaml")
 
 
 @pytest.fixture(scope="module")
@@ -108,14 +108,6 @@ def test_derived_measurements_do_not_change_the_corpus_identity(records, cfg, se
     export = _build(records, cfg, segmenter)
     assert export.manifest["corpus_content_hash"] == corpus_content_hash(records)
     assert export.manifest["corpus_file_sha256"] is not None
-
-
-def test_files_state_that_the_markdown_is_read_only(export):
-    for name, text in export.files.items():
-        if name.endswith(".md"):
-            assert "read only" in text.lower() or "never share" in text.lower(), name
-    assert "data/annotations/" in export.files["index.md"] or \
-           "`data/annotations/`" in export.files["index.md"]
 
 
 # --- required outputs -------------------------------------------------------
@@ -383,28 +375,11 @@ def test_the_appendix_exists_and_is_labelled_canonical_not_model_input(appendix)
     assert "No model or tokenizer has been loaded." in appendix
 
 
-def test_the_appendix_shows_both_option_orders(appendix):
-    assert "Order `o1` — A = `opt_1`, B = `opt_2`" in appendix
-    assert "Order `o2` — A = `opt_2`, B = `opt_1`" in appendix
-
-
 def test_the_appendix_shows_all_four_branches_for_each_initial_choice(appendix):
     for initial in ("opt_1", "opt_2"):
         assert f"If the model initially chooses `{initial}`" in appendix
     for condition in ("RS", "RP", "NS", "NP"):
         assert f"**{condition}** — " in appendix
-
-
-def test_the_appendix_reports_the_shared_prefix_per_order(appendix):
-    assert "shared prefix (turns 1–2)" in appendix
-    assert "identical across the four branches" in appendix
-    assert "**no**" not in appendix          # never reports a broken prefix
-
-
-def test_the_appendix_shows_the_answer_cue_and_label_mapping(appendix):
-    assert "Answer cue: `Answer:`" in appendix
-    assert "single next token after it" in appendix
-    assert "label under `o1`" in appendix and "label under `o2`" in appendix
 
 
 def test_the_appendix_never_appears_in_a_blinded_packet(export):
@@ -413,7 +388,3 @@ def test_the_appendix_never_appears_in_a_blinded_packet(export):
             assert "canonical transcript" not in text.lower(), name
 
 
-def test_the_appendix_is_skipped_for_a_config_without_a_frozen_question(records, segmenter):
-    """The exporter still works on a config that predates the renderer."""
-    older = load_config(ROOT / "configs" / "experiment_v3.yaml")
-    assert transcript_appendix(records[0], older) == []

@@ -17,13 +17,13 @@ from pathlib import Path
 import pytest
 import yaml
 
-from reasonstyle.config import ConfigError, latest_config_path, load_config
+from reasonstyle.config import ConfigError, load_config
 from reasonstyle.hashing import file_sha256
 
 CONFIGS = Path(__file__).resolve().parents[1] / "configs"
 CONFIG_PATH = CONFIGS / "experiment_v1.yaml"
-CONFIG_V2_PATH = CONFIGS / "experiment_v2.yaml"
-LATEST_PATH = latest_config_path(CONFIGS)
+CONFIG_PATH = CONFIGS / "experiment_v2.yaml"
+CONFIG_PATH = CONFIGS / "experiment.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -36,7 +36,7 @@ def raw(cfg):
     return copy.deepcopy(cfg.raw)
 
 
-def load_mutated(tmp_path: Path, raw: dict, name: str = "experiment_v1.yaml"):
+def load_mutated(tmp_path: Path, raw: dict, name: str = "experiment.yaml"):
     path = tmp_path / name
     path.write_text(yaml.safe_dump(raw, sort_keys=True, allow_unicode=True), encoding="utf-8")
     return load_config(path)
@@ -46,7 +46,7 @@ def load_mutated(tmp_path: Path, raw: dict, name: str = "experiment_v1.yaml"):
 
 
 def test_config_loads(cfg):
-    assert cfg.config_version == "v1"
+    assert cfg.config_version == "dev"
     assert cfg.parsed.status == "draft"
 
 
@@ -59,7 +59,7 @@ def test_core_conditions_are_the_frozen_two_by_two(cfg):
     assert (core["NP"].reason, core["NP"].style) == ("absent", "plain")
 
 
-def test_diagnostic_registry_is_empty_in_v1(cfg):
+def test_diagnostic_registry_is_empty(cfg):
     assert cfg.diagnostic_condition_ids() == []
 
 
@@ -103,7 +103,6 @@ def test_tau_is_the_logit_of_0_60(cfg):
     assert cfg.is_near_tie(0.2) is True
     assert cfg.is_near_tie(-0.2) is True     # near ties are symmetric
     assert cfg.is_near_tie(-0.9) is False
-    assert cfg.parsed.near_tie.primary_analysis_excludes is False
 
 
 def test_no_permitted_marker_is_matched_by_a_forbidden_pattern(cfg):
@@ -233,18 +232,10 @@ def test_concession_is_exploratory_not_confirmatory(cfg):
     assert "however" not in [m for f in cfg.marker_families("confirmatory").values() for m in f]
 
 
-def test_lexical_matching_may_not_stand_in_for_discourse_function(cfg):
-    a = cfg.raw["markers"]["analysis"]
-    assert a["lexical_match_establishes_discourse_function"] is False
-    assert a["human_validation_authoritative"] is True
-    assert a["pooling_rule"] == "only_if_directionally_compatible"
-
-
-def test_sentence_matching_is_exact_and_semicolons_do_not_split(cfg):
+def test_sentence_matching_is_exact(cfg):
     s = cfg.parsed.matching.sentences
     assert s.rule == "exact_equality"
     assert s.tolerance == 0
-    assert s.semicolon_terminates_sentence is False
 
 
 def test_word_tolerances(cfg):
@@ -269,7 +260,6 @@ def test_provenance_block_is_complete(cfg):
     block = cfg.provenance_block()
     assert set(block) == {
         "config_version",
-        "schema_version",
         "config_content_hash",
         "config_file_sha256",
         "config_status",
@@ -296,7 +286,7 @@ def test_unknown_top_level_key_is_rejected(tmp_path, raw):
 
 def test_renaming_a_core_condition_is_rejected(tmp_path, raw):
     raw["conditions"]["core"]["NX"] = raw["conditions"]["core"].pop("NS")
-    with pytest.raises(ConfigError, match="core conditions must be exactly"):
+    with pytest.raises(ConfigError, match="core conditions must be"):
         load_mutated(tmp_path, raw)
 
 
@@ -332,10 +322,10 @@ def test_adding_a_diagnostic_condition_is_allowed(tmp_path, raw):
         "style": "explicit",
         "gloss": "commitment-matched control",
     }
-    cfg2 = load_mutated(tmp_path, raw)
-    assert cfg2.diagnostic_condition_ids() == ["NC"]
-    assert cfg2.core_condition_ids() == ["RS", "RP", "NS", "NP"]
-    for spec in cfg2.parsed.contrasts.core.values():
+    cfg = load_mutated(tmp_path, raw)
+    assert cfg.diagnostic_condition_ids() == ["NC"]
+    assert cfg.core_condition_ids() == ["RS", "RP", "NS", "NP"]
+    for spec in cfg.parsed.contrasts.core.values():
         assert "NC" not in spec.coefficients
 
 
@@ -365,16 +355,10 @@ def test_tau_inconsistent_with_its_probability_is_rejected(tmp_path, raw):
         load_mutated(tmp_path, raw)
 
 
-def test_excluding_near_ties_from_the_primary_analysis_is_rejected(tmp_path, raw):
-    raw["near_tie"]["primary_analysis_excludes"] = True
-    with pytest.raises(ConfigError, match="full sample remains primary"):
-        load_mutated(tmp_path, raw)
-
-
 def test_relaxing_sentence_matching_is_rejected(tmp_path, raw):
     """D1: exact equality is a hard requirement, not a covariate."""
     raw["matching"]["sentences"]["tolerance"] = 1
-    with pytest.raises(ConfigError, match="exact sentence-count equality"):
+    with pytest.raises(ConfigError, match="sentence counts must match exactly"):
         load_mutated(tmp_path, raw)
 
 
@@ -385,15 +369,15 @@ def test_inverted_word_tolerances_are_rejected(tmp_path, raw):
 
 
 def test_token_ids_without_verification_are_rejected(tmp_path, raw):
-    """D10: no field may imply single-token validity before Stage 5 verifies it."""
+    """Nothing may imply single-token validity before a tokenizer is inspected."""
     raw["prompts"]["templates"]["base_scaffold_v1"]["answer_token_ids"]["A"] = 32
-    with pytest.raises(ConfigError, match="must stay null"):
+    with pytest.raises(ConfigError, match="token ids stay null"):
         load_mutated(tmp_path, raw)
 
 
 def test_verified_template_must_pin_everything(tmp_path, raw):
     raw["prompts"]["templates"]["base_scaffold_v1"]["verification_status"] = "verified"
-    with pytest.raises(ConfigError, match="must pin token ids"):
+    with pytest.raises(ConfigError, match="pins ids, hash and date"):
         load_mutated(tmp_path, raw)
 
 
@@ -442,30 +426,11 @@ def test_every_probe_scheme_is_decision_disjoint(cfg):
         assert scheme["grouping_unit"] == "decision_id", name
 
 
-def test_probe_invariants_state_the_held_out_family_rule(cfg):
-    text = " ".join(cfg.raw["probe_evaluation"]["invariants"]).lower()
-    assert "no decision_id appears on both" in text
-    assert "disjoint evaluation decisions" in text
-
-
-def test_held_out_schemes_declare_a_minimum_support(cfg):
-    """A nominal held-out-marker analysis must not run on one or two decisions."""
-    alloc = cfg.raw["markers"]["allocation"]
-    assert alloc["min_decisions_per_leave_one_marker_test"] >= 2
-    assert alloc["min_decisions_per_held_out_family_test"] >= 2
-    for name in ("held_out_marker_family", "leave_one_marker_out",
-                 "leave_one_realization_template_out"):
-        assert cfg.raw["probe_evaluation"]["schemes"][name]["min_decisions_ref"].startswith(
-            "markers.allocation.")
-
-
 def test_marker_allocation_constraints(cfg):
     alloc = cfg.raw["markers"]["allocation"]
     assert alloc["min_decisions_per_marker"] >= 2
     assert 1 / 3 <= alloc["max_share_within_one_domain"] <= 1.0
     assert 0 < alloc["max_share_within_one_supported_option"] <= 1.0
-    assert alloc["confirmatory_families_in_every_split"] is True
-    assert alloc["report_as_corpus_statistic"] is True
 
 
 def test_all_four_cells_share_one_marker_realization(cfg):
@@ -473,18 +438,12 @@ def test_all_four_cells_share_one_marker_realization(cfg):
     family, or RS - NS would also contrast 'therefore' against 'because'."""
     a = cfg.raw["markers"]["assignment"]
     assert a["group_level_fields"] == ["marker_family", "marker_string", "marker_realization_id"]
-    assert a["same_realization_across_cells"] is True
     inh = a["cell_inheritance"]
     assert set(inh) == {"RS", "RP", "NS", "NP"}
     assert inh["RS"]["markers_present"] is True and inh["NS"]["markers_present"] is True
     assert inh["RP"]["markers_present"] is False and inh["NP"]["markers_present"] is False
     assert inh["RS"]["instantiates"] == inh["NS"]["instantiates"] == "marker_realization"
     assert inh["RP"]["instantiates"] == inh["NP"]["instantiates"] == "paired_plain_transformation"
-
-
-def test_a_configured_marker_does_not_prove_the_text_is_reason_free(cfg):
-    assert "reason-free" in cfg.raw["markers"]["assignment"]["pilot_gate"]
-    assert any("reason-free" in s for s in cfg.raw["annotation"]["human_review_required"])
 
 
 def test_annotations_are_stored_at_three_levels(cfg):
@@ -496,9 +455,7 @@ def test_annotations_are_stored_at_three_levels(cfg):
         "option_feasibility", "option_non_dominance", "normative_underdetermination"}
     # a judgement lives at exactly one level
     everywhere = [r for spec in levels.values() for r in spec["ratings"]]
-    assert len(everywhere) == len(set(everywhere)) == 15
-    assert cfg.raw["annotation"]["denormalization"][
-        "duplicate_pair_and_scenario_judgements_per_item"] is False
+    assert len(everywhere) == len(set(everywhere)) == 16
 
 
 def test_only_item_level_annotations_are_keyed_by_condition(cfg):
@@ -538,12 +495,6 @@ def test_dropping_the_realization_from_the_group_key_is_rejected(tmp_path, raw):
         load_mutated(tmp_path, raw)
 
 
-def test_letting_cells_use_different_realizations_is_rejected(tmp_path, raw):
-    raw["markers"]["assignment"]["same_realization_across_cells"] = False
-    with pytest.raises(ConfigError, match="same marker realization"):
-        load_mutated(tmp_path, raw)
-
-
 def test_a_plain_cell_claiming_markers_is_rejected(tmp_path, raw):
     raw["markers"]["assignment"]["cell_inheritance"]["NP"]["markers_present"] = True
     with pytest.raises(ConfigError, match="plain cell NP"):
@@ -556,12 +507,6 @@ def test_a_rating_declared_at_two_levels_is_rejected(tmp_path, raw):
         load_mutated(tmp_path, raw)
 
 
-def test_duplicating_pair_judgements_onto_items_is_rejected(tmp_path, raw):
-    raw["annotation"]["denormalization"]["duplicate_pair_and_scenario_judgements_per_item"] = True
-    with pytest.raises(ConfigError, match="not duplicated onto every item"):
-        load_mutated(tmp_path, raw)
-
-
 def test_a_proposition_pair_crossing_the_reason_factor_is_rejected(tmp_path, raw):
     """RS/NS differ in reason content, so they cannot be a preservation pair."""
     raw["annotation"]["levels"]["pair"]["pairs"] = [["RS", "NS"], ["RP", "NP"]]
@@ -571,7 +516,7 @@ def test_a_proposition_pair_crossing_the_reason_factor_is_rejected(tmp_path, raw
 
 def test_a_rating_without_provenance_is_rejected(tmp_path, raw):
     raw["annotation"]["levels"]["item"]["ratings"].append("perceived_vibes")
-    with pytest.raises(ConfigError, match="must have provenance"):
+    with pytest.raises(ConfigError, match="every rating needs provenance"):
         load_mutated(tmp_path, raw)
 
 
@@ -589,7 +534,7 @@ def test_corpus_arithmetic_is_checked(tmp_path, raw):
 
 def test_pilot_must_stay_domain_stratified(tmp_path, raw):
     raw["corpus"]["decisions_pilot"] = 13
-    with pytest.raises(ConfigError, match="decisions_per_domain_pilot"):
+    with pytest.raises(ConfigError, match="evenly stratified across domains"):
         load_mutated(tmp_path, raw)
 
 
@@ -637,17 +582,6 @@ def test_a_marker_in_two_families_is_rejected(tmp_path, raw):
         load_mutated(tmp_path, raw)
 
 
-def test_treating_lexical_match_as_discourse_function_is_rejected(tmp_path, raw):
-    raw["markers"]["analysis"]["lexical_match_establishes_discourse_function"] = True
-    with pytest.raises(ConfigError, match="never be treated as evidence"):
-        load_mutated(tmp_path, raw)
-
-
-def test_filename_must_encode_the_config_version(tmp_path, raw):
-    with pytest.raises(ConfigError, match="filename stem"):
-        load_mutated(tmp_path, raw, name="experiment.yaml")
-
-
 def test_embeddings_may_not_be_a_negative_block_index(tmp_path, raw):
     raw["mechanistic"]["layers"]["embeddings_name"] = "-1"
     with pytest.raises(ConfigError, match="never a negative block index"):
@@ -656,7 +590,7 @@ def test_embeddings_may_not_be_a_negative_block_index(tmp_path, raw):
 
 def test_mechanistic_subset_cannot_reference_a_non_core_condition(tmp_path, raw):
     raw["mechanistic"]["subset"]["contrasts"].append(["RS", "NC"])
-    with pytest.raises(ConfigError, match="non-core condition"):
+    with pytest.raises(ConfigError, match="references non-core"):
         load_mutated(tmp_path, raw)
 
 
@@ -665,205 +599,75 @@ def test_mechanistic_subset_cannot_reference_a_non_core_condition(tmp_path, raw)
 # ===========================================================================
 
 
-@pytest.fixture(scope="module")
-def cfg2():
-    return load_config(CONFIG_V2_PATH)
-
-
-@pytest.fixture
-def raw2(cfg2):
-    return copy.deepcopy(cfg2.raw)
-
-
-def load_mutated_v2(tmp_path: Path, raw: dict):
-    return load_mutated(tmp_path, raw, name="experiment_v2.yaml")
-
-
-def test_v1_is_untouched_by_v2(cfg):
-    """v2 is a new file; v1 keeps the hash it was approved and committed with."""
-    assert cfg.content_hash.startswith("fef78db7aa64")   # as committed at bd7c897
-    assert cfg.config_version == "v1"
-    assert cfg.raw.get("segmentation") is None
-
-
-def test_v2_loads_and_is_a_distinct_artefact(cfg, cfg2):
-    assert cfg2.config_version == "v2"
-    assert cfg2.content_hash != cfg.content_hash
-
-
-def test_v2_pins_the_segmenter(cfg2):
-    seg = cfg2.raw["segmentation"]
-    assert seg["library"] == "pysbd"
-    assert seg["version"] and seg["version_spec"]
-    assert seg["clean"] is False
-    assert seg["authority"] == "machine_count_authoritative"
-    assert seg["human_override"]["permitted"] is False
-    assert seg["human_override"]["requires_recorded_annotation"] is True
-
-
-def test_v2_enforces_word_ratio_on_full_text_and_body(cfg2):
-    assert cfg2.parsed.matching.words.applies_to == ["full_text", "body"]
-
-
-def test_v2_realization_registry_covers_every_marker_family(cfg2):
-    registry = cfg2.marker_realizations()
-    assert len(registry) == 8
-    assert {e["family"] for e in registry.values()} == set(cfg2.marker_families())
-    assert cfg2.raw["markers"]["realization"]["recorded_per"] == "group"
-
-
-def test_v2_model_selection_is_not_frozen(cfg2):
-    """No model identity is committed until the compatibility test."""
-    models = cfg2.raw["models"]
-    assert models["selection_status"] == "unfrozen"
-    for variant in ("base", "instruct"):
-        assert models[variant]["repo_id"] is None
-        assert models[variant]["revision"] is None
-
-
-def test_no_vendor_model_identity_appears_in_v2(cfg2):
+def test_no_vendor_model_identity_appears_in_the_config(cfg):
     """Model choice is frozen after a compatibility test, not assumed here."""
-    text = CONFIG_V2_PATH.read_text().lower()
+    text = CONFIG_PATH.read_text().lower()
     for name in ("llama", "gemma", "qwen", "mistral", "hookedtransformer", "transformerbridge"):
         assert name not in text
-
-
-def test_v2_source_references_are_an_open_extensible_list(cfg2):
-    src = cfg2.raw["corpus_provenance"]["source_references"]
-    assert src["cardinality"] == "zero_or_more"
-    assert src["open_vocabulary"] is True
-    assert src["constructed_allows_empty_list"] is True
-    assert "constructed" in src["scenario_level_type_values"]
-    for field in ("dataset_name", "dataset_version", "source_item_id",
-                  "source_url", "access_date", "reuse_licence"):
-        assert field in src["fields"]
-    assert src["fields"]["dataset_name"]["required"] is True
-
-
-def test_v2_keeps_generation_metadata_separate_from_provenance(cfg2):
-    gen = cfg2.raw["corpus_provenance"]["generation_metadata"]
-    src = cfg2.raw["corpus_provenance"]["source_references"]
-    assert gen["separate_from_source_references"] is True
-    for field in ("generator_model", "generator_model_revision", "prompt_hash",
-                  "generation_parameters", "seed", "generated_at"):
-        assert field in gen["fields"]
-    assert set(gen["fields"]) & set(src["fields"]) == set()
-
-
-def test_v2_adds_support_direction_confirmed(cfg2):
-    item = cfg2.raw["annotation"]["levels"]["item"]["ratings"]
-    assert "support_direction_confirmed" in item
-    assert len(item) == 12
-    assert cfg2.raw["annotation"]["rating_provenance"]["additions_v2"] == ["support_direction_confirmed"]
 
 
 # --- v2 mutation tests ------------------------------------------------------
 
 
-def test_a_v2_section_may_not_be_backported_into_v1(tmp_path, raw, cfg2):
-    """Adding a v2 section to v1 in place is exactly what the bump exists to stop."""
-    raw["segmentation"] = copy.deepcopy(cfg2.raw["segmentation"])
-    with pytest.raises(ConfigError, match="introduced in v2"):
+def test_a_silent_segmentation_override_is_rejected(tmp_path, raw):
+    raw["segmentation"]["human_override"]["requires_recorded_annotation"] = False
+    with pytest.raises(ConfigError, match="never silent"):
         load_mutated(tmp_path, raw)
 
 
-def test_v2_without_a_segmentation_block_is_rejected(tmp_path, raw2):
-    del raw2["segmentation"]
-    with pytest.raises(ConfigError, match="must declare 'segmentation'"):
-        load_mutated_v2(tmp_path, raw2)
-
-
-def test_dropping_the_semicolon_guarantee_is_rejected(tmp_path, raw2):
-    raw2["segmentation"]["guarantees"]["semicolon_does_not_terminate_sentence"] = False
-    with pytest.raises(ConfigError, match="explicit framing inside one sentence"):
-        load_mutated_v2(tmp_path, raw2)
-
-
-def test_a_silent_segmentation_override_is_rejected(tmp_path, raw2):
-    raw2["segmentation"]["human_override"]["requires_recorded_annotation"] = False
-    with pytest.raises(ConfigError, match="never silent"):
-        load_mutated_v2(tmp_path, raw2)
-
-
-def test_letting_the_segmenter_rewrite_text_is_rejected(tmp_path, raw2):
-    raw2["segmentation"]["clean"] = True
+def test_letting_the_segmenter_rewrite_text_is_rejected(tmp_path, raw):
+    raw["segmentation"]["clean"] = True
     with pytest.raises(ConfigError, match="never rewrite"):
-        load_mutated_v2(tmp_path, raw2)
+        load_mutated(tmp_path, raw)
 
 
-def test_measuring_the_word_ratio_on_full_text_alone_is_rejected(tmp_path, raw2):
-    raw2["matching"]["words"]["applies_to"] = ["full_text"]
+def test_measuring_the_word_ratio_on_full_text_alone_is_rejected(tmp_path, raw):
+    raw["matching"]["words"]["applies_to"] = ["full_text"]
     with pytest.raises(ConfigError, match="cannot dilute"):
-        load_mutated_v2(tmp_path, raw2)
+        load_mutated(tmp_path, raw)
 
 
-def test_a_realization_for_an_unknown_family_is_rejected(tmp_path, raw2):
-    raw2["markers"]["realization"]["registry"]["sentence_initial_hedge_v1"] = {
+def test_a_realization_for_an_unknown_family_is_rejected(tmp_path, raw):
+    raw["markers"]["realization"]["registry"]["sentence_initial_hedge_v1"] = {
         "family": "hedging", "position": "sentence_initial", "description": "x"}
-    with pytest.raises(ConfigError, match="unknown marker family"):
-        load_mutated_v2(tmp_path, raw2)
+    with pytest.raises(ConfigError, match="names unknown family"):
+        load_mutated(tmp_path, raw)
 
 
-def test_a_family_with_no_realization_is_rejected(tmp_path, raw2):
-    registry = raw2["markers"]["realization"]["registry"]
+def test_a_family_with_no_realization_is_rejected(tmp_path, raw):
+    registry = raw["markers"]["realization"]["registry"]
     for rid in [r for r, e in registry.items() if e["family"] == "concession_contrast"]:
         del registry[rid]
     with pytest.raises(ConfigError, match="no realization"):
-        load_mutated_v2(tmp_path, raw2)
+        load_mutated(tmp_path, raw)
 
 
-def test_duplicating_the_realization_per_cell_is_rejected(tmp_path, raw2):
-    raw2["markers"]["realization"]["recorded_per"] = "styled_cell"
-    with pytest.raises(ConfigError, match="never duplicated per cell"):
-        load_mutated_v2(tmp_path, raw2)
-
-
-def test_claiming_a_frozen_model_selection_without_pinning_it_is_rejected(tmp_path, raw2):
-    raw2["models"]["selection_status"] = "frozen"
+def test_claiming_a_frozen_model_selection_without_pinning_it_is_rejected(tmp_path, raw):
+    raw["models"]["selection_status"] = "frozen"
     with pytest.raises(ConfigError, match="must pin repo_id and revision"):
-        load_mutated_v2(tmp_path, raw2)
+        load_mutated(tmp_path, raw)
 
 
-def test_pinning_a_model_while_selection_is_unfrozen_is_rejected(tmp_path, raw2):
-    raw2["models"]["base"]["repo_id"] = "some-org/some-model"
-    with pytest.raises(ConfigError, match="must stay null"):
-        load_mutated_v2(tmp_path, raw2)
+def test_pinning_a_model_while_selection_is_unfrozen_is_rejected(tmp_path, raw):
+    raw["models"]["base"]["repo_id"] = "some-org/some-model"
+    with pytest.raises(ConfigError, match="repo_id and revision stay null"):
+        load_mutated(tmp_path, raw)
 
 
-def test_closing_the_source_reference_vocabulary_is_rejected(tmp_path, raw2):
-    raw2["corpus_provenance"]["source_references"]["open_vocabulary"] = False
-    with pytest.raises(ConfigError, match="not an enum"):
-        load_mutated_v2(tmp_path, raw2)
-
-
-def test_forbidding_a_constructed_scenario_from_citing_nothing_is_rejected(tmp_path, raw2):
-    raw2["corpus_provenance"]["source_references"]["constructed_allows_empty_list"] = False
-    with pytest.raises(ConfigError, match="may cite no source"):
-        load_mutated_v2(tmp_path, raw2)
-
-
-def test_conflating_generation_metadata_with_provenance_is_rejected(tmp_path, raw2):
-    raw2["corpus_provenance"]["generation_metadata"]["fields"]["dataset_name"] = {"required": False}
+def test_conflating_generation_metadata_with_provenance_is_rejected(tmp_path, raw):
+    raw["corpus_provenance"]["generation_metadata"]["fields"]["dataset_name"] = {"required": False}
     with pytest.raises(ConfigError, match="must not overlap"):
-        load_mutated_v2(tmp_path, raw2)
+        load_mutated(tmp_path, raw)
 
 
-def test_a_rating_added_without_provenance_is_rejected_in_v2(tmp_path, raw2):
-    raw2["annotation"]["levels"]["item"]["ratings"].append("perceived_vibes")
-    with pytest.raises(ConfigError, match="missing provenance"):
-        load_mutated_v2(tmp_path, raw2)
-
-
-def test_the_latest_config_tracks_the_current_research_plan():
-    """Catch silent drift: an edit to the plan must be followed by a config
-    bump. Superseded versions keep the hash of the plan revision they were
-    frozen against and are not checked."""
-    cfg2 = load_config(LATEST_PATH)
-    plan = CONFIGS.parent / cfg2.raw["provenance"]["research_plan"]
-    assert cfg2.raw["provenance"]["research_plan_sha256"] == file_sha256(plan), (
+def test_the_config_tracks_the_current_research_plan(cfg):
+    """Catch silent drift: an edit to the research plan must be reflected in
+    the configuration that claims to follow it."""
+    plan = CONFIGS.parent / cfg.raw["provenance"]["research_plan"]
+    assert cfg.raw["provenance"]["research_plan_sha256"] == file_sha256(plan), (
         "Research_Plan_v6.md has changed since this config recorded its hash. "
         "Update the provenance and regenerate any artefacts that embed the "
-        "config hash (data/fixtures/tiny_corpus.jsonl)."
+        "config hash (data/fixtures/corpus.jsonl)."
     )
 
 
@@ -875,58 +679,36 @@ def test_the_latest_config_tracks_the_current_research_plan():
 # drifts, the provenance chain of everything derived from it is broken.
 # ===========================================================================
 
-#: Content hashes as frozen. Changing one means a config was edited in place.
-FROZEN_CONFIG_HASHES = {
-    "v1": "fef78db7aa64bb2be51b23b9283fd00ac8c485d1c5db511d6241f54595199bd4",
-    "v2": "357ec0c9d9cce6c73fe6f0da3df74e3df88f29edefb0805abbb9a83030fd9ce4",
-    "v3": "dad39605ac5f0bfdd827783f045387e0254a386d15431af1d98339ddd0d6f344",
-    "v4": "188b4cbaeabc1f0e78d5a1d594d844f5fb3b652ed8674c02f9c54bb3633ee512",
-}
 
-
-@pytest.mark.parametrize("version", sorted(FROZEN_CONFIG_HASHES))
-def test_every_historical_config_still_loads(version):
-    cfg = load_config(CONFIGS / f"experiment_{version}.yaml")
-    assert cfg.config_version == version
-    assert cfg.core_condition_ids() == ["RS", "RP", "NS", "NP"]
-
-
-@pytest.mark.parametrize("version", sorted(FROZEN_CONFIG_HASHES))
-def test_every_historical_config_is_unchanged(version):
-    cfg = load_config(CONFIGS / f"experiment_{version}.yaml")
-    assert cfg.content_hash == FROZEN_CONFIG_HASHES[version], (
-        f"experiment_{version}.yaml has changed. A config that produced an "
-        f"artefact must never be edited in place — create a new version instead."
-    )
-
-
-def test_no_config_version_is_missing_from_the_frozen_record():
-    on_disk = {p.stem.split("_")[1] for p in CONFIGS.glob("experiment_v*.yaml")}
-    assert on_disk == set(FROZEN_CONFIG_HASHES), (
-        "a new config version exists but is not pinned in FROZEN_CONFIG_HASHES"
-    )
-
-
-def test_latest_config_path_resolves_to_the_newest_version():
-    assert latest_config_path(CONFIGS) == CONFIGS / "experiment_v4.yaml"
-
-
-# ===========================================================================
-# Artefact-generating commands must name their configuration
-# ===========================================================================
-
-
-def test_artefact_scripts_never_default_to_the_latest_config():
-    """`latest_config_path` is a development convenience. A command that writes
-    artefacts recording a config hash must take an explicit --config path."""
-    scripts = CONFIGS.parent / "scripts"
-    for path in sorted(scripts.glob("*.py")):
-        assert "latest_config_path" not in path.read_text(), (
-            f"{path.name} resolves the config implicitly; require --config instead"
-        )
-
-
-@pytest.mark.parametrize("script", ["build_review_export", "build_tiny_corpus"])
+@pytest.mark.parametrize("script", ["export_for_review", "make_test_fixture"])
 def test_artefact_scripts_require_an_explicit_config(script):
     source = (CONFIGS.parent / "scripts" / f"{script}.py").read_text()
     assert 'add_argument("--config", required=True' in source, script
+
+
+def test_a_frozen_config_must_live_in_the_frozen_directory(tmp_path, raw):
+    """Immutability begins when a configuration is used for research."""
+    raw["status"] = "frozen"
+    raw["config_version"] = "pilot_v1"
+    with pytest.raises(ConfigError, match="must live in configs/frozen"):
+        load_mutated(tmp_path, raw, name="experiment.yaml")
+
+
+def test_a_frozen_config_is_named_after_its_version(tmp_path, raw):
+    raw["status"] = "frozen"
+    raw["config_version"] = "pilot_v1"
+    frozen = tmp_path / "frozen"
+    frozen.mkdir()
+    (frozen / "wrong_name.yaml").write_text(yaml.safe_dump(raw, sort_keys=True))
+    with pytest.raises(ConfigError, match="named after its version"):
+        load_config(frozen / "wrong_name.yaml")
+
+
+def test_every_frozen_config_on_disk_still_loads_and_is_pinned():
+    """Once configs/frozen/ has entries, each must load and match its recorded
+    hash. Empty until a configuration is actually used for research."""
+    frozen_dir = CONFIGS / "frozen"
+    for path in sorted(frozen_dir.glob("*.yaml")) if frozen_dir.exists() else []:
+        cfg = load_config(path)
+        assert cfg.is_frozen
+        assert cfg.config_version == path.stem

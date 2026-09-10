@@ -21,9 +21,10 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from reasonstyle.config import latest_config_path, load_config
-from reasonstyle.corpus import CorpusError, corpus_content_hash, dumps_record, load_corpus, save_corpus
-from reasonstyle.schemas import (
+from reasonstyle.config import load_config
+from reasonstyle.corpus import CorpusError, corpus_content_hash, load_corpus, save_corpus
+from reasonstyle.corpus.store import dumps_record
+from reasonstyle.corpus.schemas import (
     CORE_CONDITIONS,
     Cell,
     DirectionBlock,
@@ -36,8 +37,8 @@ from reasonstyle.schemas import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "data" / "fixtures" / "tiny_corpus.jsonl"
-CONFIG_V2 = latest_config_path(ROOT / "configs")
+FIXTURE = ROOT / "data" / "fixtures" / "corpus.jsonl"
+CONFIG_V2 = ROOT / "configs" / "experiment.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -118,7 +119,7 @@ def test_fixture_declares_itself_constructed_with_no_sources(corpus):
 
 
 def test_fixture_carries_its_config_provenance(corpus):
-    cfg = load_config(ROOT / "configs" / f"experiment_{corpus[0].config_version}.yaml")
+    cfg = load_config(CONFIG_V2)
     for record in corpus:
         assert record.config_content_hash == cfg.content_hash
 

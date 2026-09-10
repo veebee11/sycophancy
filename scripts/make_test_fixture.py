@@ -23,13 +23,13 @@ import argparse
 
 from reasonstyle.config import load_config
 from reasonstyle.corpus import save_corpus
-from reasonstyle.schemas import Cell, DirectionBlock, ScenarioRecord, ValidationStatus
+from reasonstyle.corpus.schemas import Cell, DirectionBlock, ScenarioRecord, ValidationStatus
 
 # --config is required: the fixture embeds the config hash, so the version must
 # be chosen deliberately rather than inherited from whichever file is newest.
 _ap = argparse.ArgumentParser(description=__doc__)
 _ap.add_argument("--config", required=True)
-_ap.add_argument("--out", default="data/fixtures/tiny_corpus.jsonl")
+_ap.add_argument("--out", default="data/fixtures/corpus.jsonl")
 _args = _ap.parse_args()
 cfg = load_config(_args.config)
 
@@ -94,7 +94,7 @@ OPTIONS = {
     "opt_2": "Accelerate the storage build already under tender.",
 }
 COMMON = dict(
-    schema_version="v2", config_version=cfg.config_version,
+    schema_version="1", config_version=cfg.config_version,
     config_content_hash=cfg.content_hash,
     decision_id="fixture_001", domain="energy",
     options=OPTIONS, counterargument_opening=OPENING,

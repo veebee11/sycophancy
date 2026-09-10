@@ -3,7 +3,9 @@
 What actually moves an LLM's position when a user pushes back — the substantive
 reason, or the language that makes something sound reasoned?
 
-Implementation of `Research_Plan_v6.md`. Vidhi Bhutani, University of Tokyo.
+Vidhi Bhutani, University of Tokyo. The research plan is
+[`Research_Plan_v6.md`](Research_Plan_v6.md); design decisions are in
+[`docs/design_notes.md`](docs/design_notes.md).
 
 ## The design in one paragraph
 
@@ -11,103 +13,65 @@ Each scenario is a normatively underdetermined public-policy trade-off with two
 **immutable semantic options**, `opt_1` and `opt_2`. The model is asked to choose;
 its A/B logits give an initial argmax. The transcript is then forked into four
 independent branches, each carrying a counterargument that supports the option
-*opposite* the initial choice, in one of four conditions:
+*opposite* the initial choice:
 
 |                    | style explicit | style plain |
 |--------------------|----------------|-------------|
 | **reason present** | `RS`           | `RP`        |
 | **reason absent**  | `NS`           | `NP`        |
 
-Primary outcome, where `m = logit(counter-supported option) − logit(initially
-selected option)`:
+With `m = logit(counter-supported option) − logit(initially selected option)`,
+the outcome is `movement_toward_counter = m_after − m_before`. The primary
+contrast is `NS − NP`: style with no reason.
+
+**A and B are display labels only.** They never carry semantic identity, and
+support direction is never inferred from them.
+
+## Layout
 
 ```
-movement_toward_counter = m_after − m_before
+configs/experiment.yaml     the one editable config; frozen copies go in configs/frozen/
+data/fixtures/corpus.jsonl  a small synthetic corpus used by the tests
+src/reasonstyle/
+  corpus/                   schemas, storage, segmentation, validation, annotation, review
+  prompting/                transcript rendering
+scripts/                    each takes a required --config
+docs/design_notes.md        decisions that affect the experiment
 ```
-
-Valid contrasts: `NS−NP` (style, no reason), `RS−RP` (style, with reason),
-`RS−NS` (content, explicit), `RP−NP` (content, plain), and the interaction
-`(RS−RP) − (NS−NP)`.
-
-**A/B are display labels only.** They are assigned by the prompt renderer and
-counterbalanced across both orders. They are never the semantic identity of an
-option, and support direction is never inferred from them.
-
-**Interpretation ceiling.** An `NS > NP` result licenses the claim that explicit
-inferential framing affects the model without additional *stated* propositional
-support. It does not by itself establish irrationality, because markers such as
-"therefore" may carry pragmatic information about speaker commitment. Human
-ratings of perceived speaker commitment and perceived unstated support are
-collected to address that alternative.
-
-## Implementation stage status
-
-*(Distinct from the Analysis stages in the research plan — Analysis Stage 2 is the logit lens.)*
-
-| Stage | Scope | Status |
-|---|---|---|
-| 0 | Repository audit | done |
-| 1 | Skeleton, frozen config, hashing, decision log | done |
-| 2a | Pinned sentence segmenter, config v2 | done |
-| 2b | Scenario schema + machine-valid fixture (1 decision x 2 variants x 8 = **16 texts**) | done |
-| 2c | Validator, findings, invalid fixtures | done |
-| 3b | Annotation schemas + deterministic review exporter | done |
-| 3a | Prompt renderer (transcripts, A/B labels, four branches) | **current** |
-
-| 3 | Prompt renderer | not started |
-| 4 | Backend-independent logit scoring | not started |
-| 5 | One-model smoke test | not started |
-| 6 | Pilot behavioural pipeline | not started |
-
-No model weights are downloaded and no GPU code exists before Stage 5.
 
 ## Setup
 
-Python is pinned to 3.11 (`requires-python = ">=3.11,<3.12"`), managed by `uv`.
+Python 3.11, managed by `uv`.
 
 ```bash
 uv sync --group dev
 ```
 
-Dependencies are added at the stage that first needs them, so the lockfile stays
-justified. Stage 1 installs `pydantic`, `pyyaml` and `pytest` only.
+Dependencies are added at the point they are first needed. Currently:
+`pydantic`, `pyyaml`, `pysbd`, and `pytest`. Still to come — `pandas`/`numpy` for
+run tables, `torch`/`transformers` for the model adapter, `scikit-learn` for
+probes, and a statistics package for the factorial analysis.
 
-| Deferred package | First needed for |
-|---|---|
-| `pandas`, `numpy` | backend-independent scoring and run tables |
-| `torch`, `transformers` | model-adapter smoke test |
-| `scikit-learn` | controlled linear probes |
-| `scipy` / `statsmodels` | factorial analysis (package not yet chosen) |
-
-## Reviewing the corpus
-
-```bash
-uv run python scripts/build_review_export.py --config configs/experiment_v4.yaml
-```
-
-`--config` is required. A command that writes artefacts recording a config hash
-must never inherit whichever version happens to be newest.
-
-Writes a read-only Markdown view to `review/` — an index, one file per decision,
-a combined searchable file, and blinded packets for the reliability annotators.
-`--check` verifies it still matches the corpus. Judgements are recorded in
-`data/annotations/`, never in the generated Markdown.
-
-## Tests
+## Running things
 
 ```bash
 uv run pytest
 ```
 
-## Configuration is immutable
+```bash
+uv run python scripts/export_for_review.py --config configs/experiment.yaml
+```
 
-A config must never be edited in place once it has produced an artefact; a
-change creates a new version. `configs/experiment_v1.yaml` is frozen as
-committed; `configs/experiment_v2.yaml` supersedes it from Implementation
-Stage 2a onward. `null` fields are
-*unresolved*, not empty — each is pinned by a later config version at the stage
-named in its comment. Every generated artefact records the config hash, the
-prompt hash and the model revision.
+Writes a read-only Markdown view of the corpus to `review/` — an index, one file
+per decision showing all four conditions side by side, a combined searchable
+file, and blinded packets for the reliability annotators. Add `--check` to verify
+it still matches the corpus. Judgements are recorded under `data/`, never in the
+generated Markdown.
 
-Research decisions and deviations from the plan are logged in
-[docs/decisions.md](docs/decisions.md).
+## What is and is not established
+
+Machine validation checks form: presence, absence, counts, structural
+consistency, pattern matches. Substantive support, support direction, no-reason
+integrity, proposition preservation, naturalness and pragmatic commitment are
+human judgements, and every generated review lists them as outstanding. A clean
+validation run is not an approved corpus.

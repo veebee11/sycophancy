@@ -48,11 +48,11 @@ from .annotations import (
     ScenarioAnnotation,
     load_annotations,
 )
-from .config import ExperimentConfig
-from .corpus import corpus_content_hash
+from ..config import ExperimentConfig
+from .store import corpus_content_hash
 from .findings import ValidationReport
-from .hashing import canonical_json, file_sha256, sha256_of
-from .rendering import (
+from ..hashing import canonical_json, file_sha256, sha256_of
+from ..prompting.render import (
     RenderingError,
     branches_share_prefix,
     option_orders,
@@ -88,7 +88,7 @@ PAIRS = (("RS", "RP", "RS_RP"), ("NS", "NP", "NS_NP"))
 
 _READ_ONLY = (
     "> **Generated file — read only.** Regenerate with "
-    "`uv run python scripts/build_review_export.py`.\n"
+    "`uv run python scripts/export_for_review.py`.\n"
     "> Every judgement belongs in `data/annotations/`. Nothing written here is read back."
 )
 
@@ -679,7 +679,6 @@ def build_review_export(
     )
 
     manifest = {
-        "exporter_version": cfg.raw["review"]["exporter_version"],
         "config_version": cfg.config_version,
         "config_content_hash": cfg.content_hash,
         "corpus_content_hash": corpus_hash,

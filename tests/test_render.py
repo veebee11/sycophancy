@@ -14,8 +14,8 @@ from pathlib import Path
 import pytest
 
 from reasonstyle.config import load_config
-from reasonstyle.corpus import load_corpus
-from reasonstyle.rendering import (
+from reasonstyle.corpus.store import load_corpus
+from reasonstyle.prompting.render import (
     AnswerContinuationUnresolved,
     MaterializationDeferred,
     RenderingError,
@@ -26,10 +26,10 @@ from reasonstyle.rendering import (
     render_branches,
     render_initial,
 )
-from reasonstyle.schemas import CORE_CONDITIONS
+from reasonstyle.corpus.schemas import CORE_CONDITIONS
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "data" / "fixtures" / "tiny_corpus.jsonl"
+FIXTURE = ROOT / "data" / "fixtures" / "corpus.jsonl"
 BASE = "base_scaffold_v1"
 INSTRUCT = "instruct_chat_v1"
 TEST_CONTINUATION = {"A": " A", "B": " B"}
@@ -37,7 +37,7 @@ TEST_CONTINUATION = {"A": " A", "B": " B"}
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config(ROOT / "configs" / "experiment_v4.yaml")
+    return load_config(ROOT / "configs" / "experiment.yaml")
 
 
 @pytest.fixture(scope="module")
@@ -231,7 +231,7 @@ def test_a_changed_record_changes_the_record_and_prompt_hashes(record, orders, c
 def test_every_artefact_carries_its_provenance(record, orders, cfg):
     for artefact in (render_initial(record, orders[0], cfg, BASE),
                      *render_branches(record, orders[0], cfg, BASE, "opt_1")):
-        assert artefact.config_version == "v4"
+        assert artefact.config_version == cfg.config_version
         assert artefact.config_content_hash == cfg.content_hash
         assert len(artefact.record_hash) == 64
         assert len(artefact.prompt_hash) == 64
@@ -292,16 +292,10 @@ def test_the_scaffold_is_the_one_frozen_in_the_config(cfg):
 
 
 def test_the_renderer_imports_no_model_or_tokenizer():
-    source = (ROOT / "src" / "reasonstyle" / "rendering.py").read_text()
+    source = (ROOT / "src" / "reasonstyle" / "prompting" / "render.py").read_text()
     for forbidden in ("torch", "transformers", "tokenizer", "AutoModel", "HookedTransformer"):
         assert f"import {forbidden}" not in source
     assert not {m for m in sys.modules if m.startswith(("torch", "transformers"))}
-
-
-def test_an_earlier_config_cannot_render(record, orders):
-    older = load_config(ROOT / "configs" / "experiment_v3.yaml")
-    with pytest.raises(RenderingError, match="v4 or later"):
-        render_initial(record, orders[0], older, BASE)
 
 
 def test_an_unknown_template_is_refused(record, orders, cfg):

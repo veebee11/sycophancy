@@ -37,3 +37,6 @@ tmp/
 # --- Generated review output (derived; never edited by hand) ---
 review/
 !review/frozen/
+
+# Personal editor settings stay local
+.vscode/

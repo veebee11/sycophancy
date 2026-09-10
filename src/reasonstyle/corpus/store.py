@@ -14,7 +14,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .hashing import canonical_json, content_hash, file_sha256
+from ..hashing import canonical_json, content_hash, file_sha256
 from .schemas import ScenarioRecord
 
 __all__ = [

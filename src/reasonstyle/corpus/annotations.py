@@ -366,7 +366,7 @@ def load_annotations(path: str | Path, model: type[BaseModel]) -> list[Any]:
 
 def save_annotations(records: Iterable[BaseModel], path: str | Path) -> Path:
     """Write annotations as canonical JSONL."""
-    from .hashing import canonical_json
+    from ..hashing import canonical_json
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
