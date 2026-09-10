@@ -52,12 +52,20 @@ from .config import ExperimentConfig
 from .corpus import corpus_content_hash
 from .findings import ValidationReport
 from .hashing import canonical_json, file_sha256, sha256_of
+from .rendering import (
+    RenderingError,
+    branches_share_prefix,
+    option_orders,
+    render_branches,
+    render_initial,
+)
 from .schemas import CORE_CONDITIONS, SEMANTIC_OPTIONS, ScenarioRecord
 from .segmentation import Segmenter
 from .validate import HUMAN_REVIEW_CODES
 
 __all__ = [
     "ReviewExport",
+    "transcript_appendix",
     "SeparationResult",
     "build_review_export",
     "order_with_separation",
@@ -205,6 +213,62 @@ def _comparison_lines(record: ScenarioRecord, option: str) -> list[str]:
     return L
 
 
+def transcript_appendix(record: ScenarioRecord, cfg: ExperimentConfig,
+                       template_name: str = "base_scaffold_v1") -> list[str]:
+    """The canonical, model-independent transcript for one scenario.
+
+    Presented so the two invariances can be checked by eye: turn 1 depends only
+    on the display order, turn 3 only on the initial choice, and turns 1-2 are
+    shared byte-for-byte by all four branches.
+    """
+    try:
+        orders = option_orders(cfg)
+        initials = [render_initial(record, o, cfg, template_name) for o in orders]
+    except RenderingError:
+        return []      # config predates the frozen question; nothing to show
+
+    L = [f"\n### Canonical transcript — `{record.scenario_id}`\n",
+         "> **This is the canonical transcript, not the exact model input.** It is an "
+         "ordered list of turns and is independent of any model. The string a model "
+         "actually receives is produced later: for an instruction-tuned model by that "
+         "model's own tokenizer chat template, and the answer continuation after the cue "
+         "(`\" A\"` versus `\"A\"`) is settled at the model-compatibility stage. No model "
+         "or tokenizer has been loaded.\n",
+         f"Answer cue: `{initials[0].transcript.answer_cue}` — the answer is the single "
+         f"next token after it.\n"]
+
+    L.append("\n**Turn 1 · user** — depends only on the display order\n")
+    for order, initial in zip(orders, initials):
+        mapping = ", ".join(f"{k} = `{v}`" for k, v in sorted(order.label_to_option.items()))
+        L += [f"*Order `{order.order_id}` — {mapping}*\n",
+              "```text\n" + initial.transcript.turns[0].content + "\n```\n"]
+
+    L.append("**Turn 2 · assistant** — the model's own initial answer, as a display label\n")
+    L += ["| Initial semantic choice | label under `o1` | label under `o2` |", "|---|---|---|"]
+    for option in SEMANTIC_OPTIONS:
+        L.append(f"| `{option}` | {orders[0].label_for(option)} | {orders[1].label_for(option)} |")
+
+    L.append("\n**Turn 3 · user** — depends only on the initial choice, never on the order\n")
+    for initial_option in SEMANTIC_OPTIONS:
+        target = record.opposing_option(initial_option)
+        branches = {o.order_id: render_branches(record, o, cfg, template_name, initial_option)
+                    for o in orders}
+        prefixes = {oid: bs[0].shared_prefix_hash for oid, bs in branches.items()}
+        L += [f"\n*If the model initially chooses `{initial_option}`, all four branches "
+              f"counter with the counterarguments supporting `{target}`.*\n",
+              "| Order | shared prefix (turns 1–2) | identical across the four branches |",
+              "|---|---|---|"]
+        for oid, bs in branches.items():
+            L.append(f"| `{oid}` | `{prefixes[oid][:12]}` | "
+                     f"{'yes' if branches_share_prefix(bs) else '**no**'} |")
+        L.append("")
+        for branch in branches[orders[0].order_id]:
+            L += [f"**{branch.condition}** — {CONDITION_GLOSS[branch.condition]} "
+                  f"(prompt hash `{branch.prompt_hash[:12]}`)\n",
+                  "```text\n" + branch.transcript.turns[2].content + "\n```\n"]
+    return L
+
+
 def decision_markdown(decision_id: str, records: Sequence[ScenarioRecord],
                       report: ValidationReport, cfg: ExperimentConfig,
                       corpus_hash: str, source: Path, segmenter: Segmenter,
@@ -261,6 +325,10 @@ def decision_markdown(decision_id: str, records: Sequence[ScenarioRecord],
                   *_human_review_lines(report, record.scenario_id, option), ""]
         L += ["#### Scenario-level machine findings\n",
               *_findings_lines(report, record.scenario_id, None), ""]
+
+    appendix = [line for record in ordered for line in transcript_appendix(record, cfg)]
+    if appendix:
+        L += ["\n---\n", "## Appendix — canonical transcripts\n", *appendix]
     return "\n".join(L) + "\n"
 
 

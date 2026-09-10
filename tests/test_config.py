@@ -880,6 +880,7 @@ FROZEN_CONFIG_HASHES = {
     "v1": "fef78db7aa64bb2be51b23b9283fd00ac8c485d1c5db511d6241f54595199bd4",
     "v2": "357ec0c9d9cce6c73fe6f0da3df74e3df88f29edefb0805abbb9a83030fd9ce4",
     "v3": "dad39605ac5f0bfdd827783f045387e0254a386d15431af1d98339ddd0d6f344",
+    "v4": "188b4cbaeabc1f0e78d5a1d594d844f5fb3b652ed8674c02f9c54bb3633ee512",
 }
 
 
@@ -907,7 +908,7 @@ def test_no_config_version_is_missing_from_the_frozen_record():
 
 
 def test_latest_config_path_resolves_to_the_newest_version():
-    assert latest_config_path(CONFIGS) == CONFIGS / "experiment_v3.yaml"
+    assert latest_config_path(CONFIGS) == CONFIGS / "experiment_v4.yaml"
 
 
 # ===========================================================================

@@ -448,6 +448,36 @@ independently seeded order per annotator to control order effects.
 `decision_id`; a test adds a second decision in a second domain and asserts it
 appears with no code change.
 
+## D19a — Item review is blinded; pair review is only PARTIALLY blinded · frozen
+
+A proposition-preservation judgement requires both texts to be visible, and the
+two texts of a pair differ only by a connective. An annotator therefore sees
+immediately that it is a minimal-pair manipulation, even with the condition
+labels removed and the sides randomised.
+
+This is inherent to the judgement, not a defect in the exporter, but it means the
+three levels are **not equally blind**:
+
+| Level | Blinding | What the annotator can infer |
+|---|---|---|
+| **item** | blinded | one text alone; condition, marker metadata, counts, sibling cells and the intended option are all hidden |
+| **pair** | **partially blinded** | both texts shown; condition labels hidden and sides randomised, but the minimal-pair structure is visible |
+| **scenario** | blinded | scenario and options only, no counterarguments |
+
+**The methodology must describe item-level review as blinded and pair-level
+review as partially blinded**, and must not report the pair-level reliability
+figure as though it were obtained under the same blinding as item-level.
+
+The sibling-separation constraint (D19) mitigates but does not remove this: it
+keeps cells of one group apart in the *item* packet, where they would otherwise
+reveal the design; it cannot help in the pair packet, where both cells are shown
+together by design.
+
+**On the real corpus the configured separation stays enforced.** If it is
+infeasible, the exporter reports it — in the packet, the manifest and on stdout —
+and the constraint requires explicit approval to change. It is never silently
+relaxed.
+
 ## D20 — Configuration resolution is explicit · frozen
 
 `latest_config_path()` is a **development convenience**, used by general tests so
@@ -462,6 +492,47 @@ Superseded configurations stay on disk, loadable and byte-stable. Their content
 hashes are pinned in `FROZEN_CONFIG_HASHES`, and a test fails if any of them
 changes — a config that produced an artefact is the record of what that artefact
 was made under.
+
+## D21 — Prompt rendering · frozen (Implementation Stage 3a)
+
+**The canonical object is a model-independent transcript** — ordered turns with
+roles, knowing nothing of tokenizers or checkpoints. Every hash is computed over
+it. Turning it into a model's input string is a separate step:
+
+| Template | Materialization | When |
+|---|---|---|
+| `base_scaffold_v1` | `plain_scaffold` — authored and hashed in config v4 | now |
+| `instruct_chat_v1` | `tokenizer_chat_template` — the tokenizer's own | model-compatibility stage |
+
+Authoring a chat template here would hard-code a checkpoint that has not been
+selected, so `materialize()` refuses for that template rather than inventing one.
+
+**The conversation is frozen at three turns**: user (scenario, options as A/B,
+question) → assistant (the model's own label) → user (one counterargument, then
+the *same* question). Turns 1–2 are built once and reused, so all four branches
+share them byte-for-byte and the four conditions never appear together.
+
+**Semantic identity never becomes a letter.** Turn 1 depends only on the display
+order; turn 3 depends only on the initial choice. Swapping the order changes
+which letters are printed and nothing else — tested by asserting that turn 3 is
+character-identical across the two orders while the labels differ.
+
+**Nothing is guessed about tokenization.** Materialization ends exactly at the
+answer cue, and rendering an assistant turn requires a resolved answer
+continuation; with none available it raises rather than choosing between `" A"`
+and `"A"`. The question wording is `provisional_until:
+model_compatibility_stage`.
+
+**Hashes:** `transcript_hash` over the structured turns, `shared_prefix_hash`
+over turns 1–2, `record_hash` over the scenario record, and `prompt_hash` binding
+transcript, template, order, condition, config and record together.
+
+**Curator appendix.** Each decision file ends with the canonical transcript for
+both option orders and all four branches, labelled explicitly as *not* the exact
+model input. It is laid out to make the two invariances checkable by eye: turn 1
+varies only with the order, turn 3 only with the initial choice.
+
+Stage 3a renders transcripts from an existing corpus. It does not generate one.
 
 ---
 

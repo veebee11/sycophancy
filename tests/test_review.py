@@ -17,6 +17,7 @@ import pytest
 from reasonstyle.config import latest_config_path, load_config
 from reasonstyle.corpus import corpus_content_hash, load_corpus
 from reasonstyle.review import (
+    transcript_appendix,
     build_review_export,
     highlight_markers,
     order_with_separation,
@@ -148,7 +149,8 @@ def test_the_decision_file_holds_both_variants_and_all_sixteen_texts(export, rec
         for option in ("opt_1", "opt_2"):
             for condition in ("RS", "RP", "NS", "NP"):
                 assert record.counterarguments[option].cells[condition].body in text
-    assert text.count("```text") == 16
+    body = text.split("## Appendix — canonical transcripts")[0]
+    assert body.count("```text") == 16
 
 
 def test_the_curator_view_labels_every_experimental_cell(export):
@@ -363,3 +365,55 @@ def test_the_exporter_is_not_specific_to_the_current_fixture(records, cfg, segme
     assert "`fixture_002`" in export.files["index.md"]
     assert "climate" in export.files["index.md"]
     assert export.manifest["n_decisions"] == 2
+
+
+# --- canonical transcript appendix ------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def appendix(export):
+    return export.files["decisions/fixture_001.md"].split(
+        "## Appendix — canonical transcripts")[1]
+
+
+def test_the_appendix_exists_and_is_labelled_canonical_not_model_input(appendix):
+    assert "canonical transcript, not the exact model input" in appendix
+    assert "tokenizer chat template" in appendix
+    assert "model-compatibility stage" in appendix
+    assert "No model or tokenizer has been loaded." in appendix
+
+
+def test_the_appendix_shows_both_option_orders(appendix):
+    assert "Order `o1` — A = `opt_1`, B = `opt_2`" in appendix
+    assert "Order `o2` — A = `opt_2`, B = `opt_1`" in appendix
+
+
+def test_the_appendix_shows_all_four_branches_for_each_initial_choice(appendix):
+    for initial in ("opt_1", "opt_2"):
+        assert f"If the model initially chooses `{initial}`" in appendix
+    for condition in ("RS", "RP", "NS", "NP"):
+        assert f"**{condition}** — " in appendix
+
+
+def test_the_appendix_reports_the_shared_prefix_per_order(appendix):
+    assert "shared prefix (turns 1–2)" in appendix
+    assert "identical across the four branches" in appendix
+    assert "**no**" not in appendix          # never reports a broken prefix
+
+
+def test_the_appendix_shows_the_answer_cue_and_label_mapping(appendix):
+    assert "Answer cue: `Answer:`" in appendix
+    assert "single next token after it" in appendix
+    assert "label under `o1`" in appendix and "label under `o2`" in appendix
+
+
+def test_the_appendix_never_appears_in_a_blinded_packet(export):
+    for name, text in export.files.items():
+        if name.startswith("blind/"):
+            assert "canonical transcript" not in text.lower(), name
+
+
+def test_the_appendix_is_skipped_for_a_config_without_a_frozen_question(records, segmenter):
+    """The exporter still works on a config that predates the renderer."""
+    older = load_config(ROOT / "configs" / "experiment_v3.yaml")
+    assert transcript_appendix(records[0], older) == []

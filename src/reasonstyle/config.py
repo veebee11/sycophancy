@@ -32,7 +32,7 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from .hashing import content_hash, file_sha256
+from .hashing import content_hash, file_sha256, sha256_of
 
 __all__ = ["ConfigError", "ExperimentConfig", "latest_config_path", "load_config"]
 
@@ -161,6 +161,10 @@ class MatchingSpec(_Base):
 class TemplateSpec(_Base):
     applies_to: Literal["base", "instruct"]
     gloss: str
+    # v4+: how the structured transcript becomes the string a model sees.
+    materialization: Literal["plain_scaffold", "tokenizer_chat_template"] | None = None
+    role_labels: dict[str, str] | None = None
+    turn_separator: str | None = None
     template_text: str | None
     template_sha256: str | None
     answer_cue: str | None
@@ -178,6 +182,12 @@ class PromptSpec(_Base):
     answer_slot_rule: str
     templates: dict[str, TemplateSpec]
     verification_rule: str
+    # v4+: the frozen question, and the conversation shape the renderer builds.
+    question_text: str | None = None
+    instruction_text: str | None = None
+    option_line_format: str | None = None
+    provisional_until: str | None = None
+    turn_structure: list[dict[str, Any]] | None = None
 
 
 class RawConfig(_Base):
@@ -973,6 +983,11 @@ def _validate_version_requirements(cfg: ExperimentConfig) -> None:
             _check(cfg.raw.get("review") is not None,
                    f"config {cfg.parsed.config_version} must declare 'review'")
             _validate_v3_sections(cfg)
+            if version >= 4:
+                _validate_v4_sections(cfg)
+            else:
+                _check("question_text" not in cfg.raw["prompts"],
+                       "prompts.question_text was introduced in v4; create a new version")
         else:
             _check(cfg.raw.get("review") is None,
                    "section 'review' was introduced in v3; create a new config version")
@@ -1003,6 +1018,49 @@ def latest_config_path(configs_dir: str | Path = "configs") -> Path:
     if not paths:
         raise ConfigError(f"no experiment config found in {configs_dir}")
     return paths[max(paths)]
+
+
+def _validate_v4_sections(cfg: ExperimentConfig) -> None:
+    """Checks for sections introduced in config v4 (Implementation Stage 3a)."""
+    raw, p = cfg.raw, cfg.parsed
+    prompts = raw["prompts"]
+
+    for field in ("question_text", "instruction_text", "option_line_format"):
+        _check(bool(prompts[field]), f"prompts.{field} must be frozen and non-empty")
+    _check("{label}" in prompts["option_line_format"]
+           and "{option_text}" in prompts["option_line_format"],
+           "the option line must place the display label beside the option text")
+    _check(prompts["provisional_until"] == "model_compatibility_stage",
+           "the question wording is provisional until the answer labels are shown "
+           "to be single next tokens under each selected template")
+
+    structure = prompts["turn_structure"]
+    _check([t["role"] for t in structure] == ["user", "assistant", "user"],
+           "the frozen conversation is user -> assistant -> user")
+    _check([t["index"] for t in structure] == [1, 2, 3], "turns are indexed 1, 2, 3")
+    _check("counterargument" in structure[2]["contains"],
+           "the counterargument belongs to turn 3, after the initial answer")
+    _check("counterargument" not in structure[0]["contains"],
+           "turn 1 must not contain a counterargument")
+
+    for name, tpl in p.prompts.templates.items():
+        _check(tpl.materialization is not None, f"template {name} must declare a materialization")
+        _check(bool(tpl.answer_cue), f"template {name} must declare an answer cue")
+        if tpl.materialization == "plain_scaffold":
+            _check(tpl.template_text is not None and tpl.template_sha256 is not None,
+                   f"template {name}: a plain scaffold must be authored and hashed here")
+            _check(sha256_of(tpl.template_text) == tpl.template_sha256,
+                   f"template {name}: template_sha256 does not match template_text")
+            for placeholder in ("{turns}", "{assistant_label}", "{answer_cue}"):
+                _check(placeholder in tpl.template_text,
+                       f"template {name}: scaffold is missing {placeholder}")
+            _check(tpl.role_labels is not None and set(tpl.role_labels) == {"user", "assistant"},
+                   f"template {name}: a plain scaffold needs a label for each role")
+            _check(tpl.turn_separator is not None, f"template {name}: needs a turn separator")
+        else:
+            _check(tpl.template_text is None and tpl.template_sha256 is None,
+                   f"template {name}: a chat template belongs to its tokenizer and is "
+                   f"materialized by the model adapter, not authored here")
 
 
 def _validate_v3_sections(cfg: ExperimentConfig) -> None:

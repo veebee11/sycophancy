@@ -51,8 +51,8 @@ collected to address that alternative.
 | 2a | Pinned sentence segmenter, config v2 | done |
 | 2b | Scenario schema + machine-valid fixture (1 decision x 2 variants x 8 = **16 texts**) | done |
 | 2c | Validator, findings, invalid fixtures | done |
-| 3b | Annotation schemas + deterministic review exporter | **current** |
-| 3a | Prompt renderer (transcripts, A/B labels, four branches) | not started |
+| 3b | Annotation schemas + deterministic review exporter | done |
+| 3a | Prompt renderer (transcripts, A/B labels, four branches) | **current** |
 
 | 3 | Prompt renderer | not started |
 | 4 | Backend-independent logit scoring | not started |
@@ -82,7 +82,7 @@ justified. Stage 1 installs `pydantic`, `pyyaml` and `pytest` only.
 ## Reviewing the corpus
 
 ```bash
-uv run python scripts/build_review_export.py --config configs/experiment_v3.yaml
+uv run python scripts/build_review_export.py --config configs/experiment_v4.yaml
 ```
 
 `--config` is required. A command that writes artefacts recording a config hash
