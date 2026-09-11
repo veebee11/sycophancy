@@ -1,0 +1,267 @@
+# Reference-source registry
+#
+# Datasets listed here are REFERENCE SOURCES ONLY. They may supply policy
+# topics, competing values and argument structures. Their text is never copied
+# into the experimental corpus.
+#
+# Each candidate has one explicit outcome:
+#   unverified   not checked yet
+#   citable      access and licence confirmed; seed-only use permitted
+#   excluded     checked, but unavailable, unsuitable, prohibited or too unclear
+#
+# Only citable entries may be cited. A candidate that nothing cites may stay
+# unverified without blocking anything. An excluded entry needs checked_by,
+# checked_at and exclusion_reason; anything that could not be found stays empty
+# rather than being invented. Nothing here is filled in from memory.
+#
+# checked_by records the person who takes responsibility for the verification.
+# Links and metadata were collected with coding assistance.
+#
+# Check with:
+#   uv run python scripts/verify_sources.py --registry data/sources/registry.yaml
+#   ... --cite KEY [KEY ...]    fails unless every listed key is citable
+#
+# Fields
+#   canonical_name        the name the provider publishes it under
+#   citation              the paper to cite (given here only where the research plan states it)
+#   outcome               unverified | citable | excluded
+#   version               the release, revision or snapshot consulted, if one is stated
+#   access_url            the current official access page
+#   access_date           when it was accessed or last checked (YYYY-MM-DD)
+#   licence               the licence, quoted as the provider states it
+#   licence_url           where that statement can be read
+#   usage                 our intended use; seed_only is the only value
+#   usage_permitted       true exactly when the outcome is citable
+#   attribution_required  whether the licence requires attribution
+#   registration_required whether access needs an account or signed agreement
+#   checked_by            who checked access and licence
+#   checked_at            when they checked it (YYYY-MM-DD)
+#   exclusion_reason      why an excluded dataset was excluded
+#   notes                 restrictions, caveats, or anything else a reader needs
+
+datasets:
+
+  # ---------------------------------------------------------------- citable
+
+  polianna:
+    canonical_name: "POLIANNA"
+    citation: "Sewerin, Kaack, Küttel et al., Scientific Data 10, 896 (2023)"
+    outcome: citable
+    version: "1.1.0 (published 2023-08-25)"
+    access_url: "https://zenodo.org/records/8284380"
+    access_date: 2026-09-11
+    licence: "Creative Commons Attribution 4.0 International"
+    licence_url: "https://creativecommons.org/licenses/by/4.0/"
+    usage: seed_only
+    usage_permitted: true
+    attribution_required: true
+    registration_required: false
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: null
+    notes: >
+      Role: climate and energy policy topics and policy structures. Annotated
+      articles from EU climate-mitigation and renewable-energy laws. Version
+      1.1.0 is not explicitly marked as the latest; the v1.0.0 record
+      (https://zenodo.org/records/7569275) states that a newer version exists.
+
+  genai4pa_jrc_2025:
+    canonical_name: "PSTW: Analysis of the generative AI landscape in the European public sector (JRC142033)"
+    citation: "European Commission, Joint Research Centre: PSTW: Analysis of the generative AI landscape in the European public sector (JRC142033). doi:10.2905/JRC.252W050"
+    outcome: citable
+    version: "issued 2025-04-14; doi:10.2905/JRC.252W050"
+    access_url: "https://data.jrc.ec.europa.eu/dataset/561de3c2-b968-42c8-8f14-fecb572d874f"
+    access_date: 2026-09-11
+    licence: "Creative Commons Attribution 4.0 International"
+    licence_url: "https://creativecommons.org/licenses/by/4.0/"
+    usage: seed_only
+    usage_permitted: true
+    attribution_required: true
+    registration_required: false
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: null
+    notes: >
+      Role: technology-governance topics on public-sector adoption and
+      governance of generative AI. This fixed snapshot is the reproducible
+      source: two tables, ANNEX I (GenAI guidelines) and ANNEX II (GenAI use
+      cases); open anonymous access. Discovery source only, not cited by the
+      topic bank: the living GenAI4PA portal,
+      https://interoperable-europe.ec.europa.eu/collection/public-sector-tech-watch/genai4pa-data-download
+      ("CC-BY 4.0 license", last update 3 July 2026). Catalogue oddities kept
+      as found: modified 10 Apr 2025, before the 14 Apr 2025 issue date; the
+      catalogue's suggested citation gives the year 2026.
+
+  ibm_argq_rank_30k:
+    canonical_name: "IBM-ArgQ-Rank-30k"
+    citation: "Gretz et al. 2020"
+    outcome: citable
+    version: "Hugging Face revision 590726b3765b1b90c5e53a17e3b1f77d92d3aa8a (modified 2023-11-06)"
+    access_url: "https://huggingface.co/datasets/ibm-research/argument_quality_ranking_30k"
+    access_date: 2026-09-11
+    licence: "CC-BY-SA 3.0"
+    licence_url: "http://creativecommons.org/licenses/by-sa/3.0/"
+    usage: seed_only
+    usage_permitted: true
+    attribution_required: true
+    registration_required: false
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: null
+    notes: >
+      Role: general pro/con argument structures only. LICENCE DISCREPANCY,
+      retained deliberately: the dataset card states "(c) Copyright IBM 2014.
+      Released under CC-BY-SA 3.0" and links to CC BY-SA 3.0, while the
+      repository metadata tag is "cc-by-3.0". The card's explicit statement is
+      recorded as the licence. The card also carries "(c) Copyright Wikipedia".
+      No dataset text will be copied or adapted; the dataset is used only to
+      understand broad argument structures.
+
+  # ------------------------------------------------------------- unverified
+
+  valueprism:
+    canonical_name: "ValuePrism"
+    citation: "Value Kaleidoscope (arXiv:2309.00779)"
+    outcome: unverified
+    version: "Hugging Face revision d439ca90825e5b4e5ef97798d9b5950e16ba7065 (modified 2023-09-08)"
+    access_url: "https://huggingface.co/datasets/allenai/ValuePrism"
+    access_date: 2026-09-11
+    licence: "AI2 ImpACT License - Medium Risk Artifacts (“MR Agreement”)"
+    licence_url: "https://huggingface.co/datasets/allenai/ValuePrism"
+    usage: seed_only
+    usage_permitted: false
+    attribution_required: null
+    registration_required: true
+    checked_by: null
+    checked_at: null
+    exclusion_reason: null
+    notes: >
+      Optional. Used only if the accepted Medium-Risk agreement can be
+      recovered and recorded; until then it stays unverified and may not be
+      cited. Its absence does not delay corpus construction: competing values
+      can also be curated from the policy sources and the research literature.
+      Role, if citable: broad value categories — competing values, rights and
+      duties — only; never its situations, explanations or other text, and not
+      a source of policy topics. Gated with automatic approval. Access-form text, verbatim:
+      "Access to this dataset is automatically granted upon accepting the AI2
+      ImpACT License - Medium Risk Artifacts (“MR Agreement”) and completing all
+      fields below." Required checkboxes include "I UNDERSTAND that the dataset
+      is intended for research purposes and not for real-world use-cases" and
+      "I AGREE to the terms and conditions of the MR Agreement above". The card
+      states: "The dataset was created and intended for research purposes. It
+      is openly released under AI2’s ImpACT license as a medium risk artifact."
+      The terms link https://allenai.org/licenses/impact-mr returned 404 on
+      2026-09-11. Situations come from the Delphi user demo; values, rights,
+      duties and explanations were generated by GPT-4. Access has been granted
+      to Vidhi Bhutani's Hugging Face account; not yet confirmed from this
+      machine by a header-only check.
+
+  # --------------------------------------------------------------- excluded
+
+  perspectrum:
+    canonical_name: "PERSPECTRUM"
+    citation: "Chen, Khashabi, Yin, Callison-Burch & Roth, NAACL 2019"
+    outcome: excluded
+    version: null
+    access_url: "https://github.com/CogComp/perspectrum"
+    access_date: 2026-09-11
+    licence: "Creative Commons (BY-SA)"
+    licence_url: "https://cogcomp.seas.upenn.edu/perspectrum/"
+    usage: seed_only
+    usage_permitted: false
+    attribution_required: null
+    registration_required: false
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: "Redundant with IBM-ArgQ-Rank-30k for argument structure, and the exact Creative Commons licence version is not stated."
+    notes: >
+      The project page says "Work is published under the Creative Commons
+      (BY-SA) license", linking only to the generic Creative Commons licences
+      page; the README says "the Creative Commons license"; no LICENSE file found.
+
+  kialo_revisions:
+    canonical_name: "Kialo revision corpus"
+    citation: "Skitalinskaya, Klaff & Wachsmuth, EACL 2021"
+    outcome: excluded
+    version: null
+    access_url: "https://github.com/GabriellaSky/claimrev"
+    access_date: 2026-09-11
+    licence: null
+    licence_url: null
+    usage: seed_only
+    usage_permitted: false
+    attribution_required: null
+    registration_required: true
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: "Data available only by personal request to the author, with no stated licence and nothing on Kialo's terms. Revisit only if access is requested and clear terms are received."
+    notes: >
+      Repository README: "In order to obtain access to the ClaimRev corpus,
+      please reach out to Gabriella Skitalinskaya (email can be found in paper)
+      along with your affiliation and a short description of how you will be
+      using the data."
+
+  changemyview_convokit:
+    canonical_name: "ChangeMyView (Cornell ConvoKit copy)"
+    citation: "Tan et al. 2016"
+    outcome: excluded
+    version: "ConvoKit 4.1.2; data file last modified 2019-10-16"
+    access_url: "https://convokit.cornell.edu/documentation/winning.html"
+    access_date: 2026-09-11
+    licence: null
+    licence_url: null
+    usage: seed_only
+    usage_permitted: false
+    attribution_required: null
+    registration_required: false
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: "No licence is stated for the data."
+    notes: >
+      The ConvoKit copy is accessible: a header-only request for
+      winning-args-corpus.zip returned 200 on 2026-09-11. The original paper's
+      dataset page (https://chenhaot.com/pages/changemyview.html) returns 404.
+      ConvoKit's MIT licence covers its code, not the data.
+
+  overtonbench:
+    canonical_name: "OvertonBench"
+    citation: "Poole-Dayan, Wu, Sorensen, Pei & Bakker, ICLR 2026"
+    outcome: excluded
+    version: null
+    access_url: "https://huggingface.co/datasets/elinorpd/overtonbench"
+    access_date: 2026-09-11
+    licence: "cc-by-4.0"
+    licence_url: null
+    usage: seed_only
+    usage_permitted: false
+    attribution_required: null
+    registration_required: false
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: "Its partisan US framing does not match our design."
+    notes: >
+      60 politically salient US questions with participant demographics
+      including political affiliation. Half the questions come from ModelSlant,
+      built around perceived Democrat/Republican slant, with no stated licence;
+      the other half from PRISM, whose human-written text is CC BY 4.0.
+
+  oecd_ai_policy_navigator:
+    canonical_name: "OECD.AI Policy Navigator"
+    citation: "OECD.AI (2025), OECD.AI Policy Navigator"
+    outcome: excluded
+    version: null
+    access_url: "https://oecd.ai/en/dashboards/overview"
+    access_date: 2026-09-11
+    licence: null
+    licence_url: null
+    usage: seed_only
+    usage_permitted: false
+    attribution_required: null
+    registration_required: false
+    checked_by: "Vidhi Bhutani"
+    checked_at: 2026-09-11
+    exclusion_reason: "Reuse permission is not sufficiently clear."
+    notes: >
+      The page states "© 2026 OECD. All rights reserved" and gives a citation
+      format but no reuse licence. Entries are submitted by national contact
+      points. OECD's general open-access policy page returned 403 when checked.

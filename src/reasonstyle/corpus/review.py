@@ -399,6 +399,17 @@ def _rng(cfg: ExperimentConfig, corpus_hash: str, salt: str) -> random.Random:
     return random.Random(int(digest, 16) % (2 ** 32))
 
 
+def item_sampling_units(records: Sequence[ScenarioRecord]) -> list[tuple[tuple, tuple]]:
+    """``(unit, stratum)`` for every counterargument cell.
+
+    The marker family in the stratum is the one assigned to the whole
+    four-condition group. RP and NP carry no marker themselves — their
+    cell-level ``marker_family`` is null — so the cell field is never used.
+    """
+    return [((r.scenario_id, o, c), (r.domain, o, c, r.counterarguments[o].marker_family))
+            for r in records for o in SEMANTIC_OPTIONS for c in CORE_CONDITIONS]
+
+
 def _stratified_sample(units: Sequence[tuple[Any, tuple]], fraction: float,
                        rng: random.Random) -> list[Any]:
     """Proportional allocation over strata, with largest-remainder rounding.
@@ -606,9 +617,7 @@ def build_review_export(
     fraction, minimum = sub["fraction"], sub["min_sibling_separation"]
     n_annotators = sub["independent_annotators"]
 
-    item_units = [((r.scenario_id, o, c),
-                   (r.domain, o, c, r.counterarguments[o].marker_family))
-                  for r in records for o in SEMANTIC_OPTIONS for c in CORE_CONDITIONS]
+    item_units = item_sampling_units(records)
     item_chosen = _stratified_sample(item_units, fraction, _rng(cfg, corpus_hash, "item-sample"))
     item_keys: list[BlindItemKey] = []
     label_rng = _rng(cfg, corpus_hash, "item-labels")

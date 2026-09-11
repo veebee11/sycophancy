@@ -142,6 +142,13 @@ so a clean machine run can never be mistaken for a validated corpus.
 | `H_REALIZATION_YIELDS_REASON_FREE_NS` | every group |
 | `H_SCENARIO_VALIDITY` | every scenario |
 | `H_PREMISE_IS_SCENARIO_CONTAINED` *(from corpus construction)* | every RS/RP cell |
+| `H_NOT_PARAPHRASE_OF_RETAINED_EXCERPT` *(from corpus construction)* | only items whose topic brief retains source wording — compared with that wording, not with a whole dataset |
+
+Alongside these, a machine provenance check, `E_GENERATOR_INPUT_NOT_FROM_BRIEF`,
+fails an item whose logged generation request differs from the request rebuilt
+from the frozen prompt template and its topic brief. Items whose brief retains no
+source text carry `independence: procedural` in their provenance rather than a
+reviewer judgement.
 
 `ValidationReport.ok` means "no machine errors" and nothing more. Approval
 additionally requires every human-review code to be discharged by a recorded
@@ -312,6 +319,118 @@ reference nor a licence claim.
 **Model selection is not frozen.** No model identity appears in any schema,
 validator or configured behaviour; `repo_id` and `revision` stay null until a
 tokenizer/template compatibility test settles them.
+
+## Corpus construction
+
+**Reference datasets are reference material only.** They are used to identify
+broad policy topics, competing values and general argument structures. Their
+scenarios, claims, arguments and explanations are never copied, lightly
+paraphrased or systematically transformed into the corpus, and no source item
+is treated as the template for an experimental item. Every scenario and
+counterargument is newly drafted under our own design rules; where anything a
+source suggests conflicts with the scenario, matching, marker,
+premise-containment or validation rules, our rules take priority. Provenance is
+recorded at the topic-idea level.
+
+**Independence is enforced by the construction process, not by comparing texts
+against whole datasets** — a reviewer cannot realistically check 960 texts
+against every source:
+
+1. Reference datasets supply only broad topic ideas, value trade-offs and
+   general structural inspiration.
+2. A curator writes a short, original topic-bank brief in their own words.
+3. No source argument, explanation or complete source item is given to the
+   generation model.
+4. The model drafts from the curated brief and our experimental constraints.
+5. Human review compares generated text only with its topic brief and any
+   source excerpt actually retained in that brief.
+
+Two checks follow. A provenance check confirms from the stored request that the
+generator received only the curated brief and our constraints: the logged
+request must match the request rebuilt from the frozen prompt template and the
+item's brief. Where a brief retains source wording, a reviewer checks that the
+generated text is not a close paraphrase of that retained wording. Where no
+source text is retained or supplied, independence is recorded as a
+**procedural guarantee**, not as an annotation claim.
+
+Intended roles: POLIANNA for climate and energy policy topics and policy
+structures; the fixed April 2025 JRC snapshot of the GenAI4PA data for
+technology-governance topics (the living GenAI4PA portal is a discovery source
+only); IBM-ArgQ-Rank-30k for general pro/con argument structures only. ValuePrism
+is optional: a source for broad value categories only if its accepted
+Medium-Risk agreement can be recovered and recorded, never for its situations,
+explanations or other text. Its absence does not delay corpus construction —
+competing values can also be curated from the policy sources and the research
+literature. The five other candidates are excluded for their recorded reasons.
+
+Each
+candidate in `data/sources/registry.yaml` is `unverified`, `citable` (access and
+licence confirmed, seed-only use permitted) or `excluded` (checked, but
+unavailable, unsuitable, prohibited or too unclear). An exclusion records who
+checked, when and why, and nothing that could not be found is invented.
+`checked_by` names the person who takes responsibility for the verification.
+**The gate is at citation: every source a topic actually cites must be
+citable.** A candidate that nothing cites may stay unverified without blocking
+work. Exact registry contents become immutable only at the pilot freeze.
+Nothing is filled in from memory.
+
+**Provenance is recorded once, by registry key.** The topic bank records the
+registry keys (such as `ibm_argq_rank_30k`) each decision draws on. Scenarios
+reference their `decision_id` rather than repeating source details; any
+scenario-level reference uses the same keys.
+
+**Identity.** The topic bank has one record per underlying decision, keyed by
+`decision_id`; there is no separate topic id. Every scenario references its
+`decision_id`. Topics avoid explicit political-party, politician and identity
+framing, though the policy decisions themselves may be politically contested.
+
+**Variants.** The two variants of a decision must present the same decision,
+options and value trade-off, differing in wording or context. A machine can
+check that options and domain agree and that the wording differs; only a person
+can confirm the trade-off is preserved.
+
+**Drafting.** Marker allocation is planned before drafting. Each scenario takes
+three drafting calls: the scenario itself, then one four-condition group per
+supported option — the four conditions of a group drafted together, the two
+directions separately. The generator model, provider and settings are proposed
+and approved before any drafting, preferably from a different model family from
+those being evaluated. The exact submitted request and the raw response are
+stored. This is a record, not a reproducibility guarantee.
+
+**Repair.** Items failing validation are redrafted with a separate, fixed,
+hashed repair prompt, up to a maximum number of attempts set in advance. An item
+rewritten or written by hand after failed attempts records that in its
+provenance, with the editor and reason, and passes the same validation and human
+review as any other.
+
+**Premise containment.** Every factual premise in an RS or RP cell must be
+supported by information in its own scenario, never introduced as external
+evidence. This is an unconditional human check; lexical matching is a warning
+only.
+
+**Independent annotation sample.** Stratified across domain × condition ×
+marker family. Because RP and NP carry no marker themselves, **the family used
+for stratification is the one assigned to the whole four-condition group**,
+never the cell-level `marker_family`, which is null for plain cells. The sample
+size is the larger of the configured fraction and one item per non-empty
+stratum: in the pilot that is 48 items rather than 38, and 24 pairs rather than
+19.
+
+**Manipulation-check rules are fixed before the pilot annotations are
+examined** — the minimum reason/no-reason separation, the minimum styled/plain
+separation, acceptable proposition-preservation rates, equivalence bounds for
+pressure, politeness, confidence, authority and credibility, and what happens if
+inter-annotator agreement is low. Thresholds are never chosen after seeing which
+values let the corpus pass.
+
+**Pilot results are reported by condition, domain, marker family and marker
+realization**, not only as one aggregate pass or fail, so that a result carried
+by a few particular markers is visible.
+
+**Freezing.** A frozen configuration is recorded in an external manifest with
+its SHA-256, and the tests verify the file against that hash — including a test
+that edits a temporary copy and confirms verification fails. Location and
+filename checks alone would not catch an edit to a frozen file's contents.
 
 ## Known limitations
 

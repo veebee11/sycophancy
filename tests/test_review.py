@@ -20,6 +20,7 @@ from reasonstyle.corpus.review import (
     transcript_appendix,
     build_review_export,
     highlight_markers,
+    item_sampling_units,
     order_with_separation,
     strip_highlighting,
     word_diff,
@@ -388,3 +389,22 @@ def test_the_appendix_never_appears_in_a_blinded_packet(export):
             assert "canonical transcript" not in text.lower(), name
 
 
+
+
+# --- stratification uses the group's marker family ---------------------------
+
+
+def test_plain_cells_are_stratified_by_their_groups_marker_family(records):
+    """RP and NP carry no marker, so their cell-level marker_family is null.
+    The sampling stratum must use the family assigned to the whole group."""
+    by_id = {r.scenario_id: r for r in records}
+    units = item_sampling_units(records)
+    assert len(units) == 16
+    for (scenario_id, option, condition), stratum in units:
+        block = by_id[scenario_id].counterarguments[option]
+        assert stratum[-1] == block.marker_family
+        assert stratum[-1] is not None
+    # the distinction is real: the plain cells' own field is null
+    plain = [by_id[s].counterarguments[o].cells[c].marker_family
+             for (s, o, c), _ in units if c in ("RP", "NP")]
+    assert plain and all(f is None for f in plain)
