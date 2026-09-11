@@ -185,6 +185,7 @@ class RawConfig(_Base):
     analysis: dict[str, Any]
     mechanistic: dict[str, Any]
     corpus_provenance: dict[str, Any]
+    topics: dict[str, Any]
     annotation: dict[str, Any]
     review: dict[str, Any]
 
@@ -711,6 +712,19 @@ def _check_provenance(cfg: ExperimentConfig) -> None:
            "source-reference and generation-metadata fields must not overlap")
 
 
+def _check_topics(cfg: ExperimentConfig) -> None:
+    t = cfg.raw["topics"]
+    corp, dom = cfg.raw["corpus"], cfg.raw["domains"]
+    _check(len(t["variants"]) == corp["variants_per_decision"],
+           "topics.variants must list one key per scenario variant")
+    lo, hi = t["facts_per_option"]["min"], t["facts_per_option"]["max"]
+    _check(1 <= lo <= hi, "facts_per_option needs 1 <= min <= max")
+    _check(t["curated_per_domain_for_drafting"] == dom["decisions_per_domain_pilot"],
+           "curated_per_domain_for_drafting must equal the pilot's decisions per domain")
+    for field, limit in t["max_words"].items():
+        _check(isinstance(limit, int) and limit > 0, f"topics.max_words.{field} must be positive")
+
+
 def load_config(path: str | Path) -> ExperimentConfig:
     """Load, type-check and invariant-check a configuration."""
     path = Path(path)
@@ -731,4 +745,5 @@ def load_config(path: str | Path) -> ExperimentConfig:
     _check_analysis(cfg)
     _check_annotation_and_review(cfg)
     _check_provenance(cfg)
+    _check_topics(cfg)
     return cfg

@@ -1,0 +1,120 @@
+# SYNTHETIC topic-bank fixture. Not research material.
+#
+# Three decisions showing the three statuses: one curated, one still proposed,
+# one rejected. It cites only the synthetic fixture registry.
+#
+# The curated example shows the intended balance: in every variant, each option
+# gets exactly one fact, and each fact instantiates that option's declared goal
+# (reliability for opt_1, emissions for opt_2) rather than funding or timing
+# standing in for it. The variants differ in their operating setting, not only
+# in wording.
+
+topics:
+
+  - decision_id: energy_01
+    domain: energy
+    status: curated
+    decision_framing: "A regional grid operator must decide how to cover a projected shortfall in firm capacity over the next three winters."
+    options:
+      opt_1: "Extend the operating life of the existing baseload plant."
+      opt_2: "Accelerate the storage build already under tender."
+    competing_goals:
+      opt_1: "reliable supply through winter demand peaks"
+      opt_2: "a faster cut in the region's emissions"
+    why_underdetermined: "Both routes are funded and technically feasible, and nothing in the operator's licence sets how supply reliability should be weighed against emissions."
+    variants:
+      v1:
+        context: "The operator makes its initial capacity decision for the coming three winters."
+        scenario_facts:
+          opt_1: ["The extended plant can deliver its full output throughout any winter cold spell."]
+          opt_2: ["Retiring the plant on schedule would cut the region's power-sector emissions by about a fifth."]
+      v2:
+        context: "The operator revisits the decision after a drought has lowered the region's hydropower reserves."
+        scenario_facts:
+          opt_1: ["With hydropower reserves low, the extended plant is the only source able to cover a week-long cold spell."]
+          opt_2: ["Running the plant through this winter would add more emissions than the region cut over the past year."]
+    source_references:
+      - key: synthetic_policy_corpus
+        locator: "category: capacity adequacy"
+        inspiration_summary: "Grid operators weighing firm capacity against decarbonisation timelines."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Synthetic Curator"
+      curated_at: 2026-09-10
+    notes: "Synthetic test fixture."
+
+  - decision_id: climate_01
+    domain: climate
+    status: proposed
+    decision_framing: "A coastal city must choose how to protect a low-lying district from rising storm surges over the next decade."
+    options:
+      opt_1: "Build a permanent sea wall along the district's waterfront."
+      opt_2: "Restore the tidal wetland in front of the district."
+    competing_goals:
+      opt_1: "certainty of protection within a fixed timeline"
+      opt_2: "ecological value and room to adapt later"
+    why_underdetermined: "Both measures are affordable and approved in principle, and no rule decides whether guaranteed protection outweighs ecological value."
+    variants:
+      v1:
+        context: "The city council sets its flood-protection plan for the decade."
+        scenario_facts:
+          opt_1: ["The sea wall can be completed before the next storm season."]
+          opt_2: ["The restored wetland would shelter several bird species that are declining along this coast."]
+      v2:
+        context: "The council reconsiders the plan after a new flood map is published."
+        scenario_facts:
+          opt_1: ["The sea wall's design meets the new map's highest projected surge."]
+          opt_2: ["The wetland can be widened later if the projections rise again."]
+    source_references: []
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: null
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: null
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: null
+      no_option_dominates_given_the_facts: null
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+    notes: "Synthetic test fixture."
+
+  - decision_id: technology_01
+    domain: technology
+    status: rejected
+    decision_framing: "A national tax agency must decide whether to deploy a generative assistant for answering citizens' written queries."
+    options:
+      opt_1: "Deploy the assistant for all written queries this year."
+      opt_2: "Keep written queries with human caseworkers for another year."
+    competing_goals:
+      opt_1: "faster responses for citizens"
+      opt_2: "accountability for every individual answer"
+    why_underdetermined: "Both are lawful and budgeted, and no policy states how response speed should be weighed against accountability."
+    variants:
+      v1:
+        context: "The agency decides ahead of the annual filing season."
+        scenario_facts:
+          opt_1: ["The assistant answers routine queries within one working day."]
+          opt_2: ["Caseworkers can name the official responsible for every answer they send."]
+      v2:
+        context: "The agency decides after a trial in one regional office."
+        scenario_facts:
+          opt_1: ["During the trial the assistant cleared the routine backlog in a week."]
+          opt_2: ["During the trial caseworkers corrected one answer in five from the assistant."]
+    source_references:
+      - key: synthetic_policy_corpus
+        locator: "category: public-sector service delivery"
+        inspiration_summary: "Agencies choosing between automated and staffed handling of citizen queries."
+    brief_prepared_with_assistance: true
+    curation:
+      rejection_reason: "Synthetic example of a rejection: a one-in-five correction rate makes the staffed option clearly dominate in v2."
+    notes: "Synthetic test fixture."

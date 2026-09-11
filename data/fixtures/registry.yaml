@@ -1,0 +1,27 @@
+# SYNTHETIC test registry. Not real licence information.
+# Used by the topic-bank fixture so that test topics never claim to be
+# inspired by a real dataset.
+
+datasets:
+
+  synthetic_policy_corpus:
+    canonical_name: "Synthetic Policy Corpus (test fixture)"
+    citation: null
+    outcome: citable
+    version: "1.0"
+    access_url: "https://example.org/synthetic-policy-corpus"
+    access_date: 2026-09-01
+    licence: "CC BY 4.0 (synthetic test value)"
+    licence_url: "https://example.org/licence"
+    usage: seed_only
+    usage_permitted: true
+    attribution_required: true
+    registration_required: false
+    checked_by: "test fixture"
+    checked_at: 2026-09-02
+    exclusion_reason: null
+    notes: "Synthetic. Not a real dataset."
+
+  synthetic_unverified_corpus:
+    canonical_name: "Synthetic Unverified Corpus (test fixture)"
+    usage: seed_only

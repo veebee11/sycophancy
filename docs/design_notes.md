@@ -142,13 +142,12 @@ so a clean machine run can never be mistaken for a validated corpus.
 | `H_REALIZATION_YIELDS_REASON_FREE_NS` | every group |
 | `H_SCENARIO_VALIDITY` | every scenario |
 | `H_PREMISE_IS_SCENARIO_CONTAINED` *(from corpus construction)* | every RS/RP cell |
-| `H_NOT_PARAPHRASE_OF_RETAINED_EXCERPT` *(from corpus construction)* | only items whose topic brief retains source wording — compared with that wording, not with a whole dataset |
 
 Alongside these, a machine provenance check, `E_GENERATOR_INPUT_NOT_FROM_BRIEF`,
 fails an item whose logged generation request differs from the request rebuilt
-from the frozen prompt template and its topic brief. Items whose brief retains no
-source text carry `independence: procedural` in their provenance rather than a
-reviewer judgement.
+from the frozen prompt template and its topic brief. No source wording is kept in
+a brief, so independence from the sources is recorded as `independence:
+procedural` rather than as a reviewer judgement.
 
 `ValidationReport.ok` means "no machine errors" and nothing more. Approval
 additionally requires every human-review code to be discharged by a recorded
@@ -338,20 +337,24 @@ against every source:
 
 1. Reference datasets supply only broad topic ideas, value trade-offs and
    general structural inspiration.
-2. A curator writes a short, original topic-bank brief in their own words.
-3. No source argument, explanation or complete source item is given to the
-   generation model.
+2. A short, original topic-bank brief is written for each decision. A source
+   is recorded only as a registry key, a locator (the article, table or
+   category used) and an `inspiration_summary` in the curator's own words.
+3. No source wording, argument, explanation or complete source item enters the
+   brief or the generation request.
 4. The model drafts from the curated brief and our experimental constraints.
-5. Human review compares generated text only with its topic brief and any
-   source excerpt actually retained in that brief.
+5. Human review compares generated text with its topic brief.
 
-Two checks follow. A provenance check confirms from the stored request that the
-generator received only the curated brief and our constraints: the logged
-request must match the request rebuilt from the frozen prompt template and the
-item's brief. Where a brief retains source wording, a reviewer checks that the
-generated text is not a close paraphrase of that retained wording. Where no
-source text is retained or supplied, independence is recorded as a
-**procedural guarantee**, not as an annotation claim.
+A provenance check confirms from the stored request that the generator received
+only the curated brief and our constraints: the logged request must match the
+request rebuilt from the frozen prompt template and the item's brief. Because no
+source wording is retained or supplied, independence is a **procedural
+guarantee**, not an annotation claim, and no paraphrase comparison is needed.
+
+**Assisted briefs.** The initial pilot briefs are prepared with assistance, and
+each record says so (`brief_prepared_with_assistance`). Vidhi Bhutani is the
+human curator who edits and approves every brief; a brief becomes `curated` only
+with the curator's recorded judgements, name and date.
 
 Intended roles: POLIANNA for climate and energy policy topics and policy
 structures; the fixed April 2025 JRC snapshot of the GenAI4PA data for
@@ -385,9 +388,42 @@ scenario-level reference uses the same keys.
 framing, though the policy decisions themselves may be politically contested.
 
 **Variants.** The two variants of a decision must present the same decision,
-options and value trade-off, differing in wording or context. A machine can
-check that options and domain agree and that the wording differs; only a person
-can confirm the trade-off is preserved.
+options and value trade-off, differing in wording or context. The options and
+competing goals are shared at the decision level; each variant has its own
+context and its own **scenario facts**. These are constructed statements the
+scenario will state, never factual claims copied from a source. **In the pilot,
+each option gets exactly one fact per variant, of at most 25 words**, so every
+option has the same amount of support and scenario lengths stay close; this can
+be reconsidered after the pilot. Each fact must instantiate its option's
+declared competing goal — if the trade-off is reliability against emissions,
+funding or timing must not silently stand in for either. An RS or RP
+counterargument may use only facts from its own variant. The two variants must
+differ in more than their context sentence: at least one scenario fact changes,
+while the decision, options and value trade-off stay the same. A machine can
+check that options and domain agree, that contexts and facts differ and that
+fact counts are equal; only a person can confirm that the facts instantiate the
+goals and that the trade-off is preserved.
+
+**Topic curation.** Each brief carries nine curator judgements: normatively
+underdetermined; can be made self-contained (whether the final scenario *is*
+self-contained can only be judged once it exists); no party, politician or
+identity framing; both options feasible and non-dominated as options; **each
+fact is a genuine consideration in favour of its assigned option**; **both
+competing goals are represented in every variant**; **neither option clearly
+dominates once all the facts are considered**; the variants differ
+substantively; no source wording in the brief. Fact balance is deliberately
+split into those three separate questions rather than judged as one. Domain balance counts only `curated`
+topics, so extra candidates can be proposed and rejected freely. Drafting may
+begin only with **exactly four curated decisions per domain** and no machine
+errors.
+
+**Whether pilot decisions count toward the final 60.** The 12 pilot decisions
+may be included in the main corpus only if (a) the experimental definitions,
+prompts and validation rules do not materially change after the pilot; (b) they
+pass the same final validation and review criteria as every other item; and (c)
+their inclusion is decided without looking at any model outcome results. If the
+pilot leads to substantive design changes, the affected decisions are
+regenerated under the final rules or excluded.
 
 **Drafting.** Marker allocation is planned before drafting. Each scenario takes
 three drafting calls: the scenario itself, then one four-condition group per

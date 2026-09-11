@@ -619,6 +619,51 @@ corpus_provenance:
       generation_parameters: {required: true}
       seed: {required: false}
       generated_at: {required: true}
+
+# ---------------------------------------------------------------------
+# Topic bank: one curated brief per underlying decision
+#
+# Each variant carries its own scenario facts, and they must support both
+# options with the same number of facts, so neither option looks stronger
+# merely because it has more supporting information. Facts are constructed
+# statements that the scenario will state; they are never copied from a source.
+# Word limits apply to each field and to each scenario fact separately.
+# ---------------------------------------------------------------------
+topics:
+  variants: [v1, v2]
+  # Pilot: exactly one fact per option per variant, so every option has the
+  # same amount of support and scenario lengths stay close. Reconsider after
+  # the pilot if one fact proves insufficient.
+  facts_per_option: {min: 1, max: 1}
+  equal_fact_counts_within_variant: true
+  max_words:
+    decision_framing: 40
+    option: 40
+    competing_goal: 40
+    why_underdetermined: 40
+    variant_context: 40
+    scenario_fact: 25              # each fact separately; one scenario sentence
+    source_locator: 20
+    inspiration_summary: 40
+  # Topics progress to drafting only with exactly this many curated decisions
+  # per domain. Proposed and rejected candidates are not counted.
+  curated_per_domain_for_drafting: 4
+  # Screened in every brief field. A match is a WARNING for the curator, never
+  # an automatic rejection: the policy decisions themselves may be contested.
+  framing_warning_terms:
+    - "Democrat"
+    - "Democrats"
+    - "Republican"
+    - "Republicans"
+    - "Labour Party"
+    - "Conservative Party"
+    - "Tory"
+    - "Tories"
+    - "Green Party"
+    - "left-wing"
+    - "right-wing"
+    - "partisan"
+
 annotation:
   levels:
     item:
