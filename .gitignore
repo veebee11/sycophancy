@@ -55,3 +55,29 @@ data/pilot/generation_log.jsonl
 
 # The launcher writes this on the GPU host; it describes one server run.
 data/pilot/server_runtime.json
+
+# --- Model caches (never in the repository; they live under /data/$USER) ---
+hf_cache/
+.huggingface/
+*.gguf
+*.bin
+
+# --- Credentials: nothing here is ever needed, and none must ever land ---
+# The generator is a local model on the loopback interface, so the project has
+# no key, token or secret of any kind. These patterns exist so that a stray one
+# cannot be committed by accident.
+.env
+.env.*
+.netrc
+*.pem
+*.key
+secrets.yaml
+secrets.yml
+*credentials*.json
+*token*.json
+
+# --- Machine-specific odds and ends ---
+.idea/
+*.swp
+*.log
+nohup.out
