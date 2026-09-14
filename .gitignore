@@ -40,3 +40,7 @@ review/
 
 # Personal editor settings stay local
 .vscode/
+
+# Raw third-party source files: fetched and verified from data/sources/downloads.yaml,
+# never committed. Must come after the data/ rule above to take effect.
+data/sources/raw/

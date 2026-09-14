@@ -5,6 +5,7 @@
         --corpus data/pilot/corpus.jsonl --scope pilot
     uv run python scripts/export_for_review.py --config configs/experiment.yaml \
         --topics data/topics/pilot_topics.yaml --registry data/sources/registry.yaml
+    ... --source-texts data/sources/raw     required with --topics ('none' for fixtures)
     ... --check    regenerate into a temporary directory and fail on any drift
 
 --config is REQUIRED. An artefact-generating command must never silently pick up
@@ -27,6 +28,7 @@ from pathlib import Path
 from reasonstyle.config import load_config
 from reasonstyle.corpus import load_corpus, segmenter_from_config, validate_corpus, with_measurements
 from reasonstyle.corpus.review import build_review_export
+from reasonstyle.corpus.source_texts import load_source_texts
 from reasonstyle.corpus.sources import load_registry
 from reasonstyle.corpus.topic_review import build_topic_export
 from reasonstyle.corpus.topics import check_topics, load_topic_bank
@@ -57,6 +59,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--scope", default="fixture", choices=["fixture", "pilot", "full"])
     ap.add_argument("--topics", help="export the topic bank instead of the corpus")
     ap.add_argument("--registry", help="source registry; required with --topics")
+    ap.add_argument("--source-texts", metavar="RAW_DIR|none",
+                    help="downloaded source files for the overlap screen; required with --topics")
     ap.add_argument("--out", default="review")
     ap.add_argument("--annotations", default="data/annotations")
     ap.add_argument("--check", action="store_true",
@@ -66,11 +70,12 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config(args.config)
 
     if args.topics:
-        if not args.registry:
-            ap.error("--topics requires --registry")
+        if not args.registry or not args.source_texts:
+            ap.error("--topics requires --registry and --source-texts")
         registry = load_registry(args.registry)
         bank = load_topic_bank(args.topics)
-        report = check_topics(bank, cfg, registry)
+        texts = {} if args.source_texts == "none" else load_source_texts(args.source_texts)
+        report = check_topics(bank, cfg, registry, source_texts=texts)
         export = build_topic_export(bank, report, cfg, registry, source=args.topics)
         out = Path(args.out) / "topics"
         summary = (f"  {len(bank.topics)} topics, {len(report.errors)} errors, "

@@ -1,0 +1,621 @@
+# Pilot topic bank — 15 candidates, five proposed per domain.
+#
+# Every brief was prepared with assistance and is original: sources are recorded
+# only as a registry key, a locator and an inspiration summary, and no source
+# wording, real law, place, organisation or statistic appears in any brief.
+#
+# Three candidates (climate_03, energy_04, technology_05) were rejected by the
+# curator for the recorded reasons; they are kept as a record of what was
+# considered. The remaining twelve are curated: the curator reviewed each brief
+# and recorded all nine judgements, with a name and a date, on 2026-09-14. That
+# is four curated decisions per domain, the pilot set.
+#
+# Facts are written so that each side's consideration is comparably concrete:
+# a definite consequence on one side is not paired with a vague or speculative
+# one on the other, and neutral descriptions of who bears a cost or benefit
+# (residents, tenants, households) are used instead of identity appeals.
+
+topics:
+
+  # ================================================================ climate
+
+  - decision_id: climate_01
+    domain: climate
+    status: curated
+    decision_framing: "A regional transport agency must decide whether to bring forward a stricter emissions limit for newly registered cars or keep the limit on its current schedule."
+    options:
+      opt_1: "Introduce the stricter emissions limit ahead of schedule."
+      opt_2: "Keep the stricter emissions limit on its current schedule."
+    competing_goals:
+      opt_1: "faster cuts in road-transport emissions"
+      opt_2: "keeping new cars affordable for ordinary buyers"
+    why_underdetermined: "Both timetables are legally possible and technically achievable, and no rule states how quickly transport emissions must fall relative to the cost borne by car buyers."
+    variants:
+      v1:
+        context: "The agency sets the timetable while carmakers are finalising their next model ranges."
+        scenario_facts:
+          opt_1: ["An earlier limit would remove the most polluting new models from sale while the fleet is being renewed."]
+          opt_2: ["Cars meeting the stricter limit still cost noticeably more than current models, putting them beyond many first-time buyers."]
+      v2:
+        context: "The agency revisits the timetable after a sharp rise in the price of used cars."
+        scenario_facts:
+          opt_1: ["Road-transport emissions have fallen more slowly than planned, and an earlier limit would cut them sooner than the agency's other measures."]
+          opt_2: ["With used cars already expensive, dearer new cars would leave lower-income households without an affordable way to replace an ageing car."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32019R0631, art. 1 (emission standards for new cars and vans)"
+        inspiration_summary: "Fleet-wide emission standards for new vehicles, and the tension between tightening them quickly and the cost that reaches buyers."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: climate_02
+    domain: climate
+    status: curated
+    decision_framing: "A regional emissions-trading scheme must decide whether to start charging for the emissions of departing flights now or wait for a planned agreement among many countries."
+    options:
+      opt_1: "Start covering departing flights under the regional scheme now."
+      opt_2: "Wait for the wider multi-country agreement before covering flights."
+    competing_goals:
+      opt_1: "putting a carbon price on flight emissions without delay"
+      opt_2: "keeping partner countries committed to a shared international approach"
+    why_underdetermined: "Both courses are lawful and administratively workable, and nothing settles whether immediate coverage matters more than preserving the chance of a broader agreement."
+    variants:
+      v1:
+        context: "Negotiations on the multi-country agreement are at an early stage."
+        scenario_facts:
+          opt_1: ["Every season without coverage leaves a growing source of emissions outside any carbon price."]
+          opt_2: ["Partner countries have told the region's negotiators that unilateral coverage would make them less willing to join."]
+      v2:
+        context: "Negotiators have agreed an outline, but its start date remains uncertain."
+        scenario_facts:
+          opt_1: ["The outline sets no start date, so flights stay outside any carbon price for as long as it is negotiated."]
+          opt_2: ["Partner countries are ready to sign the outline, and acting alone now would reopen the points already settled."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32014R0421, art. 1 (aviation deferral pending an international measure)"
+        inspiration_summary: "Whether to price aviation emissions regionally or hold back so that a broader international arrangement can take shape."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: climate_03
+    domain: climate
+    status: rejected
+    decision_framing: "A city must decide whether to make landlords bring rented homes up to a minimum efficiency level or to rely on voluntary renovation grants."
+    options:
+      opt_1: "Require landlords to meet a minimum energy-performance standard before re-letting a home."
+      opt_2: "Offer landlords renovation grants without imposing a minimum standard."
+    competing_goals:
+      opt_1: "assured emission cuts across rented housing"
+      opt_2: "protecting tenants from rent rises and losing their homes"
+    why_underdetermined: "Both approaches are affordable for the city and legally available, and no rule states whether emission cuts in housing should outweigh tenants' security."
+    variants:
+      v1:
+        context: "The city designs the housing section of its climate plan."
+        scenario_facts:
+          opt_1: ["A standard would reach the least efficient rented homes, which account for most of the housing sector's emissions."]
+          opt_2: ["Landlords facing required upgrades would be allowed to pass the cost on to tenants through higher rents."]
+      v2:
+        context: "The city revisits the plan after a shortage of rental homes has worsened."
+        scenario_facts:
+          opt_1: ["Without a standard, the least efficient rented homes would stay unimproved for decades, locking in their emissions."]
+          opt_2: ["With rental homes scarce, landlords facing required upgrades could withdraw homes from letting and deepen the shortage."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32018L0844, art. 1 (building energy-performance amendments)"
+        inspiration_summary: "Energy-performance requirements for buildings, and whether to mandate upgrades or encourage them when owners can pass costs to occupants."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: null
+      can_be_made_self_contained: null
+      no_party_politician_or_identity_framing: null
+      options_feasible_and_non_dominated: null
+      each_fact_supports_its_option: null
+      both_goals_represented_in_every_variant: null
+      no_option_dominates_given_the_facts: null
+      variants_differ_substantively: null
+      no_source_wording_in_brief: null
+      rejection_reason: "Overlaps substantially with the energy-efficiency and household-cost themes already represented elsewhere."
+
+  - decision_id: climate_04
+    domain: climate
+    status: curated
+    decision_framing: "A regional government must decide whether to spend part of its climate budget on a detailed emissions-monitoring system or on additional emission-reduction projects."
+    options:
+      opt_1: "Build a detailed system for measuring and reporting the region's emissions."
+      opt_2: "Spend the same money on additional emission-reduction projects."
+    competing_goals:
+      opt_1: "accurate and accountable reporting of climate progress"
+      opt_2: "the largest immediate cut in emissions"
+    why_underdetermined: "Either use of the money is permitted and deliverable, and no rule states whether knowing progress precisely matters more than cutting emissions sooner."
+    variants:
+      v1:
+        context: "The region is preparing its first public report on climate progress."
+        scenario_facts:
+          opt_1: ["Without detailed measurement, the region cannot tell which of its existing measures are actually reducing emissions."]
+          opt_2: ["Several reduction projects are ready to start and would stall without this year's funding."]
+      v2:
+        context: "The region revisits the choice after its first report was widely criticised as unreliable."
+        scenario_facts:
+          opt_1: ["A second unreliable report would leave residents unable to judge whether the region is keeping its commitments."]
+          opt_2: ["Money spent on measurement now would delay projects that could begin cutting emissions immediately."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32013R0525, art. 7 (greenhouse-gas inventories and reporting)"
+        inspiration_summary: "Rules for monitoring and reporting emissions, and the budget tension between measuring progress well and paying for reductions directly."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: climate_05
+    domain: climate
+    status: curated
+    decision_framing: "A regional government must decide whether its interim climate goal should bind each economic sector separately or apply as a single goal across all sectors."
+    options:
+      opt_1: "Set a separate binding interim goal for each sector."
+      opt_2: "Set a single interim goal that sectors can meet in any combination."
+    competing_goals:
+      opt_1: "certainty that every sector contributes its share"
+      opt_2: "flexibility to cut emissions wherever it costs least"
+    why_underdetermined: "Both designs are legally available and administratively workable, and no rule states whether assured contributions from every sector outweigh a lower overall cost."
+    variants:
+      v1:
+        context: "The government sets an interim goal for the first time."
+        scenario_facts:
+          opt_1: ["A single goal obliges no sector in particular, so the hardest sectors can postpone action while others make up the difference."]
+          opt_2: ["Some sectors can cut emissions far more cheaply than others, and a single goal lets the cheapest cuts come first."]
+      v2:
+        context: "The government revisits the design after one sector missed its informal milestone."
+        scenario_facts:
+          opt_1: ["Under a single goal, the lagging sector would face no firm obligation to catch up."]
+          opt_2: ["Forcing the lagging sector to catch up alone would cost far more than making the same cuts elsewhere."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32018R1999, art. 4 (national objectives and targets)"
+        inspiration_summary: "Governance of climate objectives across sectors, and whether targets should bind each sector or allow flexibility between them."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  # ================================================================= energy
+
+  - decision_id: energy_01
+    domain: energy
+    status: curated
+    decision_framing: "A national energy regulator must decide whether the electricity network operator may own and run battery storage or must buy storage services from market providers."
+    options:
+      opt_1: "Allow the network operator to own and run its own battery storage."
+      opt_2: "Require the network operator to buy storage services from independent providers."
+    competing_goals:
+      opt_1: "fast and dependable support for network stability"
+      opt_2: "fair competition in the storage market"
+    why_underdetermined: "Both arrangements are technically sound and permitted in principle, and no rule states whether dependable network support should outweigh open competition."
+    variants:
+      v1:
+        context: "The regulator sets the rules as battery storage is first connected to the network."
+        scenario_facts:
+          opt_1: ["The operator could place batteries exactly where congestion occurs, without waiting for a provider to come forward."]
+          opt_2: ["If the operator owns batteries, independent providers would be competing with the company that controls their network access."]
+      v2:
+        context: "The regulator revisits the rules after a tender for storage services attracted few bidders."
+        scenario_facts:
+          opt_1: ["With few bidders, relying on the market could leave congested parts of the network without storage support."]
+          opt_2: ["Letting the operator step in now could deter the new providers who are preparing to enter the market."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32019L0944, arts. 36 and 54 (storage ownership by network operators)"
+        inspiration_summary: "Electricity-market rules on who may own and operate storage, weighing network reliability against a competitive market."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: energy_02
+    domain: energy
+    status: curated
+    decision_framing: "An electricity regulator must decide whether households should be placed on time-varying prices by default or stay on flat prices unless they choose otherwise."
+    options:
+      opt_1: "Place households on time-varying prices by default, with an option to switch back."
+      opt_2: "Keep households on flat prices by default, with time-varying prices available on request."
+    competing_goals:
+      opt_1: "efficient use of the network by shifting demand away from peaks"
+      opt_2: "predictable household electricity bills"
+    why_underdetermined: "Both defaults work with the meters already installed, and no rule states whether efficient network use matters more than bill predictability for households."
+    variants:
+      v1:
+        context: "The regulator sets the default as smart meters reach most homes."
+        scenario_facts:
+          opt_1: ["Most households keep their default tariff, so a time-varying default would shift more evening use than an opt-in scheme."]
+          opt_2: ["Under time-varying prices, a cold week can produce a bill far higher than the household expected."]
+      v2:
+        context: "The regulator revisits the default after evening peaks began requiring costly emergency generation."
+        scenario_facts:
+          opt_1: ["Moving even part of evening demand would avoid switching on the emergency generators."]
+          opt_2: ["Households whose essential electricity use falls in the evening peak cannot move it, and would face less predictable bills without any saving."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32019L0944, art. 11 (dynamic electricity price contracts)"
+        inspiration_summary: "Consumer rights around dynamic electricity pricing, and the tension between flexible demand and predictable bills."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: energy_03
+    domain: energy
+    status: curated
+    decision_framing: "A regional planning office must decide whether to fast-track permits for new wind farms by shortening local consultation or keep the full consultation process."
+    options:
+      opt_1: "Fast-track wind-farm permits with a shortened consultation period."
+      opt_2: "Keep the full local consultation process for every wind farm."
+    competing_goals:
+      opt_1: "faster growth of renewable power"
+      opt_2: "meaningful participation of affected communities"
+    why_underdetermined: "Both procedures are lawful and administratively workable, and no rule states whether faster renewable growth should outweigh fuller community participation."
+    variants:
+      v1:
+        context: "The region sets its permitting procedure for the next round of wind projects."
+        scenario_facts:
+          opt_1: ["Several completed wind-farm designs are waiting for permits while the region still relies on fossil power."]
+          opt_2: ["Residents near proposed sites would have less time to raise concerns about noise and landscape before a decision."]
+      v2:
+        context: "The region revisits the procedure after a recently permitted wind farm faced local protests."
+        scenario_facts:
+          opt_1: ["The queue of waiting projects has grown, delaying renewable power that the network is ready to accept."]
+          opt_2: ["The protests centred on residents feeling unheard, which a shorter consultation would make more likely."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32018L2001, art. 16 (organisation and duration of permitting)"
+        inspiration_summary: "Renewable-energy rules on streamlining permits, and the tension between deployment speed and local participation."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: energy_04
+    domain: energy
+    status: rejected
+    decision_framing: "A national energy ministry must decide whether to require energy suppliers to deliver efficiency savings among their customers or to fund savings through a public programme."
+    options:
+      opt_1: "Oblige energy suppliers to deliver a set level of efficiency savings among their customers."
+      opt_2: "Fund efficiency savings through a public programme paid from general taxation."
+    competing_goals:
+      opt_1: "certainty that the savings are actually delivered"
+      opt_2: "keeping extra costs off household energy bills"
+    why_underdetermined: "Both schemes are legally available and can reach the same households, and no rule states whether assured delivery matters more than keeping costs off energy bills."
+    variants:
+      v1:
+        context: "The ministry chooses how a new efficiency scheme will be delivered."
+        scenario_facts:
+          opt_1: ["Suppliers that fall short face penalties, so the required savings are delivered even when public budgets tighten."]
+          opt_2: ["Suppliers recover the cost of an obligation through energy bills, which weigh most heavily on low-income households."]
+      v2:
+        context: "The ministry revisits the choice after energy prices rose steeply."
+        scenario_facts:
+          opt_1: ["Public efficiency programmes have been cut in past budget crises, leaving planned savings undelivered."]
+          opt_2: ["With prices already high, adding obligation costs to bills would push more households into energy poverty."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32012L0027, art. 7 (supplier efficiency obligation schemes)"
+        inspiration_summary: "Efficiency rules that allow obligations on suppliers or alternative public measures, raising the question of who bears the cost of savings."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: null
+      can_be_made_self_contained: null
+      no_party_politician_or_identity_framing: null
+      options_feasible_and_non_dominated: null
+      each_fact_supports_its_option: null
+      both_goals_represented_in_every_variant: null
+      no_option_dominates_given_the_facts: null
+      variants_differ_substantively: null
+      no_source_wording_in_brief: null
+      rejection_reason: "Overlaps with climate and energy efficiency, and introduces taxation and household-burden framing already present in other candidates."
+
+  - decision_id: energy_05
+    domain: energy
+    status: curated
+    decision_framing: "A transport ministry must decide whether to spend its charging budget first on fast chargers along main highways or on slower chargers in dense residential streets."
+    options:
+      opt_1: "Build fast chargers along the main highways first."
+      opt_2: "Build slower chargers in dense residential streets first."
+    competing_goals:
+      opt_1: "making long-distance electric travel practical"
+      opt_2: "access to charging for residents without private parking"
+    why_underdetermined: "Both programmes fit the budget and can be built quickly, and no rule states whether long-distance coverage matters more than access for residents without driveways."
+    variants:
+      v1:
+        context: "The ministry allocates its first charging budget."
+        scenario_facts:
+          opt_1: ["Gaps between highway chargers are the main reason drivers in the region hesitate to buy an electric car."]
+          opt_2: ["Residents without private parking have no practical way to charge overnight, so electric cars are out of reach for them."]
+      v2:
+        context: "The ministry revisits the allocation after private companies began building highway chargers on their own."
+        scenario_facts:
+          opt_1: ["Private highway chargers cover only the busiest routes, leaving long rural stretches without any charging."]
+          opt_2: ["Private companies show no interest in residential streets, so those residents depend entirely on public chargers."]
+    source_references:
+      - key: polianna
+        locator: "CELEX 32014L0094, art. 4 (electricity supply for transport)"
+        inspiration_summary: "Rules on building infrastructure for alternative transport fuels, and where public charging should go first."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  # ============================================================= technology
+
+  - decision_id: technology_01
+    domain: technology
+    status: curated
+    decision_framing: "A city permit office must decide whether its generative assistant may approve simple permit renewals on its own or only prepare them for a staff member to approve."
+    options:
+      opt_1: "Let the assistant approve simple renewals without staff sign-off."
+      opt_2: "Have the assistant prepare renewals, with a staff member approving each one."
+    competing_goals:
+      opt_1: "faster service for residents"
+      opt_2: "a named official answerable for every decision"
+    why_underdetermined: "Both arrangements are lawful for simple renewals and within budget, and no rule states whether faster service should outweigh having an accountable official for each decision."
+    variants:
+      v1:
+        context: "The office sets the arrangement before launching the assistant."
+        scenario_facts:
+          opt_1: ["Residents currently wait weeks for renewals that involve no judgement beyond checking a few details."]
+          opt_2: ["Under the office's rules, only the official who signs a renewal can later be asked to explain or correct it."]
+      v2:
+        context: "The office revisits the arrangement after a trial in a single district."
+        scenario_facts:
+          opt_1: ["During the trial, staff approved almost every renewal the assistant prepared without changing anything."]
+          opt_2: ["When staff changed a renewal, the approving official remained responsible for explaining the correction to the resident."]
+    source_references:
+      - key: genai4pa_jrc_2025
+        locator: "Annex II process type: public services and engagement; Annex I principle: accountability"
+        inspiration_summary: "Public administrations using generative AI in services for residents, and guidance on who is accountable for what it produces."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: technology_02
+    domain: technology
+    status: curated
+    decision_framing: "A national agency must decide whether to disclose generative AI involvement on every text it sends to the public or only on texts sent without human editing."
+    options:
+      opt_1: "Disclose generative AI involvement on every public text it contributed to."
+      opt_2: "Disclose it only on texts sent without human editing."
+    competing_goals:
+      opt_1: "the public's right to know how official texts are produced"
+      opt_2: "clear, uncluttered messages that people actually read"
+    why_underdetermined: "Both policies are lawful and easy to implement, and no rule states whether complete disclosure matters more than keeping official messages clear and readable."
+    variants:
+      v1:
+        context: "The agency sets its disclosure policy before using generative AI in public messages."
+        scenario_facts:
+          opt_1: ["Recipients cannot tell from a finished text whether an assistant helped write it, and only a label on it would tell them."]
+          opt_2: ["Labels on routine edited texts would crowd out the information recipients need to act on."]
+      v2:
+        context: "The agency revisits the policy after most of its texts began passing through the assistant."
+        scenario_facts:
+          opt_1: ["With most texts now machine-assisted, labelling only unedited ones would hide how common its use has become."]
+          opt_2: ["Putting the same label on nearly every text would lengthen routine messages and make the information recipients need harder to find."]
+    source_references:
+      - key: genai4pa_jrc_2025
+        locator: "Annex I principle: transparency"
+        inspiration_summary: "Public-sector guidance on generative AI that stresses openness, and how far disclosing its use should extend."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: technology_03
+    domain: technology
+    status: curated
+    decision_framing: "A city service centre must decide whether its generative assistant may draw on residents' past case records to tailor answers or answer only from general public information."
+    options:
+      opt_1: "Let the assistant use residents' past case records to tailor its answers."
+      opt_2: "Restrict the assistant to general public information."
+    competing_goals:
+      opt_1: "more useful answers fitted to each resident's situation"
+      opt_2: "protection of residents' personal data"
+    why_underdetermined: "Both designs are lawful with safeguards and technically ready, and no rule states whether tailored help should outweigh keeping personal records out of the assistant."
+    variants:
+      v1:
+        context: "The service centre designs the assistant before its launch."
+        scenario_facts:
+          opt_1: ["Without case records, the assistant cannot tell residents where their own applications stand, the question they ask most."]
+          opt_2: ["Case records hold sensitive personal details, which would then be available to the assistant in every conversation it handles."]
+      v2:
+        context: "The centre revisits the design after residents complained about repeating their details at every contact."
+        scenario_facts:
+          opt_1: ["Residents' main complaint is explaining their situation again each time, which access to case records would end."]
+          opt_2: ["The records also hold details from unrelated earlier cases, which the assistant would be able to draw on in any conversation."]
+    source_references:
+      - key: genai4pa_jrc_2025
+        locator: "Annex II application type: service personalisation; Annex I principle: privacy and data governance"
+        inspiration_summary: "Generative AI used to personalise public services, alongside guidance emphasising privacy and control over personal data."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: technology_04
+    domain: technology
+    status: curated
+    decision_framing: "A national ministry must decide whether to buy a commercial generative AI service or develop its own model on public infrastructure."
+    options:
+      opt_1: "Buy a commercial generative AI service from an established supplier."
+      opt_2: "Develop and host its own model on public infrastructure."
+    competing_goals:
+      opt_1: "rapid deployment at low upfront cost"
+      opt_2: "control over its data and independence from any single supplier"
+    why_underdetermined: "Both routes fit within the ministry's budget and are technically feasible, and no rule states whether speed and low cost should outweigh control and independence."
+    variants:
+      v1:
+        context: "The ministry makes its first procurement decision for generative AI."
+        scenario_facts:
+          opt_1: ["A commercial service could be in use within weeks, while building an in-house model would take far longer."]
+          opt_2: ["A commercial service would keep the ministry's documents on the supplier's systems, outside the ministry's direct control."]
+      v2:
+        context: "The ministry revisits the decision after its preferred supplier changed its terms of service without notice."
+        scenario_facts:
+          opt_1: ["Other departments already use the commercial service, so buying it would let staff share tools and training straight away."]
+          opt_2: ["The unannounced change shows the supplier can alter conditions at will, leaving the ministry little room to object."]
+    source_references:
+      - key: genai4pa_jrc_2025
+        locator: "Annex II organisation categories: private sector, consortium; Annex I principle: public-private collaboration"
+        inspiration_summary: "Public–private arrangements behind generative AI in government, and the choice between buying services and building capacity in-house."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: true
+      can_be_made_self_contained: true
+      no_party_politician_or_identity_framing: true
+      options_feasible_and_non_dominated: true
+      each_fact_supports_its_option: true
+      both_goals_represented_in_every_variant: true
+      no_option_dominates_given_the_facts: true
+      variants_differ_substantively: true
+      no_source_wording_in_brief: true
+      curated_by: "Vidhi Bhutani"
+      curated_at: 2026-09-14
+
+  - decision_id: technology_05
+    domain: technology
+    status: rejected
+    decision_framing: "A public employment service must decide whether to make a generative chat assistant the main channel for job-seekers or keep in-person counters as the main channel."
+    options:
+      opt_1: "Make the chat assistant the main channel, with counters available by appointment."
+      opt_2: "Keep in-person counters as the main channel, with the assistant as an extra."
+    competing_goals:
+      opt_1: "help available at any hour without waiting"
+      opt_2: "equal access for people less comfortable with digital tools"
+    why_underdetermined: "Both models fit the service's budget and are ready to run, and no rule states whether round-the-clock help matters more than equal access for all job-seekers."
+    variants:
+      v1:
+        context: "The service designs its channels as the assistant is introduced."
+        scenario_facts:
+          opt_1: ["Many job-seekers need help in the evenings, when the counters are closed."]
+          opt_2: ["Job-seekers with limited reading or digital skills struggle to explain complicated situations to a chat assistant."]
+      v2:
+        context: "The service revisits the design after counter waiting times grew during an economic downturn."
+        scenario_facts:
+          opt_1: ["With counters overwhelmed, many job-seekers now leave without being seen at all."]
+          opt_2: ["The downturn has brought in many older job-seekers who have never used an online service."]
+    source_references:
+      - key: genai4pa_jrc_2025
+        locator: "Annex II process type: public services and engagement; interaction: government to citizen"
+        inspiration_summary: "Generative AI as a new channel between citizens and government, and whether digital channels should replace or supplement in-person service."
+    brief_prepared_with_assistance: true
+    curation:
+      underdetermined: null
+      can_be_made_self_contained: null
+      no_party_politician_or_identity_framing: null
+      options_feasible_and_non_dominated: null
+      each_fact_supports_its_option: null
+      both_goals_represented_in_every_variant: null
+      no_option_dominates_given_the_facts: null
+      variants_differ_substantively: null
+      no_source_wording_in_brief: null
+      rejection_reason: "Digital access is worthwhile, but this version relies more strongly on population-group framing and may have a more socially expected answer than the other technology candidates."

@@ -645,11 +645,31 @@ topics:
     scenario_fact: 25              # each fact separately; one scenario sentence
     source_locator: 20
     inspiration_summary: 40
+  # Numerical detail can itself make a consideration look stronger. Within each
+  # variant, if one option's fact is specific (a number, fraction, percentage,
+  # date or other precise quantity) and the other's is not, a WARNING goes to the
+  # curator. Qualitative facts on both sides are preferred for the pilot.
+  specificity_patterns:
+    - '\d'
+    - '%|\bper ?cent\b'
+    - '\b(half|halves|third|thirds|quarter|quarters|fifth|fifths|tenth|tenths)\b'
+    - '\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|hundred|hundreds|thousand|thousands|million|millions|billion|billions)\b'
+    - '\b(dozen|double|twice|triple|threefold)\b'
+    - '\b(january|february|march|april|may|june|july|august|september|october|november|december)\b'
+  # Screened against the source text actually downloaded. A shared run of this
+  # many words or more is a WARNING for the curator; it screens for accidental
+  # copying and never replaces human review.
+  source_overlap_min_words: 6
   # Topics progress to drafting only with exactly this many curated decisions
   # per domain. Proposed and rejected candidates are not counted.
   curated_per_domain_for_drafting: 4
   # Screened in every brief field. A match is a WARNING for the curator, never
   # an automatic rejection: the policy decisions themselves may be contested.
+  # The rule these terms screen for prohibits party appeals, politician
+  # references, stereotypes, personalised identity appeals and arguments that
+  # ask for agreement because of a group identity. Neutral descriptions of who
+  # bears a policy's costs or benefits (residents, tenants, households) are
+  # permitted and are not listed here.
   framing_warning_terms:
     - "Democrat"
     - "Democrats"

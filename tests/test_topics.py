@@ -56,8 +56,9 @@ def curated(raw_topics, **changes):
     return topic
 
 
-def check(topics, cfg, registry):
-    return check_topics(TopicBank.model_validate({"topics": topics}), cfg, registry)
+def check(topics, cfg, registry, source_texts=None):
+    return check_topics(TopicBank.model_validate({"topics": topics}), cfg, registry,
+                        source_texts=source_texts or {})
 
 
 def codes(report):
@@ -72,7 +73,7 @@ def words(n):
 
 
 def test_the_fixture_is_machine_valid(cfg, registry):
-    report = check_topics(load_topic_bank(TOPICS), cfg, registry)
+    report = check_topics(load_topic_bank(TOPICS), cfg, registry, source_texts={})
     assert report.errors == () and report.warnings == ()
 
 
@@ -185,6 +186,90 @@ def test_party_framing_terms_warn_but_never_block(raw_topics, cfg, registry):
                             decision_framing="A partisan dispute over how a grid operator covers a shortfall.")],
                    cfg, registry)
     assert "W_TOPIC_FRAMING_TERMS" in codes(report) and not report.errors
+
+
+def test_naming_who_is_affected_is_not_identity_framing(raw_topics, cfg, registry):
+    """The rule bars identity appeals, not neutral descriptions of who bears a
+    policy's costs. A trade-off usually cannot be stated without them."""
+    topic = curated(raw_topics)
+    topic["variants"]["v1"]["scenario_facts"]["opt_1"][0] = (
+        "Tenants and households without private parking would keep a supply they can rely on.")
+    report = check([topic], cfg, registry)
+    assert "W_TOPIC_FRAMING_TERMS" not in codes(report) and not report.errors
+
+
+# --- numerical specificity ---------------------------------------------------
+
+
+def _v1_facts(raw_topics, opt_1, opt_2):
+    topic = curated(raw_topics)
+    topic["variants"]["v1"]["scenario_facts"] = {"opt_1": [opt_1], "opt_2": [opt_2]}
+    return topic
+
+
+@pytest.mark.parametrize("specific", [
+    "The plant keeps 40 per cent of winter capacity in reserve.",
+    "The storage build halves the region's emissions.",
+    "The plant can run for three extra winters.",
+    "The tender closes in March.",
+])
+def test_a_specific_fact_opposite_a_qualitative_one_is_flagged(raw_topics, cfg, registry, specific):
+    topic = _v1_facts(raw_topics, specific, "Retiring the plant would substantially cut emissions.")
+    report = check([topic], cfg, registry)
+    assert "W_TOPIC_SPECIFICITY_MISMATCH" in codes(report) and not report.errors
+
+
+def test_comparably_specific_facts_are_not_flagged(raw_topics, cfg, registry):
+    topic = _v1_facts(raw_topics, "The plant covers two cold spells a winter.",
+                      "Retiring the plant cuts emissions by a third.")
+    assert "W_TOPIC_SPECIFICITY_MISMATCH" not in codes(check([topic], cfg, registry))
+
+
+def test_qualitative_facts_on_both_sides_are_not_flagged(raw_topics, cfg, registry):
+    assert "W_TOPIC_SPECIFICITY_MISMATCH" not in codes(check([curated(raw_topics)], cfg, registry))
+
+
+# --- the source-overlap screen ------------------------------------------------
+
+SOURCE = {"doc": "The operator must ensure that storage facilities remain available to every "
+                 "market participant on equal terms."}
+
+
+def test_six_shared_words_are_flagged(raw_topics, cfg, registry):
+    topic = curated(raw_topics,
+                    decision_framing="A regulator asks whether storage facilities remain available to every market participant.")
+    report = check([topic], cfg, registry, source_texts=SOURCE)
+    finding = next(f for f in report.warnings if f.code == "W_TOPIC_SOURCE_OVERLAP")
+    assert finding.detail["field"] == "decision_framing" and finding.detail["words"] >= 6
+    assert not report.errors
+
+
+def test_five_shared_words_are_not_flagged(raw_topics, cfg, registry):
+    topic = curated(raw_topics, decision_framing="A regulator asks whether storage facilities remain open to newcomers.")
+    assert "W_TOPIC_SOURCE_OVERLAP" not in codes(check([topic], cfg, registry, source_texts=SOURCE))
+
+
+def test_the_screen_checks_scenario_facts_too(raw_topics, cfg, registry):
+    topic = curated(raw_topics)
+    topic["variants"]["v1"]["scenario_facts"]["opt_2"] = [
+        "Storage facilities remain available to every market participant on equal terms."]
+    assert "W_TOPIC_SOURCE_OVERLAP" in codes(check([topic], cfg, registry, source_texts=SOURCE))
+
+
+def test_the_screen_is_a_required_argument(raw_topics, cfg, registry):
+    """It cannot be skipped by forgetting it."""
+    with pytest.raises(TypeError):
+        check_topics(TopicBank.model_validate({"topics": [curated(raw_topics)]}), cfg, registry)
+
+
+def test_the_export_states_whether_the_screen_ran(cfg, registry):
+    bank = load_topic_bank(TOPICS)
+    unscreened = build_topic_export(bank, check_topics(bank, cfg, registry, source_texts={}),
+                                    cfg, registry, TOPICS)
+    screened = build_topic_export(bank, check_topics(bank, cfg, registry, source_texts=SOURCE),
+                                  cfg, registry, TOPICS)
+    assert "Overlap screen: NOT RUN" in unscreened.files["index.md"]
+    assert "compared with 1 downloaded source documents" in screened.files["index.md"]
 
 
 # --- variants and identity ---------------------------------------------------
@@ -301,12 +386,12 @@ def test_a_machine_error_blocks_drafting(raw_topics, cfg, registry):
 @pytest.fixture(scope="module")
 def export(cfg, registry):
     bank = load_topic_bank(TOPICS)
-    return build_topic_export(bank, check_topics(bank, cfg, registry), cfg, registry, TOPICS)
+    return build_topic_export(bank, check_topics(bank, cfg, registry, source_texts={}), cfg, registry, TOPICS)
 
 
 def test_the_export_is_deterministic(cfg, registry, export):
     bank = load_topic_bank(TOPICS)
-    again = build_topic_export(bank, check_topics(bank, cfg, registry), cfg, registry, TOPICS)
+    again = build_topic_export(bank, check_topics(bank, cfg, registry, source_texts={}), cfg, registry, TOPICS)
     assert again.files == export.files and again.manifest == export.manifest
 
 

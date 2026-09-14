@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -32,6 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from ..config import ExperimentConfig
 from .findings import Finding
 from .schemas import SEMANTIC_OPTIONS, SemanticOption
+from .source_texts import ngram_index, shared_runs
 from .sources import SourceRegistry
 
 __all__ = [
@@ -55,6 +56,13 @@ Identifier = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$", min_length=3, ma
 #: its own option, do the facts actually instantiate the declared goals (rather
 #: than, say, funding or timing standing in for them), and does either option
 #: dominate once every fact is considered.
+#:
+#: ``no_party_politician_or_identity_framing`` rules out party appeals,
+#: references to politicians, stereotypes, personalised identity appeals and any
+#: argument that asks for agreement because of a group identity. It does *not*
+#: rule out neutrally describing who bears a policy's costs or benefits —
+#: residents, tenants, households — which is often needed to state the
+#: trade-off at all.
 CURATION_JUDGEMENTS = (
     "underdetermined",
     "can_be_made_self_contained",
@@ -177,6 +185,8 @@ class TopicReport:
     findings: tuple[Finding, ...]
     curated_per_domain: dict[str, int]
     required_per_domain: int
+    #: Source documents the overlap screen compared against; 0 if skipped.
+    overlap_screened_documents: int = 0
 
     @property
     def errors(self) -> tuple[Finding, ...]:
@@ -204,8 +214,10 @@ class TopicReport:
         return not self.readiness_problems()
 
 
-def check_topics(bank: TopicBank, cfg: ExperimentConfig,
-                 registry: SourceRegistry) -> TopicReport:
+def check_topics(bank: TopicBank, cfg: ExperimentConfig, registry: SourceRegistry, *,
+                 source_texts: Mapping[str, str]) -> TopicReport:
+    """Check every brief. ``source_texts`` is required so the overlap screen is
+    never skipped by accident; pass an empty mapping only for synthetic data."""
     t = cfg.raw["topics"]
     domains = list(cfg.raw["domains"]["ids"])
     variant_ids = set(t["variants"])
@@ -215,6 +227,9 @@ def check_topics(bank: TopicBank, cfg: ExperimentConfig,
                      for term in t["framing_warning_terms"]]
     forbidden = cfg.compiled_forbidden()
     leakage = cfg.compiled_leakage()
+    specific = [re.compile(p, re.IGNORECASE) for p in t["specificity_patterns"]]
+    n_overlap = t["source_overlap_min_words"]
+    overlap_index = ngram_index(source_texts.values(), n_overlap) if source_texts else set()
 
     findings: list[Finding] = []
 
@@ -274,6 +289,17 @@ def check_topics(bank: TopicBank, cfg: ExperimentConfig,
                     f"variant {vid} supports the options with unequal numbers of facts {counts}",
                     topic, variant=vid, counts=counts)
 
+            # Numerical detail can itself make a consideration look stronger.
+            is_specific = {opt: any(p.search(f) for p in specific
+                                    for f in getattr(variant.scenario_facts, opt))
+                           for opt in SEMANTIC_OPTIONS}
+            if len(set(is_specific.values())) > 1:
+                which = next(o for o, v in is_specific.items() if v)
+                add("W_TOPIC_SPECIFICITY_MISMATCH", "warning",
+                    f"variant {vid}: only the {which} fact contains a number, fraction, date "
+                    f"or other precise quantity; make both qualitative or both comparably specific",
+                    topic, variant=vid, specific=is_specific)
+
         # -- every field that reaches the generator --------------------------
         for field, limit_key, text in topic.prose_fields():
             n = len(_WORD.findall(text))
@@ -296,8 +322,18 @@ def check_topics(bank: TopicBank, cfg: ExperimentConfig,
                 match = term.search(text)
                 if match:
                     add("W_TOPIC_FRAMING_TERMS", "warning",
-                        f"{field} mentions {match.group(0)!r}: check for party or identity framing",
+                        f"{field} mentions {match.group(0)!r}: check for a party or identity-based "
+                        f"appeal; neutrally naming who is affected is not itself a problem",
                         topic, field=field)
+            # Screen for accidental copying. Locators are identifiers and never
+            # reach the generator, so they are not screened.
+            if overlap_index and not field.endswith(".locator"):
+                for run in shared_runs(text, overlap_index, n_overlap):
+                    shown = " ".join(run.split()[:12])
+                    add("W_TOPIC_SOURCE_OVERLAP", "warning",
+                        f"{field} shares a run of {len(run.split())} words with the source text: "
+                        f"\"{shown}\" — rewrite in original wording",
+                        topic, field=field, words=len(run.split()))
 
         # -- sources: every cited key must be citable -----------------------
         for problem in registry.citation_problems(s.key for s in topic.source_references):
@@ -324,6 +360,7 @@ def check_topics(bank: TopicBank, cfg: ExperimentConfig,
         findings=tuple(findings),
         curated_per_domain={d: curated.get(d, 0) for d in domains},
         required_per_domain=t["curated_per_domain_for_drafting"],
+        overlap_screened_documents=len(source_texts),
     )
 
 

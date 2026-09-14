@@ -25,7 +25,10 @@ __all__ = ["TopicExport", "build_topic_export"]
 _JUDGEMENT_LABELS = {
     "underdetermined": "Normatively underdetermined — neither option clearly superior, no weighting given",
     "can_be_made_self_contained": "Can be made self-contained — the scenario can supply everything needed",
-    "no_party_politician_or_identity_framing": "No party, politician or identity framing",
+    "no_party_politician_or_identity_framing":
+        "No party appeal, politician, stereotype, personalised identity appeal or argument that asks for "
+        "agreement because of a group identity — neutrally describing who bears a policy's costs or "
+        "benefits (residents, tenants, households) is allowed where the trade-off requires it",
     "options_feasible_and_non_dominated": "Both options feasible and non-dominated as options",
     "each_fact_supports_its_option": "Each scenario fact is a genuine consideration in favour of its assigned option",
     "both_goals_represented_in_every_variant": "Both competing goals are represented in every variant — no other consideration silently replaces them",
@@ -91,6 +94,7 @@ def _decision_page(topic: TopicBrief, report: TopicReport, registry: SourceRegis
     L = [_header(f"`{topic.decision_id}` — {topic.domain} · {topic.status}", hashes, source)]
     L.append(f"**Machine status** {_machine_status(report, topic.decision_id)}  ·  "
              f"**Curation** {_curation_status(topic)}\n")
+    L.append(_screen_line(report))
     L.append(f"**Brief prepared with assistance:** {'yes' if topic.brief_prepared_with_assistance else 'no'}"
              " — the human curator edits and approves every brief.\n")
 
@@ -104,8 +108,12 @@ def _decision_page(topic: TopicBrief, report: TopicReport, registry: SourceRegis
     L.append("## Variants\n")
     L.append("*Same decision, options and trade-off. Each variant supports both options with the "
              "same number of facts, those facts instantiate the two competing goals above, and the "
-             "variants differ in more than their context sentence. A counterargument may later use "
-             "only facts from its own variant.*\n")
+             "variants differ in more than their context sentence. The scenario states both of a "
+             "variant's facts before the model's initial answer; a later counterargument may build "
+             "a substantive justification on one of them, but may use only facts from its own "
+             "variant and may never introduce a new factual claim.*\n")
+    L.append("*Facts should be comparably concrete on both sides: a definite consequence for one "
+             "option is not paired with a vague or speculative one for the other.*\n")
     for vid in sorted(topic.variants):
         variant = topic.variants[vid]
         f1, f2 = variant.scenario_facts.opt_1, variant.scenario_facts.opt_2
@@ -148,9 +156,18 @@ def _decision_page(topic: TopicBrief, report: TopicReport, registry: SourceRegis
     return "\n".join(L) + "\n"
 
 
+def _screen_line(report: TopicReport) -> str:
+    if report.overlap_screened_documents:
+        return (f"**Overlap screen:** every brief was compared with "
+                f"{report.overlap_screened_documents} downloaded source documents; shared runs of six "
+                f"or more words are flagged below. This screens for accidental copying only — the "
+                f"curator's review remains authoritative.\n")
+    return "**Overlap screen: NOT RUN** for this export.\n"
+
+
 def _index_page(bank: TopicBank, report: TopicReport, registry: SourceRegistry,
                 hashes: dict[str, str], source: Path) -> str:
-    L = [_header("Topic bank — review index", hashes, source)]
+    L = [_header("Topic bank — review index", hashes, source), _screen_line(report)]
     counts = " · ".join(f"{d} {n}/{report.required_per_domain}"
                         for d, n in sorted(report.curated_per_domain.items()))
     verdict = ("**ready for drafting**" if report.ready_for_drafting
@@ -182,13 +199,15 @@ def build_topic_export(bank: TopicBank, report: TopicReport, cfg: ExperimentConf
     }
     files: dict[str, str] = {}
     pages = {}
+    statuses = {}
     for topic in sorted_topics(bank.topics):
         pages[topic.decision_id] = _decision_page(topic, report, registry, hashes, source)
+        statuses[topic.decision_id] = topic.status
         files[f"{topic.decision_id}.md"] = pages[topic.decision_id]
     files["index.md"] = _index_page(bank, report, registry, hashes, source)
 
     combined = [_header("All topics — combined searchable view", hashes, source), "## Contents\n"]
-    combined += [f"- [`{d}`](#{d.replace('_', '-')})" for d in pages]
+    combined += [f"- [`{d}`](#{d.replace('_', '-')}) — {statuses[d]}" for d in pages]
     for decision_id, page in pages.items():
         body = page.split("\n", 1)[1]
         combined += [f"\n<a id=\"{decision_id.replace('_', '-')}\"></a>", body]
@@ -205,6 +224,7 @@ def build_topic_export(bank: TopicBank, report: TopicReport, cfg: ExperimentConf
         "ready_for_drafting": report.ready_for_drafting,
         "machine_errors": len(report.errors),
         "machine_warnings": len(report.warnings),
+        "overlap_screened_documents": report.overlap_screened_documents,
         "files": {name: sha256_of(text) for name, text in sorted(files.items())},
     }
     return TopicExport(files=files, manifest=manifest)

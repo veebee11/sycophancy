@@ -351,6 +351,38 @@ request rebuilt from the frozen prompt template and the item's brief. Because no
 source wording is retained or supplied, independence is a **procedural
 guarantee**, not an annotation claim, and no paraphrase comparison is needed.
 
+**Overlap screen (mandatory, warning only).** As a safeguard against wording
+slipping in while briefs are written, every generation-bound brief field is
+compared with the downloaded source text, and any run of six or more
+consecutive shared words raises `W_TOPIC_SOURCE_OVERLAP`. The checker and the
+review export will not run without deciding on the screen: they need the
+downloaded files, or an explicit `none` (for synthetic fixtures only), in
+which case the output states that the screen was not run. The warning quotes
+at most twelve words of the brief's own text; no source excerpt is stored in
+the topic bank or the review export.
+
+**What the screen does and does not establish.** A six-word match detects
+*possible verbatim reuse*; it cannot prove semantic independence. Close
+paraphrase, translated wording and reused argument structure all pass it, and
+a match can equally be an ordinary collocation. Independence rests primarily on
+the construction procedure above: the later generator receives only the
+original curator-written brief and our constraints, never a source passage, so
+there is no source text for it to reuse. The screen is a backstop against
+accidental copying while briefs are written, and the curator's
+`no_source_wording_in_brief` judgement remains the authority. This is how the
+thesis should describe it, rather than as evidence of originality.
+
+**Downloads.** Raw source files are fetched only from pinned URLs listed in
+`data/sources/downloads.yaml`, which records the access date, size, the
+provider's checksum and our own SHA-256; a mismatch stops the process before
+anything is recorded. Raw files live in the gitignored `data/sources/raw/`.
+Every archive member path is checked before anything is extracted; pickle
+files are never extracted or loaded. Only POLIANNA's JSON files and the two
+pinned JRC CSV tables are read. Reading a provision to understand its general
+subject is acceptable; its wording, organisations, locations and statistics
+never enter a brief. `data/sources/inventory.md` summarises the material in
+our own words.
+
 **Assisted briefs.** The initial pilot briefs are prepared with assistance, and
 each record says so (`brief_prepared_with_assistance`). Vidhi Bhutani is the
 human curator who edits and approves every brief; a brief becomes `curated` only
@@ -384,8 +416,19 @@ scenario-level reference uses the same keys.
 
 **Identity.** The topic bank has one record per underlying decision, keyed by
 `decision_id`; there is no separate topic id. Every scenario references its
-`decision_id`. Topics avoid explicit political-party, politician and identity
-framing, though the policy decisions themselves may be politically contested.
+`decision_id`.
+
+**The identity-framing rule, precisely.** Briefs, scenarios and
+counterarguments must contain no political-party appeal, no reference to a
+politician, no stereotype, no personalised identity appeal and no argument that
+asks for agreement because of a group identity. The rule does **not** prohibit
+neutrally describing who bears a policy's costs or benefits — residents,
+tenants, households without private parking, job-seekers — which is frequently
+the only way to state a genuine distributive trade-off. The distinction is
+between *naming who is affected* (allowed, and often necessary) and *appealing
+to who someone is* (prohibited). The configured `framing_warning_terms` list
+party and partisan vocabulary only; a match is a warning for the curator, and
+the policy decisions themselves may be politically contested.
 
 **Variants.** The two variants of a decision must present the same decision,
 options and value trade-off, differing in wording or context. The options and
@@ -403,6 +446,28 @@ while the decision, options and value trade-off stay the same. A machine can
 check that options and domain agree, that contexts and facts differ and that
 fact counts are equal; only a person can confirm that the facts instantiate the
 goals and that the trade-off is preserved.
+
+**Both facts precede the initial answer.** The scenario states both of a
+variant's supporting facts before the model gives its initial answer, so that
+the answer is made with the whole trade-off in view. A later RS or RP
+counterargument may build a substantive justification on one of those facts,
+but it introduces no new factual claim; this is the premise-containment rule
+below, seen from the scenario's side.
+
+**Specificity balance.** Facts are preferably qualitative on both sides. If one
+option's fact includes a number, percentage, deadline or other precise
+quantity, the other option's fact in that variant should be comparably
+specific, so that precision does not lend one side extra persuasive weight.
+A pattern screen (configured in `topics.specificity_patterns`) flags a variant
+where only one option's facts look specific (`W_TOPIC_SPECIFICITY_MISMATCH`)
+for human review. It is deliberately broad — number words such as "one" also
+match, so "no one" is a false positive — and the curator judges comparability.
+
+The same balance applies beyond numbers, and only a person can check it: a
+definite consequence for one option must not be paired with a vague or
+speculative one for the other. A present-tense fact on one side and a "could
+eventually" on the other tilts the trade-off even when both facts are
+qualitative.
 
 **Topic curation.** Each brief carries nine curator judgements: normatively
 underdetermined; can be made self-contained (whether the final scenario *is*
@@ -475,3 +540,4 @@ filename checks alone would not catch an edit to a frozen file's contents.
 - Pair-level reliability is measured under weaker blinding than item-level.
 - LLM generation is not bit-reproducible across model versions; the generation log is a record, not a replay guarantee.
 - Style and content are not perfectly separable in language; the residual confound is stated rather than argued away.
+- The six-word overlap screen detects possible verbatim reuse only; independence is a property of the construction procedure, not of the screen.

@@ -723,6 +723,10 @@ def _check_topics(cfg: ExperimentConfig) -> None:
            "curated_per_domain_for_drafting must equal the pilot's decisions per domain")
     for field, limit in t["max_words"].items():
         _check(isinstance(limit, int) and limit > 0, f"topics.max_words.{field} must be positive")
+    for pattern in t["specificity_patterns"]:
+        re.compile(pattern)
+    _check(isinstance(t["source_overlap_min_words"], int) and t["source_overlap_min_words"] >= 3,
+           "source_overlap_min_words must be an integer of at least 3")
 
 
 def load_config(path: str | Path) -> ExperimentConfig:

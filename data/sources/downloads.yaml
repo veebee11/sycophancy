@@ -1,0 +1,45 @@
+# Downloaded reference-source files.
+#
+# Raw files live under the gitignored data/sources/raw/ and are never committed.
+# This manifest is: it records where each file came from, its size, the checksum
+# its provider publishes, and the SHA-256 we computed. Re-fetch and verify with:
+#
+#   uv run python scripts/fetch_sources.py --manifest data/sources/downloads.yaml
+#
+# sha256 and access_date are written by the script on first download. After
+# that, any file whose bytes differ from the recorded SHA-256 is refused.
+
+files:
+- name: POLIANNA_v1_1.zip
+  registry_key: polianna
+  url: https://zenodo.org/api/records/8284380/files/POLIANNA_v1_1.zip/content
+  size_bytes: 23124034
+  provider_checksum:
+    algorithm: md5
+    value: c64bc9cf4b3f238c57e72b068f56728e
+    published_by: Zenodo record 8284380
+  extract: true
+  sha256: fdf7b7369f40d6cd86196d6d721157560636ac8fffd3f5e39939bfbf71391d82
+  access_date: '2026-09-11'
+- name: Export_PSTW_GENAI_AnnexI_guidelines_dataset.csv
+  registry_key: genai4pa_jrc_2025
+  url: https://raw.githubusercontent.com/ipsoeu/data/ac50c891eb0597a3561ee3647864686657274db5/Export_PSTW_GENAI_AnnexI_guidelines_dataset.csv
+  size_bytes: 38130
+  provider_checksum:
+    algorithm: git_blob_sha1
+    value: bedd27381ed1b8b09223d52eb0f824d5de63fa5f
+    published_by: GitHub ipsoeu/data at commit ac50c891eb0597a3561ee3647864686657274db5
+  extract: false
+  sha256: 9f33fb083562cbb0dcf729a320268003b36013fb5031e219c553651071e63460
+  access_date: '2026-09-11'
+- name: Export_PSTW_GENAI_AnnexII_usecases_dataset.csv
+  registry_key: genai4pa_jrc_2025
+  url: https://raw.githubusercontent.com/ipsoeu/data/ac50c891eb0597a3561ee3647864686657274db5/Export_PSTW_GENAI_AnnexII_usecases_dataset.csv
+  size_bytes: 80895
+  provider_checksum:
+    algorithm: git_blob_sha1
+    value: 64614bb05a00631e04940cb0e12e061080cf539f
+    published_by: GitHub ipsoeu/data at commit ac50c891eb0597a3561ee3647864686657274db5
+  extract: false
+  sha256: 4eddd8319d154fa25b7cfe78cec49892a17e61ed6039a3bae501960ab46ef6cc
+  access_date: '2026-09-11'
