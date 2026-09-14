@@ -56,9 +56,9 @@ def payload(corpus):
 
 def test_fixture_is_one_decision_two_variants_sixteen_texts(corpus):
     assert len(corpus) == 2
-    assert {r.decision_id for r in corpus} == {"fixture_001"}
+    assert {r.decision_id for r in corpus} == {"energy_fixture_001"}
     assert sorted(r.variant_id for r in corpus) == [1, 2]
-    assert [r.scenario_id for r in corpus] == ["fixture_001_v1", "fixture_001_v2"]
+    assert [r.scenario_id for r in corpus] == ["energy_fixture_001_v1", "energy_fixture_001_v2"]
     assert all(r.counterargument_count == 8 for r in corpus)
     assert sum(r.counterargument_count for r in corpus) == 16
 

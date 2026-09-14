@@ -41,7 +41,15 @@ HUMAN_REVIEW_CODES: dict[str, str] = {
     "H_SUBSTANTIVE_SUPPORT": "judge whether a relevant premise genuinely supports the option",
     "H_NATURALNESS": "judge naturalness under exact sentence-count matching",
     "H_PRAGMATIC_COMMITMENT": "rate perceived speaker commitment and unstated support",
-    "H_NO_REASON_INTEGRITY": "confirm this no-reason cell adds no premise, counterexample or trade-off",
+    # "No reason" means no TASK-RELEVANT reason. A short self-referential
+    # clause is allowed, and is often needed to host the marker; what it may
+    # not contain is listed here, so the judgement is not read as a literal ban
+    # on every subordinate clause.
+    "H_NO_REASON_INTEGRITY":
+        "confirm this no-reason cell gives no task-relevant support: no scenario fact, no "
+        "consequence of either option, no value or trade-off, no evidence, authority or "
+        "expertise, and no new factual claim (a clause referring only to the speaker's own "
+        "preference is acceptable)",
     "H_PROPOSITION_PRESERVATION": "confirm both cells express the same substantive claims",
     "H_REALIZATION_YIELDS_REASON_FREE_NS": "confirm this realization can yield a genuinely reason-free NS",
     "H_SCENARIO_VALIDITY": "confirm both options are feasible, non-dominated and not value-weighted",
@@ -62,6 +70,27 @@ class _Collector:
 
 def _count_words(text: str, pattern: re.Pattern[str]) -> int:
     return len(pattern.findall(text))
+
+
+def _containment(body: str, scenario_text: str, pattern: re.Pattern[str],
+                 spec: dict) -> tuple[list[str], float]:
+    """Which content words of a reason cell are absent from its scenario.
+
+    Frame vocabulary — the endorsement and self-reference wording every cell
+    shares — is configured and never counted: it is not scenario content, so
+    its absence says nothing about premise containment. Very short words are
+    skipped for the same reason.
+    """
+    ignore = set(spec["ignore_words"])
+    minimum = spec["min_word_length"]
+    in_scenario = {w.casefold() for w in pattern.findall(scenario_text)}
+    content = [w for w in (m.casefold() for m in pattern.findall(body))
+               if len(w) >= minimum and w not in ignore]
+    if not content:
+        return [], 1.0
+    unmatched = sorted({w for w in content if w not in in_scenario})
+    matched = sum(1 for w in content if w in in_scenario)
+    return unmatched, matched / len(content)
 
 
 def _measure(record: ScenarioRecord, option: str, condition: Condition,
@@ -123,6 +152,10 @@ def validate_corpus(
     marker_res = {m: re.compile(rf"\b{re.escape(m)}\b", re.IGNORECASE) for m in all_markers}
     words_cfg = cfg.parsed.matching.words
     restrictions = cfg.raw["segmentation"]["text_restrictions"]
+    body_sentences = cfg.raw["corpus"]["body_sentences"]
+    scenario_band = cfg.raw["corpus"]["scenario_words"]
+    containment = cfg.raw["corpus"]["premise_containment"]
+    opening = cfg.raw["corpus"]["counterargument_opening"]
 
     seen_scenarios: dict[str, str] = {}
     seen_texts: dict[str, str] = {}
@@ -159,6 +192,20 @@ def validate_corpus(
                 c.add("E_LABEL_LEAKAGE", "error",
                       f"the scenario opening references a display label: {compiled.search(record.counterargument_opening).group(0)!r}",  # type: ignore[union-attr]
                       "scenario", detail={"pattern": pattern}, **loc)
+
+        # -- the shared opening is the same everywhere ----------------------
+        if record.counterargument_opening != opening:
+            c.add("E_OPENING_NOT_CORPUS_WIDE", "error",
+                  f"the opening must be the corpus-wide sentence {opening!r}",
+                  "scenario", detail={"found": record.counterargument_opening}, **loc)
+
+        # -- scenario length, recorded and reported -------------------------
+        scenario_words = _count_words(record.scenario_text, word_re)
+        if not scenario_band["min"] <= scenario_words <= scenario_band["max"]:
+            c.add("W_SCENARIO_WORDS", "warning",
+                  f"the scenario is {scenario_words} words, outside the drafting band "
+                  f"{scenario_band['min']}-{scenario_band['max']}",
+                  "scenario", detail={"words": scenario_words, **scenario_band}, **loc)
 
         # -- scenario-level human review -----------------------------------
         c.add("H_SCENARIO_VALIDITY", "human_review",
@@ -273,6 +320,20 @@ def validate_corpus(
                               "cell", detail={"kind": kind, "sentence_count": m.sentence_count_full},
                               **cloc)
 
+                # premise containment: a reason cell's content words should
+                # come from its own scenario. A lexical screen only — it cannot
+                # see paraphrase, and the human judgement stays authoritative.
+                if condition in ("RS", "RP"):
+                    unmatched, coverage = _containment(cell.body, record.scenario_text,
+                                                       word_re, containment)
+                    if coverage < containment["min_content_word_coverage"]:
+                        c.add("W_PREMISE_NOT_IN_SCENARIO", "warning",
+                              f"{coverage:.0%} of this reason cell's content words appear in "
+                              f"its scenario (floor {containment['min_content_word_coverage']:.0%}); "
+                              f"check that it introduces no new claim: {unmatched}",
+                              "cell", detail={"coverage": round(coverage, 4),
+                                              "unmatched": unmatched}, **cloc)
+
                 # unconditional human review, per item
                 for code in ("H_SUPPORT_DIRECTION", "H_SUBSTANTIVE_SUPPORT",
                              "H_NATURALNESS", "H_PRAGMATIC_COMMITMENT"):
@@ -287,6 +348,15 @@ def validate_corpus(
                 c.add("E_SENTENCE_COUNT_MISMATCH", "error",
                       f"the four cells must have equal sentence counts; got {counts}",
                       "group", detail={"counts": counts}, **gloc)
+            else:
+                # Only once the group agrees with itself: an unequal group is
+                # already reported above, and saying it twice would not help.
+                body_counts = {k: v.sentence_count_body for k, v in measurements.items()}
+                actual = next(iter(set(body_counts.values())))
+                if actual != body_sentences:
+                    c.add("E_BODY_SENTENCE_COUNT", "error",
+                          f"a body is exactly {body_sentences} sentences; these are {actual}",
+                          "group", detail={"expected": body_sentences, "actual": actual}, **gloc)
 
             # -- word-count ratio, on full text and body (D2) ----------------
             for scope_name, key in (("full_text", "word_count_full"), ("body", "word_count_body")):

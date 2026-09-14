@@ -118,7 +118,7 @@ def test_the_export_contains_every_required_file(export):
     names = set(export.files)
     assert "index.md" in names
     assert "all_decisions.md" in names
-    assert "decisions/fixture_001.md" in names
+    assert "decisions/energy_fixture_001.md" in names
     for annotator in ("annotator_1", "annotator_2"):
         for level in ("item", "pair", "scenario"):
             assert f"blind/{annotator}/{level}_packet.md" in names
@@ -135,9 +135,9 @@ def test_the_index_covers_every_decision(export, records):
 
 
 def test_the_decision_file_holds_both_variants_and_all_sixteen_texts(export, records):
-    text = export.files["decisions/fixture_001.md"]
-    assert "Variant 1 — `fixture_001_v1`" in text
-    assert "Variant 2 — `fixture_001_v2`" in text
+    text = export.files["decisions/energy_fixture_001.md"]
+    assert "Variant 1 — `energy_fixture_001_v1`" in text
+    assert "Variant 2 — `energy_fixture_001_v2`" in text
     for record in records:
         for option in ("opt_1", "opt_2"):
             for condition in ("RS", "RP", "NS", "NP"):
@@ -147,7 +147,7 @@ def test_the_decision_file_holds_both_variants_and_all_sixteen_texts(export, rec
 
 
 def test_the_curator_view_labels_every_experimental_cell(export):
-    text = export.files["decisions/fixture_001.md"]
+    text = export.files["decisions/energy_fixture_001.md"]
     for condition in ("RS", "RP", "NS", "NP"):
         assert f"**{condition}** — " in text
     assert "Marker family" in text and "realization" in text
@@ -155,7 +155,7 @@ def test_the_curator_view_labels_every_experimental_cell(export):
 
 
 def test_the_decision_file_shows_findings_and_outstanding_review(export):
-    text = export.files["decisions/fixture_001.md"]
+    text = export.files["decisions/energy_fixture_001.md"]
     assert "#### Machine findings" in text
     assert "*No machine errors or warnings.*" in text
     assert "#### Human review still required" in text
@@ -165,7 +165,7 @@ def test_the_decision_file_shows_findings_and_outstanding_review(export):
 
 
 def test_all_four_comparison_views_are_labelled(export):
-    text = export.files["decisions/fixture_001.md"]
+    text = export.files["decisions/energy_fixture_001.md"]
     for a, b, name in (("RS", "RP", "style_with_reason"), ("NS", "NP", "style_without_reason"),
                        ("RS", "NS", "content_with_style"), ("RP", "NP", "content_plain")):
         assert f"**{a} − {b}** · `{name}`" in text
@@ -174,7 +174,7 @@ def test_all_four_comparison_views_are_labelled(export):
 def test_the_combined_file_contains_every_decision_file(export):
     combined = export.files["all_decisions.md"]
     assert "## Contents" in combined
-    body = export.files["decisions/fixture_001.md"].split("\n", 1)[1]
+    body = export.files["decisions/energy_fixture_001.md"].split("\n", 1)[1]
     assert body in combined
 
 
@@ -191,7 +191,7 @@ def test_highlighting_is_reversible_and_never_alters_the_text(export, records):
 
 
 def test_the_canonical_text_appears_verbatim_in_a_fenced_block(export, records):
-    text = export.files["decisions/fixture_001.md"]
+    text = export.files["decisions/energy_fixture_001.md"]
     for record in records:
         for option in ("opt_1", "opt_2"):
             for condition in ("RS", "RP", "NS", "NP"):
@@ -365,7 +365,7 @@ def test_the_exporter_is_not_specific_to_the_current_fixture(records, cfg, segme
 
 @pytest.fixture(scope="module")
 def appendix(export):
-    return export.files["decisions/fixture_001.md"].split(
+    return export.files["decisions/energy_fixture_001.md"].split(
         "## Appendix — canonical transcripts")[1]
 
 
@@ -400,11 +400,29 @@ def test_plain_cells_are_stratified_by_their_groups_marker_family(records):
     by_id = {r.scenario_id: r for r in records}
     units = item_sampling_units(records)
     assert len(units) == 16
-    for (scenario_id, option, condition), stratum in units:
+    for (scenario_id, option, condition), stratum, balance in units:
         block = by_id[scenario_id].counterarguments[option]
         assert stratum[-1] == block.marker_family
         assert stratum[-1] is not None
+        # the supported option is balanced marginally, not crossed into the
+        # stratum: 3 x 4 x 3 = 36 strata is what a 48-item sample can cover.
+        assert option not in stratum and balance == (option,)
     # the distinction is real: the plain cells' own field is null
     plain = [by_id[s].counterarguments[o].cells[c].marker_family
-             for (s, o, c), _ in units if c in ("RP", "NP")]
+             for (s, o, c), _, _ in units if c in ("RP", "NP")]
     assert plain and all(f is None for f in plain)
+
+
+def test_the_supported_option_is_balanced_marginally(records, cfg):
+    """It is not a crossed stratum, so the sampler must keep the running tally
+    even: an unbalanced sample would silently weight one direction."""
+    from collections import Counter
+    from reasonstyle.corpus.review import _rng, _stratified_sample, item_sampling_units
+    from reasonstyle.corpus.store import corpus_content_hash
+
+    sub = cfg.raw["annotation"]["reliability_subsample"]
+    units = item_sampling_units(records, sub["stratify_by"], sub["balance_marginally"])
+    chosen = _stratified_sample(units, 0.5,
+                                _rng(cfg, corpus_content_hash(records), "item-sample"))
+    by_option = Counter(option for _, option, _ in chosen)
+    assert abs(by_option["opt_1"] - by_option["opt_2"]) <= 1

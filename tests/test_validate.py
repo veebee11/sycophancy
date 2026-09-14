@@ -83,7 +83,7 @@ def test_proposition_preservation_is_a_pair_level_judgement(report):
 
 
 def test_outstanding_review_is_reported_per_scenario(report):
-    outstanding = report.outstanding_human_review("fixture_001_v1")
+    outstanding = report.outstanding_human_review("energy_fixture_001_v1")
     assert "H_SUPPORT_DIRECTION" in outstanding
     assert "H_SCENARIO_VALIDITY" in outstanding
     assert report.outstanding_human_review("no_such_scenario_v1") == ()
@@ -199,7 +199,7 @@ def test_findings_locate_the_offending_cell(cfg, segmenter, invalid_corpus):
     report = _validate("marker_in_plain_cell", cfg, segmenter, invalid_corpus)
     finding = next(f for f in report.errors if f.code == "E_MARKER_IN_PLAIN_CELL")
     assert (finding.scenario_id, finding.supported_option, finding.condition) == (
-        "fixture_001_v1", "opt_1", "RP")
+        "energy_fixture_001_v1", "opt_1", "RP")
     assert "given that" in finding.detail["markers_found"]
 
 
@@ -263,3 +263,93 @@ def test_with_measurements_leaves_the_originals_untouched(records, cfg, segmente
     with_measurements(records, cfg, segmenter)
     assert all(c.measurements is None
                for r in records for b in r.counterarguments.values() for c in b.cells.values())
+
+
+# --- drafting-shape rules (approved 2026-09-14) ------------------------------
+
+
+def _mutate(records, cfg, segmenter, change):
+    """Validate a copy of the fixture with one change applied."""
+    import copy
+    from reasonstyle.corpus.schemas import ScenarioRecord
+    payload = [json_of(r) for r in records]
+    change(payload)
+    return validate_corpus([ScenarioRecord.model_validate(p) for p in copy.deepcopy(payload)],
+                           cfg, segmenter, corpus_scope="fixture")
+
+
+def json_of(record):
+    import json
+    from reasonstyle.corpus.store import dumps_record
+    return json.loads(dumps_record(record))
+
+
+def test_a_scenario_outside_the_word_band_warns(records, cfg, segmenter):
+    """The band is a drafting instruction, and the pilot is meant to show
+    whether it forced filler — so it is reported, not enforced."""
+    report = _mutate(records, cfg, segmenter,
+                     lambda p: p[0].__setitem__("scenario_text", "Too short by far."))
+    assert "W_SCENARIO_WORDS" in report.codes("warning")
+    assert report.errors == ()
+
+
+def test_the_opening_must_be_the_corpus_wide_one(records, cfg, segmenter):
+    report = _mutate(records, cfg, segmenter,
+                     lambda p: p[0].__setitem__("counterargument_opening",
+                                                "I have read the scenario and would weigh it differently."))
+    assert "E_OPENING_NOT_CORPUS_WIDE" in report.codes("error")
+
+
+def test_a_body_of_the_wrong_length_is_rejected(records, cfg, segmenter):
+    """All four cells at three sentences: internally consistent, but not the
+    fixed body length. The mismatch error would not catch this."""
+    def lengthen(p):
+        for condition, cell in p[0]["counterarguments"]["opt_1"]["cells"].items():
+            cell["body"] += " The plant can deliver it."
+    report = _mutate(records, cfg, segmenter, lengthen)
+    assert "E_BODY_SENTENCE_COUNT" in report.codes("error")
+    assert "E_SENTENCE_COUNT_MISMATCH" not in report.codes("error")
+
+
+def test_a_premise_from_outside_the_scenario_is_flagged(records, cfg, segmenter):
+    """A lexical screen only: it points the reviewer at a cell whose content
+    words are not in its own scenario. The human judgement remains the one that
+    decides."""
+    report = _mutate(records, cfg, segmenter, lambda p: p[0]["counterarguments"]["opt_1"]
+                     ["cells"]["RS"].__setitem__(
+                         "body", "The proposed tariff reform lowers connection charges for "
+                                 "industry. Because charges fall, the plant extension remains "
+                                 "my preferred option."))
+    assert "W_PREMISE_NOT_IN_SCENARIO" in report.codes("warning")
+
+
+def test_every_reason_cell_of_the_fixture_is_contained_by_its_scenario(records, cfg):
+    """The fixture satisfies the containment rule the real corpus must satisfy:
+    each reason cell's content words come from its own scenario."""
+    import re
+    from reasonstyle.corpus.validate import _containment
+    word = re.compile(cfg.parsed.matching.words.word_regex)
+    spec = cfg.raw["corpus"]["premise_containment"]
+    for record in records:
+        for option, block in record.counterarguments.items():
+            for condition in ("RS", "RP"):
+                unmatched, coverage = _containment(block.cells[condition].body,
+                                                   record.scenario_text, word, spec)
+                assert coverage >= spec["min_content_word_coverage"], (
+                    record.scenario_id, option, condition, unmatched)
+
+
+def test_the_fixture_scenarios_state_both_brief_facts(records, cfg, synthetic_bank):
+    """The chain brief -> scenario -> counterargument holds end to end: both of
+    a variant's facts are stated in the scenario, before any answer is given."""
+    import re
+    word = re.compile(cfg.parsed.matching.words.word_regex)
+    topic = next(t for t in synthetic_bank.topics if t.decision_id == "energy_fixture_001")
+    for record in records:
+        variant = topic.variants[f"v{record.variant_id}"]
+        in_scenario = {w.casefold() for w in word.findall(record.scenario_text)}
+        for option in ("opt_1", "opt_2"):
+            fact, = getattr(variant.scenario_facts, option)
+            missing = [w for w in word.findall(fact)
+                       if len(w) >= 4 and w.casefold() not in in_scenario]
+            assert not missing, (record.scenario_id, option, missing)

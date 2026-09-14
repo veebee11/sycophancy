@@ -44,3 +44,14 @@ review/
 # Raw third-party source files: fetched and verified from data/sources/downloads.yaml,
 # never committed. Must come after the data/ rule above to take effect.
 data/sources/raw/
+
+# Generation run artefacts: requests, responses, raw traffic and logs are
+# produced by a run, not by hand. The allocation is committed; a run is not.
+data/pilot/requests/
+data/pilot/responses/
+data/pilot/raw/
+data/pilot/smoke/
+data/pilot/generation_log.jsonl
+
+# The launcher writes this on the GPU host; it describes one server run.
+data/pilot/server_runtime.json

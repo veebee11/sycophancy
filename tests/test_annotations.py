@@ -35,7 +35,7 @@ RATINGS = dict(substantive_support=4, perceived_reasoning_style=5,
 
 
 def item(**kw):
-    base = dict(scenario_id="fixture_001_v1", supported_option="opt_1", condition="NS",
+    base = dict(scenario_id="energy_fixture_001_v1", supported_option="opt_1", condition="NS",
                 annotator_id="curator", annotated_at=date(2026, 9, 9), round="full_review",
                 support_direction_answer="opt_1", support_direction_confirmed=True,
                 supplies_premise=False, **HASHES, **RATINGS)
@@ -48,7 +48,7 @@ def response(**kw):
     return BlindItemResponse(**{**base, **kw})
 
 
-KEY = BlindItemKey(blind_id="i0001", scenario_id="fixture_001_v1", supported_option="opt_1",
+KEY = BlindItemKey(blind_id="i0001", scenario_id="energy_fixture_001_v1", supported_option="opt_1",
                    condition="NS", option_labels={"P": "opt_1", "Q": "opt_2"})
 
 
@@ -154,7 +154,7 @@ def test_option_labels_must_cover_both_semantic_options():
 
 
 def test_pair_unblinding_recovers_the_pair_id():
-    key = BlindPairKey(blind_id="p0001", scenario_id="fixture_001_v1",
+    key = BlindPairKey(blind_id="p0001", scenario_id="energy_fixture_001_v1",
                        supported_option="opt_2", pair_id="NS_NP",
                        side_conditions={"1": "NP", "2": "NS"})
     result = unblind_pairs([BlindPairResponse(blind_id="p0001", annotator_id="a1",

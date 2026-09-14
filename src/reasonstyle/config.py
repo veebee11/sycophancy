@@ -34,6 +34,11 @@ DEV_CONFIG = Path("configs/experiment.yaml")
 FROZEN_DIR = "frozen"
 
 
+#: The repository this package lives in — src/reasonstyle/config.py -> root.
+#: Used only as the last place to look for a file the config points at.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
 class ConfigError(ValueError):
     """The configuration is structurally or semantically invalid."""
 
@@ -160,6 +165,9 @@ class PromptSpec(_Base):
     option_line_format: str
     turn_structure: list[dict[str, Any]]
     templates: dict[str, TemplateSpec]
+    #: Drafting templates for the generator. Separate from ``templates``, which
+    #: are evaluation scaffolds for the models under test.
+    drafting: dict[str, Any]
 
 
 class RawConfig(_Base):
@@ -202,6 +210,25 @@ class ExperimentConfig:
         self.path = path
         self.content_hash = content_hash(raw)
         self.file_sha256 = file_sha256(path) if path is not None else None
+
+    def resolve_path(self, relative: str | Path) -> Path:
+        """Locate a file the configuration points at, such as a prompt template.
+
+        Tried in order: beside the config, one level above it (the usual
+        ``configs/experiment.yaml`` -> repository root), then the repository
+        this package was installed from. The last case is what lets a test
+        write a mutated config into a temporary directory without having to
+        copy the prompt files with it; the hash check still applies, so a
+        template found this way is still the pinned one.
+        """
+        relative = Path(relative)
+        bases = [p for p in ((self.path.parent, self.path.parent.parent) if self.path else ())]
+        bases.append(_REPO_ROOT)
+        for base in bases:
+            candidate = base / relative
+            if candidate.is_file():
+                return candidate
+        return bases[0] / relative
 
     @property
     def config_version(self) -> str:
@@ -362,6 +389,27 @@ def _check_corpus_shape(cfg: ExperimentConfig) -> None:
                        (corp["decisions_pilot"], "texts_pilot")):
         expected = n_dec * corp["variants_per_decision"] * per_scenario
         _check(corp[key] == expected, f"{key} must be {expected}; got {corp[key]}")
+
+    _check(isinstance(corp["body_sentences"], int) and corp["body_sentences"] >= 2,
+           "a body needs at least two sentences to carry a premise and a conclusion")
+    words = corp["scenario_words"]
+    _check(0 < words["min"] < words["max"], "the scenario word band must be a real range")
+    opening = corp["counterargument_opening"]
+    _check(bool(opening.strip()), "the corpus-wide opening sentence must be set")
+    # The opening is prepended to all eight texts of every scenario, so any
+    # deliberation word in it would be reasoning content present even in the
+    # plain, no-reason cells.
+    deliberation = re.compile(
+        r"\b(read|reading|weigh\w*|consider\w*|think\w*|reason\w*|reflect\w*|"
+        r"analys\w*|analyz\w*|evaluat\w*|judg\w*|assess\w*)\b", re.IGNORECASE)
+    match = deliberation.search(opening)
+    _check(match is None,
+           f"counterargument_opening must not suggest deliberation or reasoning: "
+           f"{match.group(0)!r}" if match else "")
+    pc = corp["premise_containment"]
+    _check(0 < pc["min_content_word_coverage"] <= 1, "coverage is a fraction in (0, 1]")
+    _check(isinstance(pc["min_word_length"], int) and pc["min_word_length"] >= 3,
+           "the containment screen ignores very short words")
 
 
 def _check_markers(cfg: ExperimentConfig) -> None:
@@ -562,6 +610,104 @@ def _check_prompts(cfg: ExperimentConfig) -> None:
                    f"model {variant}: a frozen selection must pin repo_id and revision")
 
 
+def _check_drafting(cfg: ExperimentConfig) -> None:
+    """The generator's prompt templates and the generator's own settings.
+
+    The template text lives in files so that it stays readable; the recorded
+    hash is what fixes it. Editing a template without bumping the hash must
+    fail at load, not silently change what the generator was asked.
+    """
+    drafting = cfg.parsed.prompts.drafting
+    _check(set(drafting) == {"scenario_draft_v1", "group_draft_v1", "repair_v1"},
+           "the drafting templates are the scenario, group and repair prompts")
+    for name, spec in drafting.items():
+        path = cfg.resolve_path(spec["path"])
+        _check(path.is_file(), f"drafting template {name}: {spec['path']} not found")
+        text = path.read_text(encoding="utf-8")
+        _check(sha256_of(text) == spec["template_sha256"],
+               f"drafting template {name}: {spec['path']} does not match its recorded hash")
+        for placeholder in spec["placeholders"]:
+            _check(f"${{{placeholder}}}" in text,
+                   f"drafting template {name}: ${{{placeholder}}} is declared but absent")
+        found = set(re.findall(r"\$\{([a-z_0-9]+)\}", text))
+        _check(found == set(spec["placeholders"]),
+               f"drafting template {name}: template uses {sorted(found)} but declares "
+               f"{sorted(spec['placeholders'])}")
+        schema = spec["response_schema"]
+        _check(schema["type"] == "object" and schema["additionalProperties"] is False,
+               f"drafting template {name}: the response schema must be a closed object")
+        _check(set(schema["required"]) == set(schema["properties"]),
+               f"drafting template {name}: every property must be required")
+
+    _check(set(drafting["group_draft_v1"]["response_schema"]["properties"])
+           == set(cfg.parsed.conditions.core),
+           "the group response schema must have exactly one field per core condition")
+    _check(drafting["repair_v1"]["response_schema"]
+           == drafting["group_draft_v1"]["response_schema"],
+           "a repair returns the same shape as the draft it repairs")
+
+    gen = cfg.raw["models"]["generator"]
+    _check(gen["backend"] in gen["supported_backends"],
+           f"generator backend {gen['backend']!r} is not one of {gen['supported_backends']}")
+
+    model = gen["model"]
+    _check(bool(model["repo_id"]), "the generator repository id must be recorded")
+    lowered = model["repo_id"].casefold()
+    clash = [f for f in model["excluded_families"] if f.casefold() in lowered]
+    _check(not clash,
+           f"the generator {model['repo_id']!r} belongs to an evaluated family {clash}: "
+           f"the corpus would share an ancestor with a model under test")
+    _check(model["trust_remote_code"] is False,
+           "remote code execution stays off for the generator")
+
+    dec = gen["decoding"]
+    _check(dec["thinking"] == "disabled",
+           "the generator runs in non-thinking mode for this short structured task")
+    _check(isinstance(dec["max_tokens"], int) and dec["max_tokens"] > 0,
+           "max_tokens must be a positive integer")
+    _check(0 < dec["temperature"] <= 1 and 0 < dec["top_p"] <= 1,
+           "temperature and top_p are recorded explicitly and lie in (0, 1]")
+    _check(isinstance(dec["seed"], int),
+           "the seed is recorded — it does not make output reproducible across GPUs "
+           "or library versions, but it belongs in the record")
+    _check(dec["n"] == 1, "one response per call; no cherry-picking among samples")
+
+    # No credential of any kind belongs in a configuration, and this generator
+    # needs none: it is a local endpoint on the loopback interface.
+    for forbidden in ("api_key", "api_key_env", "token", "auth"):
+        _check(forbidden not in gen, f"{forbidden!r} must never appear in the configuration")
+    url = gen["vllm"]["base_url"]
+    _check(url.startswith("http://127.0.0.1") or url.startswith("http://localhost"),
+           f"the generator endpoint must be local; got {url!r}")
+    _check(gen["vllm"]["require_offline_env"] == {"HF_HUB_OFFLINE": "1"},
+           "offline mode is required so that a missing model is an error, not a download")
+
+    # Authorisation to run is deliberately absent from the config: it lives in
+    # an explicit argument plus an environment variable at the call site.
+    _check("live_calls_enabled" not in gen,
+           "run authorisation does not belong in the experiment configuration")
+
+    alloc = cfg.raw["markers"]["allocation"]
+    confirmatory = cfg.raw["markers"]["roles"]["confirmatory"]
+    inventory = cfg.raw["markers"]["primary_families"]
+    _check(alloc["pilot_families"] == confirmatory,
+           "the pilot allocates the confirmatory families; the exploratory family "
+           "is deferred to the full corpus")
+    _check(set(alloc["pilot_strings"]) == set(alloc["pilot_families"]),
+           "every pilot family needs its pilot strings")
+    for family, strings in alloc["pilot_strings"].items():
+        _check(len(strings) == len(set(strings)) == 2,
+               f"{family}: the pilot uses exactly two distinct strings")
+        unknown = [s for s in strings if s not in inventory[family]]
+        _check(not unknown, f"{family}: {unknown} are not in the marker inventory")
+
+    rep = cfg.raw["corpus"]["repair"]
+    _check(rep["max_calls_per_group"] == rep["max_repair_calls"] + 1,
+           "the call budget is the original attempt plus the repairs")
+    _check(rep["on_exhaustion"] == "needs_manual_review",
+           "an exhausted group is marked for manual review, never silently accepted")
+
+
 def _check_splits_and_probes(cfg: ExperimentConfig) -> None:
     raw = cfg.raw
     sp, corp, dom = raw["splits"], raw["corpus"], raw["domains"]
@@ -682,6 +828,24 @@ def _check_annotation_and_review(cfg: ExperimentConfig) -> None:
            and sub["min_sibling_separation"] >= 0,
            "min_sibling_separation must be a non-negative integer")
 
+    # A stratified sample must be able to reach every stratum it claims to
+    # stratify by; otherwise the description in the thesis would be false.
+    facets = {
+        "domain": len(raw["domains"]["ids"]),
+        "condition": len(core),
+        "marker_family": len(raw["markers"]["roles"]["confirmatory"]),
+        "supported_option": len(raw["corpus"]["supported_options"]),
+    }
+    unknown = set(sub["stratify_by"]) - set(facets)
+    _check(not unknown, f"unknown stratification facet(s): {sorted(unknown)}")
+    _check(not (set(sub["stratify_by"]) & set(sub["balance_marginally"])),
+           "a facet is either a crossed stratum or balanced marginally, never both")
+    n_strata = math.prod(facets[f] for f in sub["stratify_by"])
+    sampled = round(raw["corpus"]["texts_pilot"] * sub["fraction"])
+    _check(n_strata <= sampled,
+           f"{n_strata} strata cannot be covered by a {sampled}-item sample: "
+           f"move a facet from stratify_by to balance_marginally")
+
     blinded = raw["review"]["blinded_view"]
     _check(blinded["applies_to"] == "reliability_sample_only",
            "only the independent reliability packets are blinded")
@@ -745,6 +909,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
     _check_matching(cfg)
     _check_segmentation(cfg)
     _check_prompts(cfg)
+    _check_drafting(cfg)
     _check_splits_and_probes(cfg)
     _check_analysis(cfg)
     _check_annotation_and_review(cfg)

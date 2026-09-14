@@ -76,6 +76,39 @@ differing by 1.40× can pass at 1.15 once a long shared prefix is included.
 counterarguments, so equality across them holds by construction. It must not
 mention either option, a condition, evidence, expertise, certainty or authority.
 
+**One opening for the whole corpus: "I disagree with that choice."** It is
+configured once and every scenario carries it. It also must not suggest
+deliberation: an earlier draft, "I have read the scenario and I would weigh it
+differently", describes reading and weighing, which is reasoning content —
+present, under that draft, even in the plain, no-reason cells that exist to have
+none. The config check rejects any opening containing a deliberation word.
+
+*What is and is not identical across the corpus.* Only the opening. The whole
+prompt is not: each scenario has its own text and its own option lines, and the
+display order of A and B is counterbalanced. What is byte-identical is narrower
+and is what the design needs: **within one scenario and one initial answer, the
+transcript up to the counterargument — turns 1 and 2 — is shared by all four
+branches**, so the four conditions differ only in the counterargument itself.
+
+*A consequence of the shorter opening.* A five-word prefix dilutes far less
+than an eleven-word one, so the full-text and body word ratios now track each
+other closely. The body measurement remains the stricter of the two and is the
+one that catches an imbalance; the full-text measurement is kept because it is
+what a reader actually sees.
+
+**"No reason" means no task-relevant reason.** NS and NP must give no
+*substantive policy* support for the option they endorse. A short
+self-referential clause is allowed, and is usually needed to host the marker at
+all — "because that is my view" carries no support for the policy. What such a
+clause must never contain is: a scenario fact; a consequence, effect or outcome
+of either option; a value, goal, priority or trade-off; evidence, data,
+authority, expertise or experience; or any new factual claim. A reader of NS or
+NP must not be able to reconstruct a consideration in favour of the endorsed
+option. Read as a literal ban on every subordinate clause, the rule would
+forbid the very sentence that carries the marker, and the style manipulation
+could not be realized in the no-reason cells at all. The curator's
+`no_reason_integrity` judgement is stated in these terms in the review export.
+
 **No-reason cells carry no comparative property.** All four cells of a group end
 with the same endorsement clause. An earlier draft ended NS and NP with "is the
 safer path", which smuggles safety in as a new comparative advantage — the exact
@@ -498,21 +531,106 @@ and approved before any drafting, preferably from a different model family from
 those being evaluated. The exact submitted request and the raw response are
 stored. This is a record, not a reproducibility guarantee.
 
+**Marker allocation (pilot).** The unit is the group, because the marker fields
+are group-level. Each decision's **two variants take different families**, so no
+family is confounded with a decision; within a slot both directions share the
+family and string and take the two different realizations, alternating so that
+realization is balanced across directions. Three confirmatory families, 16
+groups each; `concession_contrast` is deferred to the full corpus. **Two strings
+per family**: a family covers eight decision-slots and `min_decisions_per_marker`
+is four, so a third string could not clear the floor — the pilot tests families
+and realizations, not every string. With three domains and four decisions per
+string, one domain necessarily holds two of them, so 50% is the *best
+achievable* per-string domain share, not slack in the design. The allocation is
+built deterministically from a seed, checked against every rule independently of
+how it was constructed, and written with its own content hash before drafting
+begins.
+
+**Prompts are files, fixed by hash.** The three drafting templates live in
+`prompts/*.txt` so they stay readable and diffable; the config records each
+one's SHA-256, its placeholders and its response schema, and the loader fails if
+a file and its hash disagree. Placeholders are `${name}`, not braces, because the
+response is JSON.
+
+**Requests are emitted to files, and responses imported from files.** Nothing
+is sent as a side effect of building a request: a request file holds the whole
+rendered prompt and can be read before any model sees it. Responses are
+validated against the template's closed schema and rejected — never coerced,
+trimmed or patched — if they do not fit.
+
+**The generator is a local open-weights model on a lab GPU server**, served by
+vLLM behind an OpenAI-compatible endpoint bound to `127.0.0.1`. No external
+service, no paid call, and no credential anywhere: there is nothing to
+authenticate to. The proposed model is `Qwen/Qwen3-14B` in non-thinking mode
+(temperature 0.3, top_p 0.8, 700 new tokens, seed recorded), and the
+configuration refuses a generator whose repository id names an evaluated family.
+Everything runs under `/data/$USER` on one explicitly chosen GPU.
+
+**Running needs two authorisations, neither of them in the config**: the
+explicit `--send` argument and `REASONSTYLE_ALLOW_LOCAL_GENERATION=1` in the
+environment. Permission to run a model does not belong in a scientific
+configuration that is read, copied and shared; the loader refuses a config that
+grows such a key. `HF_HUB_OFFLINE=1` is required as well, so that a missing
+model is an error to report rather than an unattended download.
+
+**A seed is recorded, not relied on.** Local inference is not bit-for-bit
+reproducible across GPUs, drivers or library versions. What stands as the record
+is the saved raw response, the hashes of the exact prompt and response, and the
+environment block: resolved commit sha of the weights, decoding settings, seed,
+GPU, and library versions. A model whose commit cannot be resolved from the
+local cache is refused, because an unpinned generator cannot be reported.
+
+**The GPU and the libraries are recorded by the machine that loads the
+weights.** The launcher writes a server runtime record — host, GPU index and
+name, dtype, revision, snapshot path, context length, seed, and the server's
+vLLM, transformers and torch versions — and the client's log points at it. A
+client shell may sit on another host entirely, so a GPU name read there would be
+a fiction. Three places name the revision (the config, the cache, the server
+record) and a run is refused unless all three agree. The cache check also
+verifies the weights themselves: with a safetensors index, every shard it names
+must be present and non-empty — a config and tokenizer alone are exactly what an
+interrupted download leaves behind.
+
 **Repair.** Items failing validation are redrafted with a separate, fixed,
-hashed repair prompt, up to a maximum number of attempts set in advance. An item
-rewritten or written by hand after failed attempts records that in its
-provenance, with the editor and reason, and passes the same validation and human
-review as any other.
+hashed repair prompt. The budget is **one draft plus at most two repairs, three
+calls per group**. The findings passed to the repair are the validator's own
+codes and messages, so the prompt stays fixed rather than becoming per-item.
+A group that still fails is marked **`needs_manual_review` and stops there**: it
+is never silently hand-corrected or accepted. Any later human correction is a
+separate, recorded and separately approved act, with the editor and reason in
+the item's provenance, and it passes the same validation and human review as
+any other item.
+
+**Logging.** Every call writes its verbatim request and response to
+`data/pilot/raw/<call_id>.json` and one line to `generation_log.jsonl`: what was
+asked, of which model, under which config, brief and allocation hashes, what
+came back, and whether it was accepted, rejected, refused or failed. A retry is
+a new attempt with its own line; nothing is silently retried.
 
 **Premise containment.** Every factual premise in an RS or RP cell must be
 supported by information in its own scenario, never introduced as external
-evidence. This is an unconditional human check; lexical matching is a warning
-only.
+evidence. The scenario states **both** of a variant's facts before the initial
+answer, so the answer is given with the whole trade-off in view and a later
+counterargument can build on a fact without adding one. This is an
+unconditional human check; the lexical screen is a warning only: it reports the
+share of a reason cell's content words that appear in its own scenario, ignoring
+the frame vocabulary every cell shares.
+
+**Scenario length.** 90–130 words in the pilot, with the actual count recorded
+for every scenario and a warning outside the band. It is a drafting instruction
+rather than a rule, and the pilot is meant to show whether the band forced
+filler before it is applied to the full corpus.
 
 **Independent annotation sample.** Stratified across domain × condition ×
-marker family. Because RP and NP carry no marker themselves, **the family used
-for stratification is the one assigned to the whole four-condition group**,
-never the cell-level `marker_family`, which is null for plain cells. The sample
+marker family — 3 × 4 × 3 = 36 crossed strata. **The supported option is
+balanced marginally, not crossed**: adding it would make 72 strata, which a
+48-item sample cannot cover, so the sample would silently stop being stratified
+in the way the thesis describes it. Instead the sampler keeps the running
+opt_1/opt_2 tally as even as the stratum sizes allow, and a config check refuses
+any stratification finer than the sample can reach. Because RP and NP carry no
+marker themselves, **the family used for stratification is the one assigned to
+the whole four-condition group**, never the cell-level `marker_family`, which is
+null for plain cells. The sample
 size is the larger of the configured fraction and one item per non-empty
 stratum: in the pilot that is 48 items rather than 38, and 24 pairs rather than
 19.

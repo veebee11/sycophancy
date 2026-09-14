@@ -11,6 +11,7 @@ Two kinds of test:
 from __future__ import annotations
 
 import copy
+import json
 import math
 from pathlib import Path
 
@@ -599,11 +600,28 @@ def test_mechanistic_subset_cannot_reference_a_non_core_condition(tmp_path, raw)
 # ===========================================================================
 
 
-def test_no_vendor_model_identity_appears_in_the_config(cfg):
-    """Model choice is frozen after a compatibility test, not assumed here."""
-    text = CONFIG_PATH.read_text().lower()
+def test_the_evaluated_models_are_not_named_until_they_are_frozen(cfg):
+    """The models under TEST are chosen after a tokenizer compatibility check,
+    so nothing names them yet. The generator is a different matter: it is a
+    local open-weights model, named here deliberately and pinned by revision."""
+    models = cfg.raw["models"]
+    assert models["selection_status"] == "unfrozen"
+    for variant in ("base", "instruct"):
+        assert models[variant]["repo_id"] is None
+        assert models[variant]["revision"] is None
     for name in ("llama", "gemma", "qwen", "mistral", "hookedtransformer", "transformerbridge"):
-        assert name not in text
+        assert name not in json.dumps({k: v for k, v in models.items()
+                                       if k != "generator"}).lower()
+
+
+def test_the_generator_is_named_pinned_and_outside_the_evaluated_families(cfg):
+    gen = cfg.raw["models"]["generator"]
+    assert gen["model"]["repo_id"]
+    assert "llama" not in gen["model"]["repo_id"].lower()
+    assert set(gen["model"]["excluded_families"]) >= {"llama", "meta-llama"}
+    # authorisation to run is not a configuration matter
+    assert "live_calls_enabled" not in gen
+    assert not {"api_key", "api_key_env", "token", "auth"} & set(gen)
 
 
 # --- v2 mutation tests ------------------------------------------------------

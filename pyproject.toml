@@ -17,6 +17,13 @@ dependencies = [
     "pyyaml>=6.0,<7",
 ]
 
+# vLLM is deliberately NOT declared here. It is needed only in the GPU server
+# environment, it resolves a large CUDA dependency tree that has no business in
+# a lockfile written on a laptop, and the client side needs nothing extra: the
+# backend speaks HTTP to a local endpoint through urllib. The server script
+# installs it explicitly, and the exact version that produced any text is
+# recorded in that run's environment block.
+
 [dependency-groups]
 dev = ["pytest>=8,<9"]
 

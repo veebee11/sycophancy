@@ -33,7 +33,7 @@ import hashlib
 import json
 import random
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -399,27 +399,58 @@ def _rng(cfg: ExperimentConfig, corpus_hash: str, salt: str) -> random.Random:
     return random.Random(int(digest, 16) % (2 ** 32))
 
 
-def item_sampling_units(records: Sequence[ScenarioRecord]) -> list[tuple[tuple, tuple]]:
-    """``(unit, stratum)`` for every counterargument cell.
+def _facets(record: ScenarioRecord, option: str, condition: str | None) -> dict[str, Any]:
+    return {"domain": record.domain,
+            "supported_option": option,
+            "condition": condition,
+            "marker_family": record.counterarguments[option].marker_family}
 
-    The marker family in the stratum is the one assigned to the whole
-    four-condition group. RP and NP carry no marker themselves — their
-    cell-level ``marker_family`` is null — so the cell field is never used.
+
+def item_sampling_units(records: Sequence[ScenarioRecord],
+                        stratify_by: Sequence[str] = ("domain", "condition", "marker_family"),
+                        balance_by: Sequence[str] = ("supported_option",),
+                        ) -> list[tuple[tuple, tuple, tuple]]:
+    """``(unit, stratum, balance)`` for every counterargument cell.
+
+    The facets are read from the configuration rather than fixed here: a
+    stratified sample must be able to reach every stratum it claims, and with
+    48 sampled items ``domain x condition x marker_family`` (36 strata) is what
+    fits. ``supported_option`` is balanced as a marginal count instead.
+
+    The marker family is the one assigned to the whole four-condition group.
+    RP and NP carry no marker themselves — their cell-level ``marker_family``
+    is null — so the cell field is never used.
     """
-    return [((r.scenario_id, o, c), (r.domain, o, c, r.counterarguments[o].marker_family))
-            for r in records for o in SEMANTIC_OPTIONS for c in CORE_CONDITIONS]
+    units = []
+    for r in records:
+        for o in SEMANTIC_OPTIONS:
+            for c in CORE_CONDITIONS:
+                facets = _facets(r, o, c)
+                units.append(((r.scenario_id, o, c),
+                              tuple(facets[f] for f in stratify_by),
+                              tuple(facets[f] for f in balance_by)))
+    return units
 
 
-def _stratified_sample(units: Sequence[tuple[Any, tuple]], fraction: float,
+def _stratified_sample(units: Sequence[tuple[Any, ...]], fraction: float,
                        rng: random.Random) -> list[Any]:
     """Proportional allocation over strata, with largest-remainder rounding.
 
     Deterministic: strata are visited in sorted key order and each stratum is
     shuffled by the supplied seeded generator.
+
+    Units may carry a third element, a **balance key**. It is not a stratum:
+    within each stratum the shuffled pool is drawn so that the running tally of
+    balance keys across the whole sample stays as even as the stratum sizes
+    allow. That is how ``supported_option`` is kept balanced marginally without
+    multiplying the number of strata beyond what the sample can cover.
     """
     strata: defaultdict[tuple, list[Any]] = defaultdict(list)
-    for unit, key in units:
+    balance: dict[Any, tuple] = {}
+    for unit, key, *rest in units:
         strata[key].append(unit)
+        if rest:
+            balance[unit] = rest[0]
     target = max(1, round(len(units) * fraction)) if units else 0
 
     quotas, remainders = {}, []
@@ -442,10 +473,22 @@ def _stratified_sample(units: Sequence[tuple[Any, tuple]], fraction: float,
             allocated += 1
 
     chosen: list[Any] = []
+    tally: Counter = Counter()
     for key in sorted(strata):
         pool = list(strata[key])
         rng.shuffle(pool)
-        chosen.extend(pool[:quotas[key]])
+        if not balance:
+            chosen.extend(pool[:quotas[key]])
+            continue
+        for _ in range(quotas[key]):
+            if not pool:
+                break
+            # Take the unit whose balance key is currently least represented;
+            # the shuffled order decides among equals, so this stays seeded.
+            pick = min(pool, key=lambda u: tally[balance.get(u)])
+            pool.remove(pick)
+            tally[balance.get(pick)] += 1
+            chosen.append(pick)
     return chosen
 
 
@@ -617,7 +660,8 @@ def build_review_export(
     fraction, minimum = sub["fraction"], sub["min_sibling_separation"]
     n_annotators = sub["independent_annotators"]
 
-    item_units = item_sampling_units(records)
+    stratify_by, balance_by = sub["stratify_by"], sub["balance_marginally"]
+    item_units = item_sampling_units(records, stratify_by, balance_by)
     item_chosen = _stratified_sample(item_units, fraction, _rng(cfg, corpus_hash, "item-sample"))
     item_keys: list[BlindItemKey] = []
     label_rng = _rng(cfg, corpus_hash, "item-labels")
@@ -628,8 +672,12 @@ def build_review_export(
             blind_id=f"i{i:04d}", scenario_id=scenario_id, supported_option=option,
             condition=condition, option_labels={"P": options[0], "Q": options[1]}))
 
-    pair_units = [((r.scenario_id, o, pid), (r.domain, o, pid,
-                   r.counterarguments[o].marker_family))
+    # Pairs stratify on the pair itself instead of the condition, and balance
+    # the supported option marginally in the same way.
+    pair_units = [((r.scenario_id, o, pid),
+                   tuple(pid if f == "condition" else _facets(r, o, None)[f]
+                         for f in stratify_by),
+                   tuple(_facets(r, o, None)[f] for f in balance_by))
                   for r in records for o in SEMANTIC_OPTIONS for _, _, pid in PAIRS]
     pair_chosen = _stratified_sample(pair_units, fraction, _rng(cfg, corpus_hash, "pair-sample"))
     pair_keys: list[BlindPairKey] = []

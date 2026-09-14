@@ -100,6 +100,45 @@ corpus:
   # because that would make them irreproducible from one day to the next.
   freeze_timestamp: null
 
+  # -- drafting shape (approved 2026-09-14) ---------------------------------
+  # Every counterargument body is exactly this many sentences. Sentence-count
+  # equality within a group is already required; fixing the number as well
+  # keeps groups comparable across scenarios.
+  body_sentences: 2
+  # Scenario length band used in the drafting instruction. Recorded for every
+  # scenario and reported, so that the pilot can show whether the band forced
+  # filler before the band is applied to the full corpus.
+  scenario_words: {min: 90, max: 130}
+  # One opening sentence for the WHOLE corpus, shared by all eight texts of a
+  # scenario. Deliberately free of any word suggesting deliberation, reading or
+  # weighing: such language would itself be reasoning content and would
+  # contaminate the plain-style cells.
+  counterargument_opening: "I disagree with that choice."
+  # Lexical screen only. A reason cell's content words should come from its own
+  # scenario; a low match rate is a WARNING pointing the reviewer at the cell.
+  # Premise containment itself is an unconditional human judgement.
+  premise_containment:
+    min_content_word_coverage: 0.75
+    min_word_length: 4
+    # Frame vocabulary: the endorsement and self-reference wording every cell
+    # shares. Not scenario content, so never counted as a premise word.
+    ignore_words:
+      ["remains", "remain", "preferred", "option", "choose", "chose", "would",
+       "still", "case", "particular", "view", "here", "overall", "this",
+       "that", "there", "then", "also", "more", "most", "than", "with",
+       "into", "over", "under", "about", "which", "while", "because", "given",
+       "considering", "therefore", "thus", "hence", "consequently", "reason",
+       "implies", "follows", "based", "implication", "however", "even",
+       "nevertheless", "despite"]
+  # Repair budget per group: the original call plus at most this many repairs.
+  # A group still failing after them is marked needs_manual_review and stops.
+  # It is never silently hand-corrected or accepted; a later human correction
+  # is recorded and approved separately.
+  repair:
+    max_repair_calls: 2
+    max_calls_per_group: 3
+    on_exhaustion: needs_manual_review
+
 # ---------------------------------------------------------------------
 # Marker inventory (plan §6.1) and family assignment (D3)
 #
@@ -192,6 +231,16 @@ markers:
     styled_cells: [RS, NS]
     plain_cells: [RP, NP]
   allocation:
+    # Pilot scope (approved 2026-09-14): the three confirmatory families only,
+    # two marker strings each. min_decisions_per_marker is 4 and a family
+    # covers 8 decision-slots in a 12-decision pilot, so a third string could
+    # not reach four distinct decisions. The pilot tests families and
+    # realizations; the remaining strings enter with the full corpus.
+    pilot_families: [premise_indicator, conclusion_indicator, metadiscursive_inference]
+    pilot_strings:
+      premise_indicator: ["because", "given that"]
+      conclusion_indicator: ["therefore", "consequently"]
+      metadiscursive_inference: ["this implies", "it follows that"]
     min_decisions_per_marker: 4
     min_decisions_per_leave_one_marker_test: 4
     min_decisions_per_held_out_family_test: 8
@@ -474,6 +523,58 @@ prompts:
       answer_token_ids: {A: null, B: null}
       verification_status: unverified
       verified_at: null
+
+  # -- drafting templates (approved 2026-09-14) ----------------------------
+  # These build the requests sent to the GENERATOR, and have nothing to do with
+  # the evaluation scaffolds above. The text lives in prompts/*.txt so that it
+  # stays readable and diffable; the hash here is what makes it fixed. The
+  # loader verifies file against hash, so editing a template without bumping
+  # the hash is a load-time failure.
+  #
+  # Placeholders use ${name} (string.Template), not braces, because the
+  # response is JSON and braces in the prose would be ambiguous.
+  drafting:
+    scenario_draft_v1:
+      path: prompts/scenario_draft_v1.txt
+      template_sha256: "08e21a847f06248661ea819933da9d005d6d8d53cef159c0ed34b6dccdeb903e"
+      placeholders: [decision_framing, variant_context, option_text_opt_1,
+                     option_text_opt_2, fact_opt_1, fact_opt_2, min_words, max_words]
+      response_schema:
+        type: object
+        additionalProperties: false
+        required: [scenario_text]
+        properties:
+          scenario_text: {type: string}
+    group_draft_v1:
+      path: prompts/group_draft_v1.txt
+      template_sha256: "f56ee80b93f08b8e8143a1f654a9bef4e9244be0345fb0fbef59d393afc6eef1"
+      placeholders: [scenario_text, option_text_opt_1, option_text_opt_2,
+                     supported_option_text, supported_option_fact,
+                     counterargument_opening, marker_string, realization_description,
+                     sentence_count]
+      response_schema:
+        type: object
+        additionalProperties: false
+        required: [RS, RP, NS, NP]
+        properties:
+          RS: {type: string}
+          RP: {type: string}
+          NS: {type: string}
+          NP: {type: string}
+    repair_v1:
+      path: prompts/repair_v1.txt
+      template_sha256: "7eb814e524ab643ab71f6c181e8ba4e96511318f2dbac20c92729a22d1d7b49d"
+      placeholders: [scenario_text, supported_option_text, supported_option_fact,
+                     rs, rp, ns, np, findings, marker_string, sentence_count]
+      response_schema:
+        type: object
+        additionalProperties: false
+        required: [RS, RP, NS, NP]
+        properties:
+          RS: {type: string}
+          RP: {type: string}
+          NS: {type: string}
+          NP: {type: string}
 models:
   # Model selection is NOT frozen here. Research_Plan_v6 §8 proposes one
   # base/instruct checkpoint pair; the family and revisions are pinned only
@@ -491,6 +592,56 @@ models:
   dtype: null                         # pinned with the model adapter
   device: null
   library_versions: null
+
+  # The GENERATOR that drafts the corpus: a locally hosted open-weights model on
+  # the lab server, reached through an OpenAI-compatible vLLM endpoint on
+  # localhost. No external service, no API key, nothing paid.
+  #
+  # This block holds the SCIENTIFIC settings only — which model, how it decodes.
+  # Authorisation to actually run it is deliberately NOT here: a run needs the
+  # explicit --send argument and the REASONSTYLE_ALLOW_LOCAL_GENERATION=1
+  # environment variable, so that reading or sharing this config can never by
+  # itself enable a model run.
+  generator:
+    approval_status: approved_pending_smoke_test
+    backend: local_vllm_openai        # the only implemented backend; see notes below
+    # A second backend (transformers in-process) is deferred until vLLM proves
+    # unavailable or unsuitable; the backend interface is what varies, not the
+    # requests, schema, hashing or logging.
+    supported_backends: [local_vllm_openai]
+
+    model:
+      repo_id: Qwen/Qwen3-14B
+      # Filled in from the read-only cache check, never from a download. A run
+      # refuses if the revision cannot be resolved: an unpinned generator
+      # cannot be reported.
+      revision: null
+      trust_remote_code: false
+      # The generator must not belong to a family under evaluation: a Llama
+      # generator would give the corpus and an evaluated model a shared
+      # ancestor. Checked against the repo id at load.
+      excluded_families: [llama, meta-llama, llama-3, llama3]
+
+    decoding:
+      # Qwen3 non-thinking mode, with that mode's suggested light sampling.
+      # The seed is recorded, but it does NOT make output bit-for-bit
+      # reproducible across GPUs, driver or library versions: the saved raw
+      # response, the environment record and the hashes are the authoritative
+      # record of what was produced.
+      thinking: disabled
+      temperature: 0.3
+      top_p: 0.8
+      max_tokens: 700
+      seed: 20260914
+      n: 1
+
+    vllm:
+      base_url: http://127.0.0.1:8011/v1   # localhost only; never exposed
+      guided_json: true                    # constrain output to the response schema
+      timeout_seconds: 300
+      # Offline everywhere: the server and the client must fail rather than
+      # silently fetch weights or tokenizer files.
+      require_offline_env: {HF_HUB_OFFLINE: "1"}
 
 # ---------------------------------------------------------------------
 # Seeds and determinism
@@ -739,7 +890,15 @@ annotation:
   reliability_subsample:
     fraction: 0.20
     independent_annotators: 2
-    stratify_by: [domain, supported_option, condition, marker_family]
+    # Fully crossed strata only. domain x condition x marker_family is 3 x 4 x 3
+    # = 36 strata for 48 sampled items; adding supported_option would make 72
+    # strata, which a 48-item sample cannot cover, so the sample would silently
+    # stop being stratified as described.
+    stratify_by: [domain, condition, marker_family]
+    # Balanced within the selected sample as a marginal count, not as a further
+    # crossed stratum: selection inside each stratum keeps the running
+    # opt_1/opt_2 tally as even as the stratum sizes allow.
+    balance_marginally: [supported_option]
     seed_ref: annotation_subsample
     min_sibling_separation: 20
   agreement:

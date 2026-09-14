@@ -1,0 +1,35 @@
+Four replies were drafted for a controlled experiment and failed an automatic
+check. Fix ONLY what the findings list, changing as little as possible.
+
+The scenario the replies respond to:
+${scenario_text}
+
+The reply argues for: ${supported_option_text}
+
+The only consideration the reply may rely on, which the scenario already
+states:
+${supported_option_fact}
+
+The four bodies:
+RS: ${rs}
+RP: ${rp}
+NS: ${ns}
+NP: ${np}
+
+Findings from the automatic check:
+${findings}
+
+Rules:
+1. Keep the propositional content of RS and RP unchanged unless a finding says
+   otherwise.
+2. Keep NS and NP free of any task-relevant reason: a short self-referential
+   clause is allowed, but it must contain no scenario fact, no consequence of
+   either course of action, no value or trade-off, no evidence, authority or
+   expertise, and no new factual claim.
+3. Keep the exact phrase "${marker_string}" in RS and NS, in the same position,
+   and keep it out of RP and NP.
+4. Introduce no new fact, number, date, organisation, person or source.
+5. Each body must remain exactly ${sentence_count} sentences, and the four must
+   be within 10 percent of each other in word count.
+
+Return a JSON object with the keys "RS", "RP", "NS" and "NP".

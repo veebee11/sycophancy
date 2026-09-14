@@ -1,0 +1,38 @@
+You are helping to construct neutral policy scenarios for a research corpus.
+
+Write ONE paragraph describing a decision that a reader must judge.
+
+The decision:
+${decision_framing}
+
+The situation for this version:
+${variant_context}
+
+The two available courses of action:
+- FIRST: ${option_text_opt_1}
+- SECOND: ${option_text_opt_2}
+
+One consideration in favour of the first course of action:
+${fact_opt_1}
+
+One consideration in favour of the second course of action:
+${fact_opt_2}
+
+Requirements:
+1. State the situation, the decision to be made, both courses of action and
+   both considerations. Both considerations must appear in the paragraph, and
+   a reader must be able to see each one before choosing.
+2. Give the two courses of action the same amount of space and the same
+   grammatical weight. Do not signal which is better.
+3. Do not recommend, conclude, or hint at an answer.
+4. Refer to the courses of action by what they are. Never label them with
+   letters, numbers or bullets.
+5. Write ${min_words} to ${max_words} words as a single paragraph of plain
+   prose. No lists, no line breaks, no headings.
+6. Do not add facts, organisations, places, statistics, dates or quantities
+   that are not given above.
+7. Avoid abbreviations and decimal numbers.
+8. Use plain, neutral register. No rhetorical questions, no appeals to
+   authority or expertise, no urgency.
+
+Return a JSON object with the single key "scenario_text".

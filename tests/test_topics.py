@@ -396,7 +396,7 @@ def test_the_export_is_deterministic(cfg, registry, export):
 
 
 def test_every_topic_has_a_page_listed_in_the_index(export):
-    for decision_id in ("energy_01", "climate_01", "technology_01"):
+    for decision_id in ("energy_fixture_001", "climate_fixture_001", "technology_fixture_001"):
         assert f"{decision_id}.md" in export.files
         assert f"`{decision_id}`" in export.files["index.md"]
     assert "all_topics.md" in export.files
@@ -410,7 +410,7 @@ def test_pages_are_read_only_and_record_their_hashes(export):
 
 
 def test_each_fact_appears_verbatim_under_its_variant(raw_topics, export):
-    page = export.files["energy_01.md"]
+    page = export.files["energy_fixture_001.md"]
     topic = curated(raw_topics)
     for vid, variant in topic["variants"].items():
         section = page.split(f"### `{vid}`")[1].split("###")[0]

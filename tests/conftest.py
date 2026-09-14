@@ -38,6 +38,20 @@ def records():
     return load_corpus(FIXTURE)
 
 
+@pytest.fixture(scope="session")
+def pilot_bank():
+    """The curated pilot bank. Allocation tests assert structural properties of
+    it, never particular briefs, so revising a brief cannot break them."""
+    from reasonstyle.corpus.topics import load_topic_bank
+    return load_topic_bank(ROOT / "data" / "topics" / "pilot_topics.yaml")
+
+
+@pytest.fixture(scope="session")
+def synthetic_bank():
+    from reasonstyle.corpus.topics import load_topic_bank
+    return load_topic_bank(ROOT / "data" / "fixtures" / "topics.yaml")
+
+
 def _cell(p, scenario=0, option="opt_1", condition="RS"):
     return p[scenario]["counterarguments"][option]["cells"][condition]
 
@@ -56,45 +70,66 @@ def _duplicate_block(p):
 
 def _marker_outside_family(p):
     _block(p)["marker_string"] = "however"
-    _body(p, "The plant extension keeps the reserve margin above the threshold. "
-             "However, the margin holds and the plant extension remains my preferred option.")
-    _body(p, "I would choose the plant extension in this case. "
-             "However, that is my view and the plant extension remains my preferred option.",
+    _body(p, "The extended plant can deliver full output through any cold spell. "
+             "However, that output holds and the plant extension remains my option.")
+    _body(p, "I would choose the plant extension in this particular case. "
+             "However, that is my view and the plant extension remains my option.",
           condition="NS")
+
+
+def _body_ratio_warn(p):
+    """A group whose BODY ratio warns while the full-text ratio stays silent.
+
+    The whole group is rewritten because the window is narrow: the corpus-wide
+    opening is only five words, so it dilutes far less than a longer one would.
+    Three cells of 25 words and one of 28 give 1.12 on the body and exactly
+    1.10 on the full text — above the warning threshold on the measurement that
+    matters, at it on the one the opening dilutes.
+    """
+    bodies = {
+        "RS": "The extended plant can deliver full output through any cold spell over the next "
+              "three coming winters. Because that output holds, the plant extension remains my "
+              "preferred option.",
+        "RP": "The extended plant can deliver full output through any cold spell of the winters. "
+              "That output holds, and the plant extension remains my preferred option.",
+        "NS": "I would choose the plant extension in this case, as I see it. Because that is my "
+              "view, the plant extension remains my preferred option.",
+        "NP": "I would choose the plant extension in this case, as I see it. That is my view, "
+              "and the plant extension remains my preferred option.",
+    }
+    for condition, text in bodies.items():
+        _body(p, text, condition=condition)
 
 
 #: name -> mutation. Each breaks one rule; the expected code is asserted in
 #: tests/test_validate.py.
 INVALID_CASES = {
     "sentence_count_mismatch":
-        lambda p: _body(p, _cell(p)["body"] + " The margin holds."),
+        lambda p: _body(p, _cell(p)["body"] + " That output holds."),
     "word_ratio_fail":
-        lambda p: _body(p, "The plant extension keeps the reserve margin above the winter "
-                           "threshold in each of the next three delivery years. "
-                           "Because the margin holds, the plant extension remains my preferred option."),
-    "word_ratio_warn":
-        lambda p: _body(p, "The plant extension keeps the reserve margin above the threshold "
-                           "in each year. Because the margin holds, the plant extension "
-                           "remains my preferred option."),
+        lambda p: _body(p, "The extended plant can deliver its full rated output through any "
+                           "cold spell in each of the next three winters. "
+                           "Because that output holds, the plant extension remains my preferred option."),
+    "word_ratio_warn": lambda p: _body_ratio_warn(p),
     "marker_missing_in_styled_cell":
-        lambda p: _body(p, _cell(p)["body"].replace("Because the margin holds,",
-                                                    "The margin holds and")),
+        lambda p: _body(p, _cell(p)["body"].replace("Because that output holds,",
+                                                    "That output holds and")),
     "marker_in_plain_cell":
         lambda p: _body(p, _cell(p, condition="RP")["body"].replace(
-            "The margin holds, and the", "Given that the margin holds, the"), condition="RP"),
+            "That output holds, and the", "Given that output holds, the"), condition="RP"),
     "forbidden_hard_fail":
-        lambda p: _body(p, "Studies show the margin holds above the winter threshold. "
-                           "Because the margin holds, the plant extension remains my preferred option."),
+        lambda p: _body(p, "Studies show the extended plant delivers output through any spell. "
+                           "Because that output holds, the plant extension remains my preferred option."),
     "forbidden_warning":
-        lambda p: _body(p, _cell(p)["body"].replace("The plant extension keeps",
-                                                    "The proven plant extension keeps")),
+        lambda p: _body(p, _cell(p)["body"].replace("The extended plant can deliver",
+                                                    "The proven extended plant delivers")),
     "label_leakage":
         lambda p: _body(p, _cell(p)["body"].replace(
             "the plant extension remains my preferred option",
             "option A remains my preferred choice")),
     "ambiguous_segmentation":
-        lambda p: _body(p, _cell(p)["body"].replace("above the threshold",
-                                                    "above the 40.5 GW threshold")),
+        lambda p: _body(p, _cell(p)["body"].replace("through any cold spell",
+                                                    "through a 40.5 hour cold spell")),
     "unknown_domain": lambda p: p[0].__setitem__("domain", "transport"),
     "unknown_realization":
         lambda p: _block(p).__setitem__("marker_realization_id", "invented_realization_v9"),
@@ -107,7 +142,7 @@ INVALID_CASES = {
                            "- the tender is open"),
     "config_hash_mismatch": lambda p: p[0].__setitem__("config_content_hash", "0" * 64),
     "duplicate_scenario_id":
-        lambda p: p[1].update({"scenario_id": "fixture_001_v1", "variant_id": 1}),
+        lambda p: p[1].update({"scenario_id": "energy_fixture_001_v1", "variant_id": 1}),
 }
 
 

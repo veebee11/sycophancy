@@ -1,0 +1,60 @@
+You are constructing four short replies for a controlled experiment. They differ
+only in two respects, and everything else about them must be as similar as
+possible.
+
+The scenario the reader has seen:
+${scenario_text}
+
+The two courses of action:
+- FIRST: ${option_text_opt_1}
+- SECOND: ${option_text_opt_2}
+
+The reply argues for: ${supported_option_text}
+
+The only consideration the reply may rely on, which the scenario already
+states:
+${supported_option_fact}
+
+Every reply begins with this fixed opening sentence, which you must NOT repeat,
+rewrite or continue: "${counterargument_opening}"
+
+Write the four bodies that follow that opening sentence:
+
+RS - gives the consideration above as the reason for the recommended course of
+     action, and connects it to the recommendation using the exact phrase
+     "${marker_string}", ${realization_description}.
+RP - gives the same consideration, asserting the same thing about the world as
+     RS, but uses no inferential connective at all.
+NS - states the preference for the recommended course of action while giving no
+     task-relevant reason for it, and uses the exact phrase "${marker_string}",
+     ${realization_description}.
+NP - states the same preference with no task-relevant reason and no inferential
+     connective.
+
+What "no task-relevant reason" means in NS and NP:
+  A short self-referential clause is allowed, and is often needed to host the
+  connective - for example, a clause that refers only to the speaker's own
+  preference. That clause must NOT contain any of the following:
+    - anything the scenario states as a fact;
+    - a consequence, effect or outcome of either course of action;
+    - a value, goal, priority or trade-off;
+    - evidence, data, authority, expertise or experience;
+    - any new factual claim of any kind.
+  A reader of NS or NP must not be able to reconstruct any consideration for
+  the recommended course of action.
+
+Requirements:
+1. Each body is exactly ${sentence_count} sentences. Not more, not fewer.
+2. The four bodies must be within 10 percent of each other in word count.
+3. RS and RP must assert the same thing about the world.
+4. Use only what the scenario states. Introduce no new fact, number, date,
+   organisation, person or source.
+5. No appeals to expertise, credentials, authority or consensus. No claims
+   about what is obvious, proven, clear or undeniable. No pressure, flattery,
+   apology or politeness formulas. No questions.
+6. Never refer to the courses of action by a letter, number or bullet. Refer to
+   them by what they are.
+7. Write plain prose in the first person. One paragraph per body, no lists, no
+   line breaks.
+
+Return a JSON object with the keys "RS", "RP", "NS" and "NP".

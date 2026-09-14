@@ -8,10 +8,14 @@
 # (reliability for opt_1, emissions for opt_2) rather than funding or timing
 # standing in for it. The variants differ in their operating setting, not only
 # in wording.
+#
+# Its facts are the ones the corpus fixture's scenarios state, so the chain
+# brief -> scenario -> counterargument can be read end to end and the premise
+# containment rule holds across it.
 
 topics:
 
-  - decision_id: energy_01
+  - decision_id: energy_fixture_001
     domain: energy
     status: curated
     decision_framing: "A regional grid operator must decide how to cover a projected shortfall in firm capacity over the next three winters."
@@ -26,13 +30,13 @@ topics:
       v1:
         context: "The operator makes its initial capacity decision for the coming three winters."
         scenario_facts:
-          opt_1: ["The extended plant can deliver its full output throughout any winter cold spell."]
-          opt_2: ["Retiring the plant on schedule would substantially cut the region's power-sector emissions."]
+          opt_1: ["The extended plant can deliver full output through any cold spell of the coming winters."]
+          opt_2: ["Retiring the plant on schedule would cut the region's power-sector emissions substantially."]
       v2:
         context: "The operator revisits the decision after a drought has lowered the region's hydropower reserves."
         scenario_facts:
-          opt_1: ["With hydropower reserves low, the extended plant is the only source able to cover a week-long cold spell."]
-          opt_2: ["Running the plant through this winter would add more emissions than the region cut over the past year."]
+          opt_1: ["With reserves low, the extended plant can cover a week-long cold spell."]
+          opt_2: ["Running the plant this winter would add emissions the region recently cut."]
     source_references:
       - key: synthetic_policy_corpus
         locator: "category: capacity adequacy"
@@ -52,7 +56,7 @@ topics:
       curated_at: 2026-09-10
     notes: "Synthetic test fixture."
 
-  - decision_id: climate_01
+  - decision_id: climate_fixture_001
     domain: climate
     status: proposed
     decision_framing: "A coastal city must choose how to protect a low-lying district from rising storm surges over the next decade."
@@ -88,7 +92,7 @@ topics:
       no_source_wording_in_brief: true
     notes: "Synthetic test fixture."
 
-  - decision_id: technology_01
+  - decision_id: technology_fixture_001
     domain: technology
     status: rejected
     decision_framing: "A national tax agency must decide whether to deploy a generative assistant for answering citizens' written queries."
