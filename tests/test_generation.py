@@ -678,7 +678,7 @@ def test_the_launcher_uses_the_project_virtualenv():
     """Not whatever "vllm" happens to be first on PATH, and no activation step."""
     text = LAUNCHER.read_text()
     assert 'VLLM="$VENV/bin/vllm"' in text and 'PYTHON="$VENV/bin/python"' in text
-    assert 'exec "$VLLM" serve' in text
+    assert 'supervise env CUDA_VISIBLE_DEVICES="$GPU" "$VLLM" serve' in text
 
 
 def test_the_launcher_pins_the_revision_it_was_given():
@@ -707,7 +707,7 @@ def test_the_launcher_disables_the_models_own_generation_defaults():
     assert "GENERATION_CONFIG:-" not in commands, "a fixed choice, not an override"
     assert '--generation-config "$GENERATION_CONFIG"' in commands
     assert '"generation_config": "$GENERATION_CONFIG"' in commands     # recorded
-    serve = commands[commands.index('exec "$VLLM" serve'):]
+    serve = commands[commands.index('"$VLLM" serve'):]
     assert "--generation-config" in serve
 
 
@@ -738,3 +738,90 @@ def test_the_launcher_writes_a_runtime_record_and_binds_localhost():
                   "\"vllm\"", "\"transformers\"", "seed"):
         assert field in text
     assert "--host 127.0.0.1" in text
+
+
+# --- regressions from the first Chomusuke02 launch attempt -------------------
+
+
+SETUP = pathlib.Path(__file__).resolve().parents[1] / "scripts/server/setup_chomusuke.sh"
+NOISY_VLLM_VERSION = "0.8.5.post1+cu118"
+
+
+def _commands(path: pathlib.Path) -> list[str]:
+    return [line for line in path.read_text().splitlines() if not line.lstrip().startswith("#")]
+
+
+def _runtime_record_block(launcher: pathlib.Path) -> str:
+    """The launcher's own lines, from the version lookups to the end of the
+    heredoc that writes server_runtime.json — executed, not pattern-matched."""
+    lines = launcher.read_text().splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith("GPU_NAME="))
+    end = next(i for i, line in enumerate(lines) if i > start and line == "PY")
+    return "\n".join(lines[start:end + 1])
+
+
+def _noisy_site_packages(root: pathlib.Path) -> pathlib.Path:
+    """A fake installed vllm that, like the real one, logs to stdout on import."""
+    site = root / "site"
+    (site / "vllm").mkdir(parents=True)
+    (site / "vllm" / "__init__.py").write_text(
+        'print("INFO 09-15 12:00:00 [__init__.py:239] Automatically detected platform cuda.")\n'
+        '__version__ = "0.8.5.post1"\n')
+    dist = site / f"vllm-{NOISY_VLLM_VERSION}.dist-info"
+    dist.mkdir()
+    dist.joinpath("METADATA").write_text(
+        f"Metadata-Version: 2.1\nName: vllm\nVersion: {NOISY_VLLM_VERSION}\n")
+    return site
+
+
+def run_runtime_record_block(launcher: pathlib.Path, tmp_path: pathlib.Path):
+    import subprocess
+    import sys
+
+    site = _noisy_site_packages(tmp_path)
+    record = tmp_path / "data" / "server_runtime.json"
+    script = "set -euo pipefail\n" + _runtime_record_block(launcher)
+    env = {
+        "PATH": "/usr/bin:/bin",            # no nvidia-smi: the GPU name is "unknown"
+        "PYTHONPATH": str(site), "PYTHONNOUSERSITE": "1",
+        "PYTHON": sys.executable, "GPU": "0", "MODEL": "Qwen/Qwen3-14B",
+        "REVISION": "a" * 40, "SNAPSHOT": str(tmp_path / "snapshot"), "DTYPE": "bfloat16",
+        "MAX_LEN": "8192", "GPU_MEM_FRACTION": "0.90", "SEED": "20260914",
+        "GENERATION_CONFIG": "vllm", "PORT": "8011", "HF_HOME": str(tmp_path / "hf"),
+        "RUNTIME_RECORD": str(record),
+    }
+    result = subprocess.run(["bash", "-c", script], env=env, capture_output=True, text=True)
+    return result, record.with_name(record.name + ".pending")
+
+
+def test_the_runtime_record_survives_a_vllm_that_logs_on_import(tmp_path):
+    """First launch attempt: `import vllm` printed an INFO line to stdout, the
+    captured "version" spanned two lines, and the Python that writes
+    server_runtime.json no longer parsed. The version must come from package
+    metadata, complete with its local build suffix."""
+    result, record = run_runtime_record_block(LAUNCHER, tmp_path)
+    assert result.returncode == 0, result.stderr
+    written = json.loads(record.read_text())
+    assert written["libraries"]["vllm"] == NOISY_VLLM_VERSION
+    assert written["generation_config"] == "vllm"
+    assert written["revision"] == "a" * 40
+
+
+def test_the_launcher_never_imports_packages_to_read_their_versions():
+    commands = "\n".join(_commands(LAUNCHER))
+    for package in ("vllm", "transformers", "torch"):
+        assert f"import {package}" not in commands
+    assert "importlib.metadata" in commands
+
+
+def test_setup_installs_a_pinned_setuptools_into_the_project_venv():
+    """First launch attempt: Triton imports setuptools when a GPU worker starts,
+    and the unseeded venv had none."""
+    commands = _commands(SETUP)
+    venv = next(i for i, line in enumerate(commands) if line.startswith("uv venv"))
+    installs = [i for i, line in enumerate(commands)
+                if line.startswith("uv pip install --python .venv") and '"setuptools==' in line]
+    assert installs and installs[0] > venv, "setuptools must be installed into .venv, pinned"
+    vllm = next(i for i, line in enumerate(commands) if '"vllm' in line)
+    assert installs[0] > vllm, "installed after vLLM, so the vLLM install cannot change the pin"
+    assert any('.venv/bin/python -c "import setuptools"' in line for line in commands)

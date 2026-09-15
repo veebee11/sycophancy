@@ -33,6 +33,15 @@ uv pip install --python .venv -e .
 # the GPU host, it brings its own torch build, and its exact version is recorded
 # in the environment block of every run rather than in a laptop lockfile.
 uv pip install --python .venv "vllm>=0.8.5"
+# Triton imports setuptools at runtime when a GPU worker starts, and `uv venv`
+# does not seed it: on Chomusuke02 the engine failed at startup with
+# "No module named 'setuptools'". Installed explicitly, at one fixed version,
+# so the environment is reproducible.
+uv pip install --python .venv "setuptools==79.0.1"
+.venv/bin/python -c "import setuptools" || {
+  echo "setuptools is not importable in .venv; the vLLM engine would fail to start." >&2
+  exit 1
+}
 
 echo
 echo "done. Before any run, in the same shell:"

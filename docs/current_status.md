@@ -10,6 +10,7 @@
 - **Topic bank.** 12 curated pilot decisions (4 climate, 4 energy, 4 technology), 2 variants each. No machine errors; the overlap screen has been run.
 - **Marker allocation.** 48 groups, 16 per confirmatory family, 8 per string.
 - **Generation client.** Hashed prompt templates and request/response files. Local vLLM backend with two-key authorisation, offline enforcement, a read-only cache preflight, three-way revision agreement, the server launcher and the one-group smoke test (dry run only so far). The Anthropic backend has been removed.
+- **Launcher fixes after the first server attempts (2026-09-15, uncommitted).** Library versions are read from package metadata instead of by import; setup installs `setuptools==79.0.1`; the runtime record is published once the launcher's own child first answers `/health`, kept while that process is alive, and removed on exit, and a port that already answers `/health` is refused.
 - **Reliability sampler.** Stratified quotas plus an exactly optimal marginal opt_1/opt_2 balance; any shortfall is reported (2026-09-15).
 - **No hidden sampling defaults.** The launcher passes `--generation-config vllm` and records it; all sampling fields are sent at explicit neutral values.
 - **Tests.** The full suite passes on a laptop, with no server.
@@ -28,18 +29,29 @@
 
 A proposal for the offline pipeline items is to be approved before implementation.
 
-## Blocker
+## Server (Chomusuke02), as of 2026-09-15
 
-Waiting for the lab administrator to create a Chomusuke02 account. No server
-has been contacted, no model run and no weights downloaded.
-`models.generator.model.revision` is `null` until the preflight resolves it.
+All commands were run by Vidhi.
+
+- The account was created, and SSH access through the gateway succeeded.
+- `/data/vidhi` exists. The host exposes four RTX A6000 48 GB GPUs.
+- An isolated Python 3.11 environment was created under `/data/vidhi/reasonstyle`.
+- Recorded versions: vLLM `0.8.5.post1+cu118`, Transformers `4.51.3`, tokenizers `0.21.4`, PyTorch `2.6.0+cu118`, huggingface-hub `0.36.2`.
+- `Qwen/Qwen3-14B` revision `40c069824f4251a91eefaf281ebe4c544efd3e18` was downloaded under `/data/vidhi/hf_cache`.
+- The offline preflight verified all eight weight shards, 29.6 GB.
+- The revision was recorded in the generator configuration. In this repository it is set in `configs/experiment.yaml` (uncommitted), and the fixture corpus and marker allocation were regenerated with the existing scripts to carry the new configuration hash; the marker assignments themselves are unchanged.
+- **Two launcher attempts, both failed.**
+  1. The first failed while building the runtime record: importing vLLM wrote to stdout and corrupted the code that writes the record.
+  2. The second reached engine initialisation and failed because `setuptools` was absent.
+- **No endpoint became ready.** No generation request was sent, no model inference occurred, and the synthetic smoke test is still pending.
+- **The runtime record left by the second attempt is invalid and must not be used.** The corrected launcher removes stale records before it starts.
 
 ## Next steps
 
-1. **Read-only preflight** on Chomusuke02 (run by Vidhi): `HF_HUB_OFFLINE=1 HF_HOME=/data/$USER/hf_cache uv run python scripts/preflight_model.py --config configs/experiment.yaml`.
-2. **If it succeeds:** record the resolved commit SHA in `models.generator.model.revision`, start vLLM on one announced GPU, and run the single fixture smoke call.
-   **If it fails:** ask the lab about an existing shared model cache. Download nothing without approval.
-3. **Offline pipeline:** approve the proposal, then implement and test it with `FakeBackend` before any pilot call.
+1. **Review and commit the launcher fixes.** Then bring the server checkout up to date and install `setuptools==79.0.1` into its environment.
+2. **Commit the recorded revision** together with the regenerated fixture corpus and marker allocation.
+3. **Start vLLM on one announced GPU, then run the single synthetic smoke call.** Stop there; no pilot generation.
+4. **Offline pipeline:** approve the proposal, then implement and test it with `FakeBackend` before any pilot call.
 
 ## Open, not resolved
 

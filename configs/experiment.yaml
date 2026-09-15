@@ -615,7 +615,7 @@ models:
       # Filled in from the read-only cache check, never from a download. A run
       # refuses if the revision cannot be resolved: an unpinned generator
       # cannot be reported.
-      revision: null
+      revision: 40c069824f4251a91eefaf281ebe4c544efd3e18
       trust_remote_code: false
       # The generator must not belong to the PRIMARY evaluated family (Llama):
       # that would give the corpus and the primary model a shared ancestor.

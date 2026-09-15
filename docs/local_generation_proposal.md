@@ -1,10 +1,9 @@
 # Local generation on Chomusuke — proposed changes
 
 **Status: approved with corrections on 2026-09-14 and implemented locally.**
-No server has been contacted, no GPU job launched, no model run and no weights
-downloaded. `models.generator.model.revision` is still `null`: it is filled in
-only from the read-only preflight on Chomusuke02, which awaits a server account.
-See [`current_status.md`](current_status.md).
+The server environment and the model cache now exist on Chomusuke02, but no
+endpoint has become ready and no model has run; the synthetic smoke test is
+pending. See [`current_status.md`](current_status.md).
 
 The Anthropic path described in `drafting_proposal.md` §5 is withdrawn in full:
 there is no Anthropic dependency, no API key anywhere, and no external paid call.
@@ -113,7 +112,7 @@ models:
 
     model:
       repo_id: Qwen/Qwen3-14B
-      revision: null                   # filled from the read-only cache check, never a download
+      revision: 40c069824f4251a91eefaf281ebe4c544efd3e18   # from the read-only cache check, never a download
       trust_remote_code: false
       excluded_families: [llama, meta-llama, llama-3, llama3]
 
@@ -159,7 +158,13 @@ export HF_HOME=/data/$USER/hf_cache        # weights, tokenizers, everything
 uv venv "$BASE/.venv" --python 3.11
 uv pip install --python "$BASE/.venv" -e .
 uv pip install --python "$BASE/.venv" "vllm>=0.8.5"
+uv pip install --python "$BASE/.venv" "setuptools==79.0.1"   # Triton needs it at engine start
 ```
+
+Triton imports `setuptools` at runtime when a GPU worker initialises, and
+`uv venv` does not seed it: the second launch attempt on Chomusuke02 failed there
+with `No module named 'setuptools'`. `79.0.1` is the selected reproducible pin,
+and the script checks that it imports.
 
 `serve_vllm.sh` — the OpenAI-compatible endpoint, one explicit GPU. It runs the
 **virtual environment's own** `vllm` and `python`, so nothing depends on an
@@ -169,7 +174,7 @@ activated shell or on what is first on `PATH`:
 REVISION="$($VENV/bin/python scripts/preflight_model.py \
   --config "$CONFIG" --model "$MODEL" --require-config-match --print-revision)"
 
-CUDA_VISIBLE_DEVICES="$GPU" exec "$VENV/bin/vllm" serve "$MODEL" \
+supervise env CUDA_VISIBLE_DEVICES="$GPU" "$VENV/bin/vllm" serve "$MODEL" \
   --revision "$REVISION" \
   --host 127.0.0.1 --port "$PORT" \
   --dtype "$DTYPE" --max-model-len "$MAX_LEN" \
@@ -177,7 +182,7 @@ CUDA_VISIBLE_DEVICES="$GPU" exec "$VENV/bin/vllm" serve "$MODEL" \
   --generation-config vllm
 ```
 
-Three things this buys:
+Four things this buys:
 
 - **The revision is required, not optional.** The launcher will not start
   without a commit sha that the configuration and the cache agree on, and it
@@ -187,11 +192,27 @@ Three things this buys:
   instead of the hub cache the preflight just verified, making a passing
   preflight meaningless. The launcher additionally checks that
   `$HF_HOME/hub/models--<repo>/snapshots/$REVISION` exists.
-- **A runtime record.** Before launching, it writes
-  `data/pilot/server_runtime.json`: host, GPU index and name, dtype, revision,
+- **A runtime record.** It records in `data/pilot/server_runtime.json`: host, GPU index and name, dtype, revision,
   snapshot path, context length, seed, endpoint, and the server's vLLM,
-  transformers and torch versions. The smoke test reads that file and refuses to
-  run without it.
+  transformers and torch versions. The versions are read from installed package
+  metadata (`importlib.metadata`), never by importing the packages: importing
+  vLLM logs to stdout, which on the first launch attempt corrupted the record's
+  generating code. Metadata also keeps the full build, e.g. `0.8.5.post1+cu118`.
+  The smoke test reads that file and refuses to run without it.
+- **A record only for a server this launcher started.** The launcher
+  refuses to start if `http://127.0.0.1:$PORT/health` already responds: the
+  host is shared, so an existing service on the port is never treated as ours,
+  and its record is left alone. Otherwise it removes any stale active or
+  `.pending` record, writes the new one as `server_runtime.json.pending`, starts
+  vLLM in the background and polls `/health` (bounded by
+  `HEALTH_TIMEOUT_SECONDS`, default 900), checking on every iteration that its
+  own child is still alive. When the child first answers, the pending file is
+  renamed, atomically, to `server_runtime.json`, and it remains while that
+  supervised process is alive. Health is not monitored after that first
+  success: a server that stops answering while its process lives keeps its
+  record. Termination is forwarded to the child, and both files are removed
+  whenever the launcher exits — a clean stop, Ctrl-C, a timeout, or an engine
+  that dies during start-up or later.
 
 Bound to `127.0.0.1`, so the endpoint is not reachable from outside the host.
 Both scripts refuse to run if `/data/$USER` does not exist.
@@ -257,6 +278,7 @@ installs it explicitly into the project virtual environment:
 ```bash
 uv pip install --python .venv -e .
 uv pip install --python .venv "vllm>=0.8.5"
+uv pip install --python .venv "setuptools==79.0.1"
 ```
 
 The exact version that produced any text is recorded in that run's server
