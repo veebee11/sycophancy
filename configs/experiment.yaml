@@ -18,7 +18,7 @@ status: draft            # draft -> frozen (only in configs/frozen/)
 provenance:
   research_plan: Research_Plan_v6.md
   research_plan_sha256: "a9ac477a10d6c4e285ae3f1e148c31de72f833a5a55d50d22a347d5f905601f0"
-  decision_log: docs/decisions.md
+  decision_log: docs/design_notes.md   # D-numbers are indexed there
 
 factors:
   reason: [present, absent]
@@ -617,13 +617,15 @@ models:
       # cannot be reported.
       revision: null
       trust_remote_code: false
-      # The generator must not belong to a family under evaluation: a Llama
-      # generator would give the corpus and an evaluated model a shared
-      # ancestor. Checked against the repo id at load.
+      # The generator must not belong to the PRIMARY evaluated family (Llama):
+      # that would give the corpus and the primary model a shared ancestor.
+      # Checked against the repo id at load. Optional replication families
+      # (e.g. Qwen) are not guarded; a shared family is disclosed instead.
       excluded_families: [llama, meta-llama, llama-3, llama3]
 
     decoding:
-      # Qwen3 non-thinking mode, with that mode's suggested light sampling.
+      # Qwen3 non-thinking mode with light sampling (approved 2026-09-14;
+      # cooler than Qwen3's own non-thinking suggestion of temperature 0.7).
       # The seed is recorded, but it does NOT make output bit-for-bit
       # reproducible across GPUs, driver or library versions: the saved raw
       # response, the environment record and the hashes are the authoritative
@@ -634,11 +636,24 @@ models:
       max_tokens: 700
       seed: 20260914
       n: 1
+      # Every other sampling field that can change the output is sent
+      # explicitly at its neutral value, so nothing is left to a server default.
+      # top_k -1 disables the filter and is accepted by vLLM 0.8.5 (which
+      # rejects 0) and by later versions ("0 or -1").
+      top_k: -1
+      min_p: 0.0
+      repetition_penalty: 1.0
+      presence_penalty: 0.0
+      frequency_penalty: 0.0
 
     vllm:
       base_url: http://127.0.0.1:8011/v1   # localhost only; never exposed
       guided_json: true                    # constrain output to the response schema
       timeout_seconds: 300
+      # The server must run with --generation-config vllm, so the model's own
+      # generation_config.json supplies no hidden sampling defaults. The
+      # launcher records the mode, and a live run refuses a record without it.
+      generation_config: vllm
       # Offline everywhere: the server and the client must fail rather than
       # silently fetch weights or tokenizer files.
       require_offline_env: {HF_HUB_OFFLINE: "1"}
@@ -891,13 +906,13 @@ annotation:
     fraction: 0.20
     independent_annotators: 2
     # Fully crossed strata only. domain x condition x marker_family is 3 x 4 x 3
-    # = 36 strata for 48 sampled items; adding supported_option would make 72
-    # strata, which a 48-item sample cannot cover, so the sample would silently
-    # stop being stratified as described.
+    # = 36 strata for 38 sampled pilot items (20% of 192); adding
+    # supported_option would make 72 strata, which a 38-item sample cannot
+    # cover, so the sample would silently stop being stratified as described.
     stratify_by: [domain, condition, marker_family]
-    # Balanced within the selected sample as a marginal count, not as a further
-    # crossed stratum: selection inside each stratum keeps the running
-    # opt_1/opt_2 tally as even as the stratum sizes allow.
+    # Balanced as a marginal count, not as a further crossed stratum: among
+    # samples with the same size and stratum quotas, the sampler draws one with
+    # the smallest reachable opt_1/opt_2 difference, and reports any shortfall.
     balance_marginally: [supported_option]
     seed_ref: annotation_subsample
     min_sibling_separation: 20

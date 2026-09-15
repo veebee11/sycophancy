@@ -1,6 +1,23 @@
 # Pilot drafting proposal
 
-**Status: approved with corrections on 2026-09-14 and implemented.** No model
+> **⚠ Historical record — generator section withdrawn.**
+> The Anthropic generator in §5 (`claude-opus-5`, the Messages API, the API
+> key and its settings), and every reference to it in §9 row 6 and §10 item 3,
+> is **withdrawn in full** and superseded by
+> [`local_generation_proposal.md`](local_generation_proposal.md): a local
+> `Qwen/Qwen3-14B` served by vLLM, with no paid call, no API key and no
+> Anthropic backend. The text below is kept unedited as a record of what was
+> proposed. For current rules read [`design_notes.md`](design_notes.md) and
+> `configs/experiment.yaml`; for current status,
+> [`current_status.md`](current_status.md).
+>
+> **Also superseded:** §7 item 4 gives the reliability sample as "48 items
+> and 24 pairs", stratified with the supported option crossed in. The current
+> pilot sample is **38 items** (all 36 item strata) and **19 pairs** (all 18
+> pair strata), with the supported option balanced marginally
+> (`design_notes.md`, *Independent annotation sample*).
+
+**Status (as originally written): approved with corrections on 2026-09-14 and implemented.** No model
 has been called and no pilot text exists. The decisions below are now in
 `configs/experiment.yaml`, `prompts/*.txt` and `src/reasonstyle/generation/`;
 §10 records what the curator corrected. The one remaining approval is a single

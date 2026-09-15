@@ -52,6 +52,7 @@ from reasonstyle.generation import (
     parse_response,
     resolve_cached_model,
     revision_agreement,
+    server_settings_problems,
     vllm_payload,
     write_request,
 )
@@ -159,16 +160,19 @@ def main(argv: list[str] | None = None) -> int:
     except (FileNotFoundError, json.JSONDecodeError) as exc:
         print(f"\nrefusing to run: {exc}", file=sys.stderr)
         return 1
-    disagreements = revision_agreement(gen["model"]["revision"], cached,
-                                       server.get("revision"))
+    disagreements = (revision_agreement(gen["model"]["revision"], cached,
+                                        server.get("revision"))
+                     + server_settings_problems(cfg, server))
     if disagreements:
         print("\nrefusing to run: the configuration, the cache and the server must name "
-              "the same commit:", file=sys.stderr)
+              "the same commit, and the server must run with the configured settings:",
+              file=sys.stderr)
         for problem in disagreements:
             print(f"  - {problem}", file=sys.stderr)
         return 1
     print(f"server       gpu {server.get('gpu_index')} ({server.get('gpu_name')}), "
-          f"{server.get('dtype')}, vllm {server.get('libraries', {}).get('vllm')}")
+          f"{server.get('dtype')}, vllm {server.get('libraries', {}).get('vllm')}, "
+          f"generation_config {server.get('generation_config')}")
 
     log = GenerationLog(Path(args.out) / "generation_log.jsonl",
                         raw_dir=Path(args.out) / "raw")

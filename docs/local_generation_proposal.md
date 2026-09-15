@@ -1,9 +1,16 @@
 # Local generation on Chomusuke — proposed changes
 
-**Status: approved with corrections on 2026-09-14 and implemented locally. No
-GPU job has been launched and no model has been contacted.** The Anthropic path
-described in `drafting_proposal.md` §5 is withdrawn in full: there is no
-Anthropic dependency, no API key anywhere, and no external paid call.
+**Status: approved with corrections on 2026-09-14 and implemented locally.**
+No server has been contacted, no GPU job launched, no model run and no weights
+downloaded. `models.generator.model.revision` is still `null`: it is filled in
+only from the read-only preflight on Chomusuke02, which awaits a server account.
+See [`current_status.md`](current_status.md).
+
+The Anthropic path described in `drafting_proposal.md` §5 is withdrawn in full:
+there is no Anthropic dependency, no API key anywhere, and no external paid call.
+
+Sections 1–8 and 11–12 describe what is implemented. §9 records the model
+choice, and §10 the decisions that settled the proposal's open questions.
 
 What changed from this proposal, as the curator directed:
 
@@ -16,8 +23,9 @@ What changed from this proposal, as the curator directed:
 | Smoke-test material | the synthetic fixture id `energy_fixture_001`, never a pilot topic (see §11) |
 | Authorisation | out of the experiment config entirely: `--send` **and** `REASONSTYLE_ALLOW_LOCAL_GENERATION=1` |
 
-Target: `chomusuke02` (4 × A6000 48 GB), everything under `/data/$USER`, no NAS,
-no API key, use announced in `#01-servers`.
+Target: one A6000 (48 GB) on `chomusuke02`, a four-GPU host. Everything runs
+under `/data/$USER`, with no NAS and no API key, and use is announced in
+`#01-servers`.
 
 ---
 
@@ -116,12 +124,18 @@ models:
       max_tokens: 700
       seed: 20260914                   # recorded; NOT a reproducibility guarantee
       n: 1
+      top_k: -1                        # the rest: explicit neutral values (added 2026-09-15)
+      min_p: 0.0
+      repetition_penalty: 1.0
+      presence_penalty: 0.0
+      frequency_penalty: 0.0
 
     vllm:
       base_url: http://127.0.0.1:8011/v1
       guided_json: true                # vLLM constrains output to the response schema
       timeout_seconds: 300
       require_offline_env: {HF_HUB_OFFLINE: "1"}
+      generation_config: vllm          # server must not load generation_config.json
 ```
 
 Authorisation to run is deliberately **not** a key here, and the loader refuses
@@ -159,7 +173,8 @@ CUDA_VISIBLE_DEVICES="$GPU" exec "$VENV/bin/vllm" serve "$MODEL" \
   --revision "$REVISION" \
   --host 127.0.0.1 --port "$PORT" \
   --dtype "$DTYPE" --max-model-len "$MAX_LEN" \
-  --gpu-memory-utilization "$GPU_MEM_FRACTION" --seed "$SEED"
+  --gpu-memory-utilization "$GPU_MEM_FRACTION" --seed "$SEED" \
+  --generation-config vllm
 ```
 
 Three things this buys:
@@ -252,47 +267,52 @@ the backend speaks HTTP through `urllib`.
 
 | | |
 |---|---|
-| Machine | `chomusuke02`, 4 × A6000 48 GB |
-| GPUs needed | **one**: a 12–14B model in bfloat16 is ~24–28 GB of weights, comfortably inside 48 GB with an 8k context |
+| Machine | `chomusuke02`, a four-GPU A6000 (48 GB) host |
+| GPUs needed | **one**: a 14B model in bfloat16 is ~28 GB of weights, inside 48 GB with an 8k context |
 | Selection | `CUDA_VISIBLE_DEVICES=<n>`; the code never picks a GPU itself |
 | Disk | ~30 GB for weights under `/data/$USER/hf_cache`; no NAS path is read or written |
 | Network | localhost only; the vLLM endpoint binds `127.0.0.1` |
 | Etiquette | announce the GPU and expected duration in `#01-servers` before starting |
-| Runtime | the pilot is 72 calls of ≤700 new tokens — minutes on one A6000, not hours |
+| Runtime | the pilot is 72 calls of ≤700 new tokens plus at most 96 repairs: expected minutes on one A6000, not yet measured |
 
-## 9. Model choice
+**Compute beyond generation (unresolved).** The A6000 is being used for corpus
+generation. It may also support the first Llama-3.1-8B compatibility and
+behavioural tests. The larger causal sweeps (Research_Plan_v6 §8, §11) may later
+need Wisteria or an A100-class GPU, depending on measured memory and runtime.
+Nothing about that has been measured or decided yet.
 
-Both candidates fit one A6000 and neither is a Llama derivative.
+## 9. Model choice (decided)
 
-| | Qwen3-14B | Gemma 3 12B Instruct |
-|---|---|---|
-| bf16 weights | ~28 GB | ~24 GB |
-| Access | ungated on the Hub | gated: the licence must be accepted on the Hub first |
-| Non-thinking | explicit `enable_thinking=False` in the chat template | no thinking mode to disable |
-| Requires | transformers ≥ 4.51 | transformers ≥ 4.50 |
+**`Qwen/Qwen3-14B` in non-thinking mode**, provided the preflight finds it
+complete in a cache on Chomusuke02. It is ungated on the Hub, its thinking
+switch is explicit (`enable_thinking=False`), it fits one A6000, and it is not a
+Llama derivative, so it differs from the primary evaluated family.
 
-**Recommendation: Qwen3-14B with `enable_thinking=False`**, if it is already on
-Chomusuke — ungated, and the thinking switch is explicit rather than implicit.
-Gemma 3 12B Instruct is an equally good second choice and is the lighter
-download. The config takes whichever you choose; nothing is hard-coded.
+Gemma 3 12B Instruct was considered as a fallback. It is gated, and the plan
+lists Gemma 3 as a replication family. It is not configured, and would need a
+separate decision.
 
-Two notes worth deciding on:
+The generator shares a family with the optional Qwen replication candidate. If
+a Qwen model is later evaluated, that is disclosed as a limitation
+(`design_notes.md`, *Corpus construction*).
 
-- **Greedy vs sampled.** I propose greedy decoding (`do_sample: false`), which
-  makes a redraft reproducible on the same weights and library versions. Qwen3's
-  own guidance for non-thinking mode suggests light sampling
-  (temperature 0.7, top_p 0.8); that would give more varied phrasing across 72
-  calls at the cost of exact reproducibility. The seed is recorded either way.
-- **Weights.** The smoke test needs the model present under
-  `/data/$USER/hf_cache`. If it is not already on the server, that is a ~25–30 GB
-  download, which I will not start without your say-so.
+**Decoding is lightly sampled**: temperature 0.3, top_p 0.8, max_tokens 700,
+n 1, seed 20260914. That is cooler than Qwen3's own non-thinking suggestion
+(temperature 0.7). `top_k`, `min_p` and the three penalties are sent at neutral
+values. The server runs with `--generation-config vllm`, so the model's
+`generation_config.json` supplies nothing (`design_notes.md`, *No hidden
+sampling defaults*). Greedy decoding was proposed and not adopted. The seed is
+recorded but does not guarantee reproduction across GPUs, drivers or library
+versions. The saved raw response, hashes and runtime record are the record.
 
-## 10. What I need from you before implementing
+## 10. Decisions made
 
-1. Which backend to build first — vLLM endpoint, Transformers in-process, or both.
-2. Which model, or "whichever is already on Chomusuke".
-3. Greedy or lightly sampled decoding.
-4. Whether the weights are already on the server, and if not, approval to download.
+| Question | Decision (2026-09-14) |
+|---|---|
+| Backend | vLLM OpenAI-compatible endpoint only; the in-process Transformers backend is deferred unless vLLM proves unavailable |
+| Model | `Qwen/Qwen3-14B`, non-thinking, if already cached on Chomusuke02 |
+| Decoding | sampled: temperature 0.3, top_p 0.8, max_tokens 700, seed recorded |
+| Weights | never downloaded without separate approval. If the preflight fails, ask the lab about an existing shared model cache first |
 
 ---
 

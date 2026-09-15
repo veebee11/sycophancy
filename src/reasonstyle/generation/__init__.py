@@ -45,6 +45,7 @@ from .environment import (
     missing_weights,
     resolve_cached_model,
     revision_agreement,
+    server_settings_problems,
 )
 from .log import GenerationLog, LogEntry
 from .requests import (
@@ -92,6 +93,7 @@ __all__ = [
     "repair_request",
     "resolve_cached_model",
     "revision_agreement",
+    "server_settings_problems",
     "save_allocation",
     "scenario_request",
     "vllm_payload",

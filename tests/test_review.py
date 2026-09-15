@@ -405,7 +405,7 @@ def test_plain_cells_are_stratified_by_their_groups_marker_family(records):
         assert stratum[-1] == block.marker_family
         assert stratum[-1] is not None
         # the supported option is balanced marginally, not crossed into the
-        # stratum: 3 x 4 x 3 = 36 strata is what a 48-item sample can cover.
+        # stratum: 3 x 4 x 3 = 36 strata is what a 38-item sample can cover.
         assert option not in stratum and balance == (option,)
     # the distinction is real: the plain cells' own field is null
     plain = [by_id[s].counterarguments[o].cells[c].marker_family
@@ -425,4 +425,18 @@ def test_the_supported_option_is_balanced_marginally(records, cfg):
     chosen = _stratified_sample(units, 0.5,
                                 _rng(cfg, corpus_content_hash(records), "item-sample"))
     by_option = Counter(option for _, option, _ in chosen)
-    assert abs(by_option["opt_1"] - by_option["opt_2"]) <= 1
+    # An equal split is feasible for this fixture, so the difference must be the
+    # minimum for the sample's parity: 0 when even, 1 when odd.
+    assert abs(by_option["opt_1"] - by_option["opt_2"]) == len(chosen) % 2
+
+
+def test_the_export_reports_supported_option_balance(export):
+    assert set(export.balance) == {"item", "pair"}
+    assert export.manifest["supported_option_balance"]["item"] == export.balance["item"].as_dict()
+    key_readme = export.files["blind_key/README.md"]
+    for name in ("item", "pair"):
+        # Reported beside the unblinding key, never inside an annotator's packet:
+        # option counts would tell a blinded annotator which options were sampled.
+        assert export.balance[name].note() in key_readme
+        for n in (1, 2):
+            assert "opt_1" not in export.files[f"blind/annotator_{n}/{name}_packet.md"]

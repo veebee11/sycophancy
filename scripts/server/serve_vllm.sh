@@ -28,6 +28,12 @@ DTYPE="${DTYPE:-bfloat16}"
 GPU_MEM_FRACTION="${GPU_MEM_FRACTION:-0.90}"
 CONFIG="${CONFIG:-$BASE/configs/experiment.yaml}"
 RUNTIME_RECORD="${RUNTIME_RECORD:-$BASE/data/pilot/server_runtime.json}"
+# Fixed, not an environment override. vLLM's default, "auto", loads the model's
+# own generation_config.json and uses it as the default for any sampling field a
+# request omits (for Qwen3 that includes top_k and a different temperature and
+# top_p). "vllm" loads none of it: every sampling value is either sent by the
+# client, as configured in models.generator.decoding, or vLLM's neutral default.
+GENERATION_CONFIG=vllm
 
 export HF_HOME="${HF_HOME:-/data/$USER/hf_cache}"
 export HF_HUB_OFFLINE=1
@@ -88,6 +94,7 @@ record = {
     "max_model_len": int("$MAX_LEN"),
     "gpu_memory_utilization": float("$GPU_MEM_FRACTION"),
     "seed": int("$SEED"),
+    "generation_config": "$GENERATION_CONFIG",
     "endpoint": "http://127.0.0.1:$PORT/v1",
     "hf_home": "$HF_HOME",
     "hf_hub_offline": "1",
@@ -103,6 +110,7 @@ echo "revision   $REVISION"
 echo "snapshot   $SNAPSHOT"
 echo "gpu        index $GPU ($GPU_NAME), one device"
 echo "cache      $HF_HOME (offline)"
+echo "gen config $GENERATION_CONFIG (model generation_config.json NOT loaded)"
 echo "endpoint   http://127.0.0.1:$PORT/v1"
 
 CUDA_VISIBLE_DEVICES="$GPU" exec "$VLLM" serve "$MODEL" \
@@ -113,4 +121,5 @@ CUDA_VISIBLE_DEVICES="$GPU" exec "$VLLM" serve "$MODEL" \
   --max-model-len "$MAX_LEN" \
   --gpu-memory-utilization "$GPU_MEM_FRACTION" \
   --seed "$SEED" \
+  --generation-config "$GENERATION_CONFIG" \
   --disable-log-requests

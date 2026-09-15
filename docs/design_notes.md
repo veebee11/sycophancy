@@ -4,6 +4,21 @@ Decisions that affect the experiment, grouped by what they concern. Where a
 decision departs from `Research_Plan_v6.md`, that is stated. Implementation
 history lives in git, not here.
 
+**Decision index.** Code, tests and `configs/experiment.yaml` cite a few
+decisions by number. Numbers not listed were retired or merged into the
+sections below; there is no separate decision log.
+
+| ID | Decision | Section |
+|---|---|---|
+| D1 | Sentence counts exactly equal across the four cells; no tolerance | Matching rules |
+| D2 | Word-count ratio (warn 1.10, fail 1.15) enforced on both full text and body | Matching rules |
+| D3 | Marker fields are group-level and inherited by all four cells; D3b: RS and NS share one realization, RP and NP its paired plain transformation | Markers |
+| D5 | Display-label leakage rejects "option A" and similar, never a bare letter | Validation |
+| D6 | One corpus-wide opening, stored once per scenario and shared by all eight texts | Matching rules |
+| D8 | Deviations from the plan: an empty diagnostic-condition registry, and three added annotation ratings | Conditions and contrasts; Annotation and review |
+| D13 | Judgements stored at the level they are made: item, pair or scenario | Annotation and review |
+| D15 | Source references kept separate from LLM generation metadata | Configuration and provenance |
+
 ---
 
 ## Conditions and contrasts
@@ -424,7 +439,11 @@ with the curator's recorded judgements, name and date.
 Intended roles: POLIANNA for climate and energy policy topics and policy
 structures; the fixed April 2025 JRC snapshot of the GenAI4PA data for
 technology-governance topics (the living GenAI4PA portal is a discovery source
-only); IBM-ArgQ-Rank-30k for general pro/con argument structures only. ValuePrism
+only); IBM-ArgQ-Rank-30k for general pro/con argument structures only. Each of
+these is **available, not mandatory**: no brief is required to cite IBM-ArgQ,
+and the curated pilot bank cites only POLIANNA and GenAI4PA. Research_Plan_v6
+§10 mentions "seeding argument content from ArgQ/CMV". That is superseded: CMV
+is excluded, and ArgQ remains optional. ValuePrism
 is optional: a source for broad value categories only if its accepted
 Medium-Risk agreement can be recovered and recorded, never for its situations,
 explanations or other text. Its absence does not delay corpus construction —
@@ -527,9 +546,16 @@ regenerated under the final rules or excluded.
 three drafting calls: the scenario itself, then one four-condition group per
 supported option — the four conditions of a group drafted together, the two
 directions separately. The generator model, provider and settings are proposed
-and approved before any drafting, preferably from a different model family from
-those being evaluated. The exact submitted request and the raw response are
-stored. This is a record, not a reproducibility guarantee.
+and approved before any drafting. The exact submitted request and the raw
+response are stored. This is a record, not a reproducibility guarantee.
+
+**Generator family.** The generator should preferably differ from the
+**primary** evaluated family. Llama-3.1 is the primary family, and a Llama
+generator is refused at config load. `Qwen/Qwen3-14B` is therefore acceptable.
+Evaluating a Qwen model is optional (Research_Plan_v6 §8). If one is later used
+as a replication model, it shares a family with the corpus generator, and that
+is disclosed as a limitation; it is not prohibited. The same applies to any
+other optional family. Only the primary family is guarded.
 
 **Marker allocation (pilot).** The unit is the group, because the marker fields
 are group-level. Each decision's **two variants take different families**, so no
@@ -563,7 +589,8 @@ vLLM behind an OpenAI-compatible endpoint bound to `127.0.0.1`. No external
 service, no paid call, and no credential anywhere: there is nothing to
 authenticate to. The proposed model is `Qwen/Qwen3-14B` in non-thinking mode
 (temperature 0.3, top_p 0.8, 700 new tokens, seed recorded), and the
-configuration refuses a generator whose repository id names an evaluated family.
+configuration refuses a generator whose repository id names the primary
+evaluated family (Llama).
 Everything runs under `/data/$USER` on one explicitly chosen GPU.
 
 **Running needs two authorisations, neither of them in the config**: the
@@ -572,6 +599,28 @@ environment. Permission to run a model does not belong in a scientific
 configuration that is read, copied and shared; the loader refuses a config that
 grows such a key. `HF_HUB_OFFLINE=1` is required as well, so that a missing
 model is an error to report rather than an unattended download.
+
+**Compute.** Chomusuke02's A6000 is used for corpus generation. It may also
+support the first Llama-3.1-8B compatibility and behavioural tests. The larger
+causal sweeps may later need Wisteria or an A100-class GPU (Research_Plan_v6
+§11), depending on measured memory and runtime. This is **not yet resolved**:
+nothing has been measured.
+
+**No hidden sampling defaults.** vLLM's default `--generation-config auto`
+loads the model's own `generation_config.json` and uses it for any sampling
+field a request leaves out. For Qwen3 that includes `top_k` and a different
+temperature and top_p. The launcher therefore always passes
+`--generation-config vllm` and records `generation_config` in the server
+runtime record. A live run refuses a record that lacks it. In addition, every
+sampling field that can change the output is sent explicitly, and the loader
+requires the neutral values: `top_k -1` (disabled), `min_p 0.0`,
+`repetition_penalty 1.0`, `presence_penalty 0.0`, `frequency_penalty 0.0`, on
+top of temperature, top_p, max_tokens, n and seed. `top_k -1` is accepted both
+by vLLM 0.8.5, which rejects 0, and by later versions. Two things are not set
+per request, and only the recorded vLLM version fixes them. (1) Stop tokens:
+without the model's generation config, generation stops at the tokenizer's EOS
+token. The smoke test should confirm `finish_reason` is `stop`, not `length`.
+(2) The structured-output backend chosen for `response_format`.
 
 **A seed is recorded, not relied on.** Local inference is not bit-for-bit
 reproducible across GPUs, drivers or library versions. What stands as the record
@@ -624,16 +673,28 @@ filler before it is applied to the full corpus.
 **Independent annotation sample.** Stratified across domain × condition ×
 marker family — 3 × 4 × 3 = 36 crossed strata. **The supported option is
 balanced marginally, not crossed**: adding it would make 72 strata, which a
-48-item sample cannot cover, so the sample would silently stop being stratified
-in the way the thesis describes it. Instead the sampler keeps the running
-opt_1/opt_2 tally as even as the stratum sizes allow, and a config check refuses
-any stratification finer than the sample can reach. Because RP and NP carry no
-marker themselves, **the family used for stratification is the one assigned to
-the whole four-condition group**, never the cell-level `marker_family`, which is
-null for plain cells. The sample
-size is the larger of the configured fraction and one item per non-empty
-stratum: in the pilot that is 48 items rather than 38, and 24 pairs rather than
-19.
+38-item sample cannot cover, so the sample would silently stop being stratified
+in the way the thesis describes it. Instead, among all samples with the same
+size and the same largest-remainder stratum quotas, the sampler draws one with
+the smallest reachable opt_1/opt_2 difference. It finds that minimum exactly;
+seeded randomness only picks among samples meeting it. A perfect split (0 when
+even, 1 when odd) is therefore always reached when one exists. When it is not,
+the best achievable difference, and whether units or quotas limit it, go into
+the manifest, the unblinding-key README and stdout. Never into an annotator's
+packet, where option counts would weaken the blinding. Balance may only choose
+among strata *tied* at the boundary remainder; a larger remainder always wins.
+A config check refuses any stratification finer than the sample can reach.
+Because RP and NP carry no marker themselves, **the family used for
+stratification is the one assigned to the whole four-condition group**, never
+the cell-level `marker_family`, which is null for plain cells.
+
+**Sample size** is `max(1, round(N × fraction))` with the configured fraction
+0.20, allocated to strata by largest remainder. In the pilot that is **38
+counterargument items** (20% of 192), covering all 36 item strata, and **19
+proposition-preservation pairs** (20% of 96), covering all 18 pair strata
+(domain × pair × marker family). An earlier statement of 48 items and 24 pairs
+came from an older rule, one item per non-empty stratum at minimum. It is
+withdrawn (decided 2026-09-15).
 
 **Manipulation-check rules are fixed before the pilot annotations are
 examined** — the minimum reason/no-reason separation, the minimum styled/plain
@@ -659,3 +720,4 @@ filename checks alone would not catch an edit to a frozen file's contents.
 - LLM generation is not bit-reproducible across model versions; the generation log is a record, not a replay guarantee.
 - Style and content are not perfectly separable in language; the residual confound is stated rather than argued away.
 - The six-word overlap screen detects possible verbatim reuse only; independence is a property of the construction procedure, not of the screen.
+- The corpus generator is a Qwen model. If an optional Qwen model is later evaluated, corpus and evaluated model share a family.

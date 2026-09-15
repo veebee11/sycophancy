@@ -730,3 +730,30 @@ def test_every_frozen_config_on_disk_still_loads_and_is_pinned():
         cfg = load_config(path)
         assert cfg.is_frozen
         assert cfg.config_version == path.stem
+
+
+@pytest.mark.parametrize("field,value", [
+    ("top_k", 40), ("top_k", 0), ("min_p", 0.05), ("repetition_penalty", 1.1),
+    ("presence_penalty", 0.5), ("frequency_penalty", 0.2)])
+def test_a_non_neutral_sampling_value_is_rejected(tmp_path, raw, field, value):
+    raw["models"]["generator"]["decoding"][field] = value
+    with pytest.raises(ConfigError, match=f"decoding.{field} must be the neutral"):
+        load_mutated(tmp_path, raw)
+
+
+@pytest.mark.parametrize("field", ["top_k", "min_p", "repetition_penalty",
+                                   "presence_penalty", "frequency_penalty"])
+def test_a_sampling_field_left_to_a_server_default_is_rejected(tmp_path, raw, field):
+    del raw["models"]["generator"]["decoding"][field]
+    with pytest.raises(ConfigError, match=f"decoding.{field} must be set explicitly"):
+        load_mutated(tmp_path, raw)
+
+
+@pytest.mark.parametrize("mode", ["auto", None])
+def test_the_server_must_not_load_the_models_generation_config(tmp_path, raw, mode):
+    if mode is None:
+        del raw["models"]["generator"]["vllm"]["generation_config"]
+    else:
+        raw["models"]["generator"]["vllm"]["generation_config"] = mode
+    with pytest.raises(ConfigError, match="--generation-config vllm"):
+        load_mutated(tmp_path, raw)

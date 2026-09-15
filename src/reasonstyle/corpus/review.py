@@ -36,6 +36,7 @@ import re
 from collections import Counter, defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
@@ -66,9 +67,12 @@ from .validate import HUMAN_REVIEW_CODES
 __all__ = [
     "ReviewExport",
     "transcript_appendix",
+    "BalanceResult",
+    "SampleResult",
     "SeparationResult",
     "build_review_export",
     "order_with_separation",
+    "stratified_sample",
     "strip_highlighting",
 ]
 
@@ -122,6 +126,7 @@ class ReviewExport:
     files: dict[str, str]
     manifest: dict[str, Any]
     separation: dict[str, SeparationResult]
+    balance: dict[str, BalanceResult]
 
     def write(self, root: str | Path) -> Path:
         root = Path(root)
@@ -414,8 +419,8 @@ def item_sampling_units(records: Sequence[ScenarioRecord],
 
     The facets are read from the configuration rather than fixed here: a
     stratified sample must be able to reach every stratum it claims, and with
-    48 sampled items ``domain x condition x marker_family`` (36 strata) is what
-    fits. ``supported_option`` is balanced as a marginal count instead.
+    38 sampled pilot items ``domain x condition x marker_family`` (36 strata) is
+    what fits. ``supported_option`` is balanced as a marginal count instead.
 
     The marker family is the one assigned to the whole four-condition group.
     RP and NP carry no marker themselves — their cell-level ``marker_family``
@@ -432,64 +437,186 @@ def item_sampling_units(records: Sequence[ScenarioRecord],
     return units
 
 
-def _stratified_sample(units: Sequence[tuple[Any, ...]], fraction: float,
-                       rng: random.Random) -> list[Any]:
-    """Proportional allocation over strata, with largest-remainder rounding.
+@dataclass(frozen=True)
+class BalanceResult:
+    """How evenly a sample splits across the two values of its balance key.
 
-    Deterministic: strata are visited in sorted key order and each stratum is
-    shuffled by the supplied seeded generator.
+    ``imbalance`` is ``|count(first) - count(second)|`` in the drawn sample.
+    ``ideal`` is what a perfect split would give: 0 for an even sample, 1 for an
+    odd one. ``best_under_stratification`` is the smallest imbalance any sample
+    of the same size and the same largest-remainder stratum quotas can reach,
+    and ``best_from_units`` the smallest reachable ignoring strata, from the
+    unit counts alone. The sampler always attains the first; the other two say
+    why an ideal split was or was not possible.
+    """
 
-    Units may carry a third element, a **balance key**. It is not a stratum:
-    within each stratum the shuffled pool is drawn so that the running tally of
-    balance keys across the whole sample stays as even as the stratum sizes
-    allow. That is how ``supported_option`` is kept balanced marginally without
-    multiplying the number of strata beyond what the sample can cover.
+    values: tuple[Any, ...]
+    counts: tuple[int, ...]
+    sample_size: int
+    imbalance: int
+    ideal: int
+    best_under_stratification: int
+    best_from_units: int
+
+    @property
+    def satisfied(self) -> bool:
+        return self.imbalance == self.ideal
+
+    def note(self) -> str:
+        split = " / ".join(f"{_balance_label(v)} {n}" for v, n in zip(self.values, self.counts))
+        if self.satisfied:
+            return (f"Supported option balanced marginally: {split} "
+                    f"(difference {self.imbalance}, the minimum for {self.sample_size} items).")
+        cause = ("the available units" if self.best_from_units > self.ideal
+                 else "the stratum quotas")
+        return (f"**Supported-option balance is INFEASIBLE for this sample**: {split}. "
+                f"Best achievable difference is {self.best_under_stratification} "
+                f"(ideal {self.ideal}), limited by {cause}. Reported, not hidden.")
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"counts": {_balance_label(v): n for v, n in zip(self.values, self.counts)},
+                "sample_size": self.sample_size, "imbalance": self.imbalance,
+                "ideal": self.ideal, "best_under_stratification": self.best_under_stratification,
+                "best_from_units": self.best_from_units, "satisfied": self.satisfied}
+
+
+def _balance_label(value: Any) -> str:
+    return "/".join(map(str, value)) if isinstance(value, tuple) else str(value)
+
+
+@dataclass(frozen=True)
+class SampleResult:
+    chosen: list[Any]
+    quotas: dict[tuple, int]
+    balance: BalanceResult | None      # None when the units carry no balance key
+
+
+def stratified_sample(units: Sequence[tuple[Any, ...]], fraction: float,
+                      rng: random.Random) -> SampleResult:
+    """Proportional allocation over strata, balanced marginally on a binary key.
+
+    **Size.** ``max(1, round(N * fraction))`` units, as before.
+
+    **Strata.** Each stratum receives ``floor(n * fraction)`` units, and the
+    remaining units go to strata in descending order of their exact fractional
+    remainder (largest remainder). Remainders are computed with exact
+    fractions, so float noise never splits a genuine tie. Only strata *tied*
+    at the boundary remainder are interchangeable; which of them receives the
+    extra unit is the one freedom the stratification leaves.
+
+    **Balance.** Units may carry a third element, a balance key with at most two
+    distinct values. Among every sample consistent with the quotas above, the
+    sampler finds the smallest reachable ``|count(first) - count(second)|`` by
+    exact dynamic programming over (strata, boundary picks, first-value count),
+    and draws a sample attaining it. So a perfect split (0 for even, 1 for odd)
+    is always reached when one exists, and otherwise the best achievable
+    imbalance is reported in the result.
+
+    **Randomness** only breaks ties between samples meeting the same objective:
+    which optimal count, which boundary strata, and which units within a stratum.
+    The generator is consumed in a fixed order, so the same units and seed give
+    the same sample.
     """
     strata: defaultdict[tuple, list[Any]] = defaultdict(list)
-    balance: dict[Any, tuple] = {}
+    balance: dict[Any, Any] = {}
     for unit, key, *rest in units:
         strata[key].append(unit)
         if rest:
             balance[unit] = rest[0]
-    target = max(1, round(len(units) * fraction)) if units else 0
+    if not units:
+        return SampleResult([], {}, None)
+    target = max(1, round(len(units) * fraction))
+    keys = sorted(strata)
 
-    quotas, remainders = {}, []
-    for key in sorted(strata):
-        exact = len(strata[key]) * fraction
-        quotas[key] = int(exact)
-        remainders.append((exact - int(exact), key))
-    allocated = sum(quotas.values())
-    # Ties in the remainder are broken by the seeded generator, not by key
-    # order. Sorting alphabetically would bias the sample toward whichever
-    # stratum happens to sort first — visible whenever strata are small enough
-    # that every remainder ties.
-    order = list(remainders)
-    rng.shuffle(order)
-    for _, key in sorted(order, key=lambda t: -t[0]):
-        if allocated >= target:
+    exact = Fraction(str(fraction))
+    floors = {k: int(len(strata[k]) * exact) for k in keys}
+    remainders = {k: len(strata[k]) * exact - floors[k] for k in keys}
+    extra = target - sum(floors.values())
+    eligible = [k for k in keys if floors[k] < len(strata[k])]
+    fixed_plus: set[tuple] = set()
+    boundary: list[tuple] = []
+    picks = 0
+    for value in sorted({remainders[k] for k in eligible}, reverse=True):
+        if extra == 0:
             break
-        if quotas[key] < len(strata[key]):
-            quotas[key] += 1
-            allocated += 1
+        group = [k for k in eligible if remainders[k] == value]
+        if len(group) <= extra:
+            fixed_plus.update(group)
+            extra -= len(group)
+        else:
+            boundary, picks, extra = group, extra, 0
+    if extra:
+        raise ValueError(f"cannot place {target} units in {len(units)}")
+    in_boundary = set(boundary)
+    base = {k: floors[k] + (k in fixed_plus) for k in keys}
+
+    values = tuple(sorted(set(balance.values()), key=repr)) if balance else ()
+    if len(values) > 2:
+        raise ValueError(f"marginal balancing supports two values; got {len(values)}")
+    first = values[0] if values else None
+    n_first = {k: sum(1 for u in strata[k] if balance.get(u) == first) for k in keys}
+
+    def ranges(k: tuple) -> list[tuple[int, int]]:
+        """``(extra pick, first-value count)`` options for one stratum."""
+        out = []
+        for e in ((0, 1) if k in in_boundary else (0,)):
+            q, n1 = base[k] + e, n_first[k]
+            n2 = len(strata[k]) - n1
+            if not balance:
+                out.append((e, 0))
+                continue
+            out.extend((e, a) for a in range(max(0, q - n2), min(q, n1) + 1))
+        return out
+
+    # reach[i]: every (boundary picks, first-value count) reachable by strata[:i]
+    reach: list[set[tuple[int, int]]] = [{(0, 0)}]
+    for k in keys:
+        opts = ranges(k)
+        reach.append({(j + e, a + d) for j, a in reach[-1] for e, d in opts
+                      if j + e <= picks})
+    finals = sorted(a for j, a in reach[-1] if j == picks)
+    best = min(abs(2 * a - target) for a in finals)
+    a_star = rng.choice([a for a in finals if abs(2 * a - target) == best])
+
+    quotas, take_first = {}, {}
+    j, a = picks, a_star
+    for i in range(len(keys) - 1, -1, -1):
+        k = keys[i]
+        opts = ranges(k)
+        rng.shuffle(opts)
+        e, d = next((e, d) for e, d in opts if (j - e, a - d) in reach[i])
+        quotas[k], take_first[k] = base[k] + e, d
+        j, a = j - e, a - d
 
     chosen: list[Any] = []
-    tally: Counter = Counter()
-    for key in sorted(strata):
-        pool = list(strata[key])
+    for k in keys:
+        pool = list(strata[k])
         rng.shuffle(pool)
         if not balance:
-            chosen.extend(pool[:quotas[key]])
+            chosen.extend(pool[:quotas[k]])
             continue
-        for _ in range(quotas[key]):
-            if not pool:
-                break
-            # Take the unit whose balance key is currently least represented;
-            # the shuffled order decides among equals, so this stays seeded.
-            pick = min(pool, key=lambda u: tally[balance.get(u)])
-            pool.remove(pick)
-            tally[balance.get(pick)] += 1
-            chosen.append(pick)
-    return chosen
+        ones = [u for u in pool if balance[u] == first]
+        others = [u for u in pool if balance[u] != first]
+        chosen.extend(ones[:take_first[k]] + others[:quotas[k] - take_first[k]])
+
+    if not balance:
+        return SampleResult(chosen, quotas, None)
+    count_first = sum(1 for u in chosen if balance[u] == first)
+    counts = (count_first, target - count_first) if len(values) == 2 else (count_first,)
+    total_first = sum(n_first.values())
+    lo, hi = max(0, target - (len(units) - total_first)), min(target, total_first)
+    from_units = min(abs(2 * a - target) for a in range(lo, hi + 1))
+    result = BalanceResult(values=values, counts=counts, sample_size=len(chosen),
+                           imbalance=abs(2 * count_first - target), ideal=target % 2,
+                           best_under_stratification=best, best_from_units=from_units)
+    assert len(chosen) == target and result.imbalance == best
+    return SampleResult(chosen, quotas, result)
+
+
+def _stratified_sample(units: Sequence[tuple[Any, ...]], fraction: float,
+                       rng: random.Random) -> list[Any]:
+    """The sampled units only; see :func:`stratified_sample`."""
+    return stratified_sample(units, fraction, rng).chosen
 
 
 def order_with_separation(items: Sequence[Any], sibling_key, minimum: int,
@@ -662,7 +789,8 @@ def build_review_export(
 
     stratify_by, balance_by = sub["stratify_by"], sub["balance_marginally"]
     item_units = item_sampling_units(records, stratify_by, balance_by)
-    item_chosen = _stratified_sample(item_units, fraction, _rng(cfg, corpus_hash, "item-sample"))
+    item_sample = stratified_sample(item_units, fraction, _rng(cfg, corpus_hash, "item-sample"))
+    item_chosen = item_sample.chosen
     item_keys: list[BlindItemKey] = []
     label_rng = _rng(cfg, corpus_hash, "item-labels")
     for i, (scenario_id, option, condition) in enumerate(sorted(item_chosen), start=1):
@@ -679,7 +807,11 @@ def build_review_export(
                          for f in stratify_by),
                    tuple(_facets(r, o, None)[f] for f in balance_by))
                   for r in records for o in SEMANTIC_OPTIONS for _, _, pid in PAIRS]
-    pair_chosen = _stratified_sample(pair_units, fraction, _rng(cfg, corpus_hash, "pair-sample"))
+    pair_sample = stratified_sample(pair_units, fraction, _rng(cfg, corpus_hash, "pair-sample"))
+    pair_chosen = pair_sample.chosen
+    balance = {name: result for name, result in (("item", item_sample.balance),
+                                                  ("pair", pair_sample.balance))
+               if result is not None}
     pair_keys: list[BlindPairKey] = []
     side_rng = _rng(cfg, corpus_hash, "pair-sides")
     for i, (scenario_id, option, pair_id) in enumerate(sorted(pair_chosen), start=1):
@@ -690,8 +822,8 @@ def build_review_export(
             pair_id=pair_id, side_conditions={"1": conditions[0], "2": conditions[1]}))
 
     scenario_units = [(r.scenario_id, (r.domain,)) for r in records]
-    scenario_chosen = _stratified_sample(scenario_units, fraction,
-                                         _rng(cfg, corpus_hash, "scenario-sample"))
+    scenario_chosen = stratified_sample(scenario_units, fraction,
+                                        _rng(cfg, corpus_hash, "scenario-sample")).chosen
     scenario_keys: list[BlindScenarioKey] = []
     scen_rng = _rng(cfg, corpus_hash, "scenario-labels")
     for i, scenario_id in enumerate(sorted(scenario_chosen), start=1):
@@ -733,6 +865,8 @@ def build_review_export(
         "These files map each blind id back to its scenario, supported option and "
         "condition, and record which semantic option was displayed as P and which as Q. "
         "Handing this directory to a reliability annotator invalidates the blinding.\n"
+        + "".join(f"\n**{name.capitalize()} sample.** {result.note()}\n"
+                  for name, result in sorted(balance.items()))
     )
 
     manifest = {
@@ -754,6 +888,7 @@ def build_review_export(
             k: {"requested": v.requested, "achieved": v.achieved,
                 "satisfied": v.satisfied, "sibling_pairs": v.n_sibling_pairs}
             for k, v in sorted(separation.items())},
+        "supported_option_balance": {k: v.as_dict() for k, v in sorted(balance.items())},
         "files": {name: sha256_of(text) for name, text in sorted(files.items())},
     }
-    return ReviewExport(files=files, manifest=manifest, separation=separation)
+    return ReviewExport(files=files, manifest=manifest, separation=separation, balance=balance)

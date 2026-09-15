@@ -5,7 +5,8 @@ reason, or the language that makes something sound reasoned?
 
 Vidhi Bhutani, University of Tokyo. The research plan is
 [`Research_Plan_v6.md`](Research_Plan_v6.md); design decisions are in
-[`docs/design_notes.md`](docs/design_notes.md).
+[`docs/design_notes.md`](docs/design_notes.md); where the work stands is in
+[`docs/current_status.md`](docs/current_status.md).
 
 ## The design in one paragraph
 
@@ -30,13 +31,23 @@ support direction is never inferred from them.
 ## Layout
 
 ```
-configs/experiment.yaml     the one editable config; frozen copies go in configs/frozen/
-data/fixtures/corpus.jsonl  a small synthetic corpus used by the tests
+Research_Plan_v6.md           the research plan (its hash is pinned in the config)
+configs/experiment.yaml       the one editable config; frozen copies go in configs/frozen/
+prompts/                      hashed drafting templates: scenario, group, repair
+data/sources/                 reference-source registry, pinned downloads, inventory
+                              (raw files in data/sources/raw/ are never committed)
+data/topics/pilot_topics.yaml curated topic briefs: 12 pilot decisions, 4 per domain
+data/pilot/                   marker allocation (committed); run artefacts (gitignored)
+data/fixtures/                small synthetic corpus and briefs used by tests and the smoke test
 src/reasonstyle/
-  corpus/                   schemas, storage, segmentation, validation, annotation, review
-  prompting/                transcript rendering
-scripts/                    each takes a required --config
-docs/design_notes.md        decisions that affect the experiment
+  corpus/                     schemas, sources, topics, segmentation, validation,
+                              annotation, review export
+  generation/                 marker allocation, requests, backends, environment, log, provenance
+  prompting/                  model-independent transcript rendering
+scripts/                      every script takes a required --config
+scripts/server/               Chomusuke02 setup and the vLLM launcher
+docs/                         design notes, current status, proposals
+tests/
 ```
 
 ## Setup
@@ -47,26 +58,74 @@ Python 3.11, managed by `uv`.
 uv sync --group dev
 ```
 
-Dependencies are added at the point they are first needed. Currently:
-`pydantic`, `pyyaml`, `pysbd`, and `pytest`. Still to come — `pandas`/`numpy` for
-run tables, `torch`/`transformers` for the model adapter, `scikit-learn` for
-probes, and a statistics package for the factorial analysis.
+Client dependencies are `pydantic`, `pyyaml`, `pysbd` and `pytest`. Libraries
+for later stages (`torch`/`transformers`, `pandas`, `scikit-learn`, statistics)
+are added when first needed. vLLM is installed only on the GPU host, by
+`scripts/server/setup_chomusuke.sh`, and is not in `pyproject.toml`.
 
-## Running things
+## Corpus workflow
+
+Reference datasets supply topic ideas only; their text never enters a brief or a
+prompt. A local open-weights model drafts from the curated briefs, and every
+draft is machine-validated and then reviewed by a person.
+
+| Step | Script | State |
+|---|---|---|
+| 1. Fetch and verify reference sources | `fetch_sources.py`, `verify_sources.py` | done |
+| 2. Check the topic bank (overlap screen, 4 curated per domain) | `prepare_topic_bank.py` | done |
+| 3. Allocate marker family, string and realization to all 48 groups | `allocate_markers.py` | done |
+| 4. Server preflight, launch, one-group smoke test | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | awaiting server account |
+| 5. Draft 24 scenarios, then 48 four-condition groups | `emit_requests.py`, `import_responses.py` | request/import only; sender not built |
+| 6. Repair failing groups (≤2 repairs), assemble corpus JSONL | — | not built |
+| 7. Validate and export for human review | `export_for_review.py` | built |
+
+## Local generator
+
+`Qwen/Qwen3-14B`, non-thinking, served by vLLM on `127.0.0.1` from one A6000
+on Chomusuke02 (temperature 0.3, top_p 0.8, 700 tokens, seed recorded; every
+other sampling field sent at its neutral value, and the server started with
+`--generation-config vllm` so the model's own defaults never apply). There is
+no external service, no paid API and no API key. Offline mode is
+required, so a missing model is an error, never a download. The weights'
+commit SHA must be resolved from the local cache and recorded in
+`models.generator.model.revision` before the server starts. A live call needs
+both `--send` and `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`. Omitting `--send` is
+the dry run. Details: [`docs/local_generation_proposal.md`](docs/local_generation_proposal.md).
+The earlier Anthropic proposal in `docs/drafting_proposal.md` is withdrawn.
+
+On the server, in order:
+
+```bash
+HF_HUB_OFFLINE=1 HF_HOME=/data/$USER/hf_cache uv run python scripts/preflight_model.py --config configs/experiment.yaml
+```
+
+```bash
+GPU=0 bash scripts/server/serve_vllm.sh
+```
+
+```bash
+REASONSTYLE_ALLOW_LOCAL_GENERATION=1 HF_HUB_OFFLINE=1 HF_HOME=/data/$USER/hf_cache uv run python scripts/smoke_test.py --config configs/experiment.yaml --send
+```
+
+## Everyday commands
 
 ```bash
 uv run pytest
 ```
 
 ```bash
+uv run python scripts/smoke_test.py --config configs/experiment.yaml
+```
+
+```bash
 uv run python scripts/export_for_review.py --config configs/experiment.yaml
 ```
 
-Writes a read-only Markdown view of the corpus to `review/` — an index, one file
-per decision showing all four conditions side by side, a combined searchable
-file, and blinded packets for the reliability annotators. Add `--check` to verify
-it still matches the corpus. Judgements are recorded under `data/`, never in the
-generated Markdown.
+The review export writes a read-only Markdown view of the corpus to `review/`: an
+index, one file per decision with all four conditions side by side, a combined
+searchable file, and blinded packets for the reliability annotators. Add
+`--check` to verify it still matches the corpus. Judgements are recorded under
+`data/`, never in the generated Markdown.
 
 ## What is and is not established
 
@@ -75,3 +134,6 @@ consistency, pattern matches. Substantive support, support direction, no-reason
 integrity, proposition preservation, naturalness and pragmatic commitment are
 human judgements, and every generated review lists them as outstanding. A clean
 validation run is not an approved corpus.
+
+Generated responses, model weights, caches and server runtime files are never
+committed.

@@ -671,6 +671,17 @@ def _check_drafting(cfg: ExperimentConfig) -> None:
            "the seed is recorded — it does not make output reproducible across GPUs "
            "or library versions, but it belongs in the record")
     _check(dec["n"] == 1, "one response per call; no cherry-picking among samples")
+    neutral = {"top_k": -1, "min_p": 0.0, "repetition_penalty": 1.0,
+               "presence_penalty": 0.0, "frequency_penalty": 0.0}
+    for name, value in neutral.items():
+        _check(name in dec, f"decoding.{name} must be set explicitly, not left to a "
+                            f"server default")
+        _check(dec[name] == value and type(dec[name]) is type(value),
+               f"decoding.{name} must be the neutral {value!r}; a non-neutral value "
+               f"is a design change, not a tuning knob")
+    _check(gen["vllm"].get("generation_config") == "vllm",
+           "the server must run with --generation-config vllm, so the model's own "
+           "generation_config.json supplies no hidden sampling defaults")
 
     # No credential of any kind belongs in a configuration, and this generator
     # needs none: it is a local endpoint on the loopback interface.

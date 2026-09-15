@@ -190,6 +190,23 @@ def revision_agreement(configured: str | None, cached: CachedModel,
     return problems
 
 
+def server_settings_problems(cfg, server: dict[str, Any]) -> list[str]:
+    """Launch settings the server must have used for its output to be reportable.
+
+    ``generation_config`` must be the configured mode ("vllm"): under vLLM's
+    default "auto" the model's own generation_config.json silently supplies any
+    sampling field a request omits. A record written by an older launcher, with
+    no such field, is refused as well — its sampling defaults are unknown.
+    """
+    expected = cfg.raw["models"]["generator"]["vllm"]["generation_config"]
+    actual = server.get("generation_config")
+    if actual != expected:
+        return [f"the server ran with generation_config={actual!r}, not {expected!r}: "
+                f"restart it with scripts/server/serve_vllm.sh, which passes "
+                f"--generation-config {expected}"]
+    return []
+
+
 def load_server_runtime(path: str | os.PathLike[str]) -> dict[str, Any]:
     """The record the launcher wrote when it started the server.
 

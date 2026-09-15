@@ -253,6 +253,19 @@ def test_the_payload_is_built_from_the_configuration(topic, cfg):
     assert payload["chat_template_kwargs"] == {"enable_thinking": False}
 
 
+def test_every_sampling_field_is_sent_explicitly_at_its_neutral_value(topic, cfg):
+    """Nothing that shapes sampling is left to a server default."""
+    payload = vllm_payload(scenario_request(topic, 1, cfg), cfg)
+    assert {k: payload[k] for k in ("top_k", "min_p", "repetition_penalty",
+                                    "presence_penalty", "frequency_penalty")} == {
+        "top_k": -1, "min_p": 0.0, "repetition_penalty": 1.0,
+        "presence_penalty": 0.0, "frequency_penalty": 0.0}
+    dec = cfg.raw["models"]["generator"]["decoding"]
+    sampling = {k for k in payload if k not in
+                ("model", "messages", "response_format", "chat_template_kwargs")}
+    assert sampling == set(dec) - {"thinking"}, "every decoding field is sent, and only those"
+
+
 def test_the_payload_constrains_the_output_to_the_response_schema(topic, cfg):
     request = scenario_request(topic, 1, cfg)
     payload = vllm_payload(request, cfg)
@@ -471,7 +484,7 @@ def test_the_three_revisions_must_agree(tmp_path):
 SERVER_RUNTIME = {
     "host": "chomusuke02", "repo_id": "Qwen/Qwen3-14B", "revision": "a" * 40,
     "gpu_index": "2", "gpu_name": "NVIDIA RTX A6000", "dtype": "bfloat16",
-    "max_model_len": 8192, "seed": 20260914,
+    "max_model_len": 8192, "seed": 20260914, "generation_config": "vllm",
     "libraries": {"vllm": "0.8.5", "transformers": "4.51.0", "torch": "2.6.0"},
 }
 
@@ -683,6 +696,40 @@ def test_the_launcher_reads_the_same_cache_layout_as_the_preflight():
     assert "--download-dir" not in text
     assert 'export HF_HOME=' in text and "HF_HUB_OFFLINE=1" in text
     assert 'SNAPSHOT="$HF_HOME/hub/models--' in text
+
+
+def test_the_launcher_disables_the_models_own_generation_defaults():
+    """--generation-config auto (vLLM's default) would let generation_config.json
+    fill in top_k, temperature and top_p for any field a request omits."""
+    commands = "\n".join(line for line in LAUNCHER.read_text().splitlines()
+                         if not line.lstrip().startswith("#"))
+    assert "GENERATION_CONFIG=vllm" in commands
+    assert "GENERATION_CONFIG:-" not in commands, "a fixed choice, not an override"
+    assert '--generation-config "$GENERATION_CONFIG"' in commands
+    assert '"generation_config": "$GENERATION_CONFIG"' in commands     # recorded
+    serve = commands[commands.index('exec "$VLLM" serve'):]
+    assert "--generation-config" in serve
+
+
+def test_a_server_without_the_neutral_generation_config_is_refused(cfg):
+    from reasonstyle.generation import server_settings_problems
+    assert server_settings_problems(cfg, SERVER_RUNTIME) == []
+    for bad in ({**SERVER_RUNTIME, "generation_config": "auto"},
+                {k: v for k, v in SERVER_RUNTIME.items() if k != "generation_config"}):
+        problems = server_settings_problems(cfg, bad)
+        assert problems and "--generation-config vllm" in problems[0]
+
+
+def test_the_smoke_test_refuses_a_server_that_loaded_model_generation_defaults(tmp_path):
+    home = _cache(tmp_path)
+    runtime = tmp_path / "server_runtime.json"
+    runtime.write_text(json.dumps({**SERVER_RUNTIME, "generation_config": "auto"}))
+    result = _run_smoke(tmp_path, "--send", "--server-runtime", str(runtime),
+                        env={AUTHORIZATION_ENV: "1", "HF_HUB_OFFLINE": "1",
+                             "HF_HOME": str(home)})
+    assert result.returncode == 1
+    assert "generation_config='auto'" in result.stderr
+    assert not (tmp_path / "smoke" / "generation_log.jsonl").exists()
 
 
 def test_the_launcher_writes_a_runtime_record_and_binds_localhost():

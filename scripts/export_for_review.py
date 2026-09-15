@@ -111,6 +111,8 @@ def main(argv: list[str] | None = None) -> int:
         for name, sep in sorted(export.separation.items()):
             if not sep.satisfied:
                 print(f"  NOTE {name}: {sep.note()}")
+        for name, result in sorted(export.balance.items()):
+            print(f"  {'' if result.satisfied else 'NOTE '}{name} sample: {result.note()}")
     return 0
 
 

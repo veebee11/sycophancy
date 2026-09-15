@@ -104,6 +104,12 @@ def vllm_payload(request: DraftRequest, cfg: ExperimentConfig) -> dict[str, Any]
         "max_tokens": dec["max_tokens"],
         "n": dec["n"],
         "seed": dec["seed"],
+        # Sent explicitly at neutral values: nothing is left to a server default.
+        "top_k": dec["top_k"],
+        "min_p": dec["min_p"],
+        "repetition_penalty": dec["repetition_penalty"],
+        "presence_penalty": dec["presence_penalty"],
+        "frequency_penalty": dec["frequency_penalty"],
     }
     if gen["vllm"]["guided_json"]:
         payload["response_format"] = {
