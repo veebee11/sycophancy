@@ -170,8 +170,17 @@ def scenario_request(topic: TopicBrief, variant_id: int, cfg: ExperimentConfig) 
 
 
 def group_request(topic: TopicBrief, variant_id: int, scenario_text: str,
-                  allocation: GroupAllocation, cfg: ExperimentConfig) -> DraftRequest:
-    """The four conditions of one group, drafted together."""
+                  allocation: GroupAllocation, cfg: ExperimentConfig,
+                  *, attempt: int = 1) -> DraftRequest:
+    """The four conditions of one group, drafted together.
+
+    ``attempt`` exists because a schema-rejected or truncated response leaves
+    nothing to repair: the next call is a fresh draft, and it must have its own
+    call id rather than colliding with the draft that failed."""
+    budget = cfg.raw["corpus"]["repair"]["max_calls_per_group"]
+    if not 1 <= attempt <= budget:
+        raise RequestError(f"attempt {attempt} is outside the budget of {budget} calls "
+                           f"per group")
     option = allocation.supported_option
     if allocation.decision_id != topic.decision_id or allocation.variant_id != variant_id:
         raise RequestError("the allocation does not belong to this scenario")
@@ -191,6 +200,7 @@ def group_request(topic: TopicBrief, variant_id: int, scenario_text: str,
         kind="group", template_name="group_draft_v1", template_sha256=digest,
         prompt=prompt, response_schema=schema,
         decision_id=topic.decision_id, variant_id=variant_id, supported_option=option,
+        attempt=attempt,
         context={"domain": topic.domain,
                  "marker_family": allocation.marker_family,
                  "marker_string": allocation.marker_string,

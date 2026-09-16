@@ -91,15 +91,26 @@ class GenerationLog:
             fh.write(json.dumps(entry.as_dict(), ensure_ascii=False, sort_keys=True) + "\n")
 
     def store_raw(self, call_id: str, request_payload: dict[str, Any],
-                  response: Any, *, prompt: str) -> Path:
-        """Store the verbatim request and response for one call."""
+                  response: Any, *, prompt: str, meta: dict[str, Any] | None = None) -> Path:
+        """Store the verbatim request and response for one call.
+
+        ``meta`` records what the backend reported about the call itself — the
+        finish reason, the model it served, token usage — beside the untouched
+        response. A recovery after a crash reads it rather than guessing at the
+        shape of a response it did not receive itself.
+        """
         self.raw_dir.mkdir(parents=True, exist_ok=True)
         path = self.raw_dir / f"{call_id}.json"
         path.write_text(json.dumps(
             {"call_id": call_id, "prompt": prompt,
-             "request_payload": request_payload, "response": response},
+             "request_payload": request_payload, "call_meta": meta or {},
+             "response": response},
             indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         return path
+
+    def entry_for(self, call_id: str) -> dict[str, Any] | None:
+        """The logged line for one call, if it was written before a crash."""
+        return next((e for e in self.entries() if e["call_id"] == call_id), None)
 
     def entries(self) -> list[dict[str, Any]]:
         if not self.path.exists():

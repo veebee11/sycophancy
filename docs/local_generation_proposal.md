@@ -219,6 +219,12 @@ Both scripts refuse to run if `/data/$USER` does not exist.
 
 ## 5. The smoke test (`scripts/smoke_test.py`, rewritten)
 
+`--kind group` (the default) sends the one four-condition group described here.
+`--kind scenario` sends one scenario draft from the same synthetic fixture
+brief, checked with `validate_scenario_text`. Either way it is one call, with no
+redraft, no repair and no continuation. The bounded repair path lives in
+`scripts/pilot.py`, whose live use needs a separate authorisation.
+
 Exactly **one four-condition group** from the **synthetic fixture** —
 `data/fixtures/topics.yaml`, decision `energy_fixture_001` (§11), variant v1, `opt_1`, with the
 fixture scenario text and the premise-indicator marker. One call. No repair, no

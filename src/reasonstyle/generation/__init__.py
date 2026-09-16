@@ -58,11 +58,33 @@ from .requests import (
     scenario_request,
     write_request,
 )
+from .pipeline import (
+    ABORTED,
+    ACCEPTED,
+    Attempt,
+    CallStore,
+    NEEDS_MANUAL_REVIEW,
+    PipelineAbort,
+    StageResult,
+    draft_group,
+    draft_scenario,
+    run_pilot,
+)
 from .provenance import ProvenanceMismatch, check_request_provenance
 
 __all__ = [
+    "ABORTED",
+    "ACCEPTED",
     "AUTHORIZATION_ENV",
     "AllocationError",
+    "Attempt",
+    "CallStore",
+    "NEEDS_MANUAL_REVIEW",
+    "PipelineAbort",
+    "StageResult",
+    "draft_group",
+    "draft_scenario",
+    "run_pilot",
     "BackendError",
     "BackendUnavailable",
     "CachedModel",

@@ -34,7 +34,8 @@ import sys
 from pathlib import Path
 
 from reasonstyle.config import load_config
-from reasonstyle.corpus import load_corpus, segmenter_from_config, validate_corpus
+from reasonstyle.corpus import (load_corpus, segmenter_from_config, validate_corpus,
+                                validate_scenario_text)
 from reasonstyle.corpus.schemas import Cell
 from reasonstyle.corpus.topics import load_topic_bank
 from reasonstyle.generation import (
@@ -47,6 +48,7 @@ from reasonstyle.generation import (
     authorization_problems,
     describe_run,
     group_request,
+    scenario_request,
     load_server_runtime,
     offline_problems,
     parse_response,
@@ -86,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", required=True)
     ap.add_argument("--corpus", default=FIXTURE_CORPUS)
     ap.add_argument("--topics", default=FIXTURE_TOPICS)
+    ap.add_argument("--kind", default="group", choices=["group", "scenario"],
+                    help="one four-condition group (default), or one scenario draft")
     ap.add_argument("--option", default="opt_1", choices=["opt_1", "opt_2"])
     ap.add_argument("--model", help="override the configured repository id")
     ap.add_argument("--base-url", help="override the configured local endpoint")
@@ -114,13 +118,20 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     allocation = _allocation_from_fixture(record, args.option)
 
-    request = group_request(topic, 1, record.scenario_text, allocation, cfg)
+    if args.kind == "scenario":
+        request = scenario_request(topic, 1, cfg)
+    else:
+        request = group_request(topic, 1, record.scenario_text, allocation, cfg)
     payload = vllm_payload(request, cfg)
     if args.base_url:
         gen["vllm"]["base_url"] = args.base_url
 
-    print(f"material     SYNTHETIC {FIXTURE_DECISION} v1 / {args.option} "
-          f"({allocation.marker_family}, {allocation.marker_string!r})")
+    if args.kind == "scenario":
+        print(f"material     SYNTHETIC {FIXTURE_DECISION} v1 scenario brief")
+    else:
+        print(f"material     SYNTHETIC {FIXTURE_DECISION} v1 / {args.option} "
+              f"({allocation.marker_family}, {allocation.marker_string!r})")
+    print(f"kind         {request.kind}")
     print(f"call_id      {request.call_id}")
     print(f"prompt hash  {request.prompt_sha256[:16]}  ({len(request.prompt.split())} words)")
     print(f"endpoint     {gen['vllm']['base_url']}")
@@ -227,7 +238,60 @@ def main(argv: list[str] | None = None) -> int:
         print("No retry was attempted and no repair request was built.", file=sys.stderr)
         return 1
 
-    # -- validate, by assembling a record from what came back ----------------
+    # -- validate ------------------------------------------------------------
+    if args.kind == "scenario":
+        # A scenario stands on its own: it is checked against the same rules,
+        # by the same code, that it will face again once a corpus is assembled.
+        scenario_findings = validate_scenario_text(
+            fields["scenario_text"], cfg, segmenter_from_config(cfg),
+            loc={"decision_id": record.decision_id, "scenario_id": record.scenario_id})
+        errors = [f for f in scenario_findings if f.severity == "error"]
+        warnings = [f for f in scenario_findings if f.severity == "warning"]
+        validation = {
+            "generated_scenario": {
+                "scenario_id": record.scenario_id,
+                "error_codes": sorted(f.code for f in errors),
+                "warning_codes": sorted(f.code for f in warnings),
+                "human_review_outstanding": sum(1 for f in scenario_findings
+                                                if f.severity == "human_review")},
+            "corpus_scope": "scenario_only",
+            "ok": not errors,
+            "report_file": str(Path(args.out) / f"validation_{request.call_id}.json"),
+        }
+        report_path = Path(validation["report_file"])
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(
+            {"call_id": request.call_id, "summary": validation,
+             "findings": [f.as_dict() for f in scenario_findings]},
+            indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        env = record_call("validation_failed" if errors else "ok",
+                          "; ".join(sorted({f.code for f in errors})) or None,
+                          response, fields, validation=validation)
+        print("\n--- the scenario ---")
+        print(fields["scenario_text"])
+        print("\n--- validator ---")
+        print(f"generated scenario ({record.scenario_id}): errors {len(errors)}, "
+              f"warnings {len(warnings)}, human judgements outstanding "
+              f"{validation['generated_scenario']['human_review_outstanding']}")
+        for finding in scenario_findings:
+            if finding.severity in ("error", "warning"):
+                print(f"  {finding.severity}: {finding.code} — {finding.message[:160]}")
+        print(f"validation   {report_path}")
+        print(f"stop_reason  {response.stop_reason}")
+        print(f"revision     {cached.revision}")
+        print(f"raw response {raw_path}")
+        print(f"log          {log.path}")
+        print(f"\n{env.reproducibility_note}")
+        print("\nThis was a smoke test: one call, no redraft, no group call, no pilot "
+              "generation.")
+        if errors:
+            print("The scenario parsed but FAILED its machine checks.", file=sys.stderr)
+            return 1
+        print("No machine errors. Not an approved scenario: H_SCENARIO_VALIDITY is "
+              "outstanding.")
+        return 0
+
+    # -- validate a group, by assembling a record from what came back --------
     cells = {c: Cell(condition=c, body=fields[c],
                      markers_present=c in ("RS", "NS"),
                      marker_family=allocation.marker_family if c in ("RS", "NS") else None)

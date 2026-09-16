@@ -74,9 +74,10 @@ draft is machine-validated and then reviewed by a person.
 | 1. Fetch and verify reference sources | `fetch_sources.py`, `verify_sources.py` | done |
 | 2. Check the topic bank (overlap screen, 4 curated per domain) | `prepare_topic_bank.py` | done |
 | 3. Allocate marker family, string and realization to all 48 groups | `allocate_markers.py` | done |
-| 4. Server preflight, launch, one-group smoke test | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | awaiting server account |
-| 5. Draft 24 scenarios, then 48 four-condition groups | `emit_requests.py`, `import_responses.py` | request/import only; sender not built |
-| 6. Repair failing groups (≤2 repairs), assemble corpus JSONL | — | not built |
+| 4. Server preflight, launch, one-call smoke test (`--kind group` or `--kind scenario`) | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | two draft-only group smokes run; a scenario-plus-repair smoke is the next live gate |
+| 5. Draft 24 scenarios, then 48 four-condition groups with bounded repair | `pilot.py`, `emit_requests.py`, `import_responses.py` | controller built and tested offline; live pilot generation not authorised |
+| 6. Repair failing groups (≤2 repairs) | `pilot.py` | built, offline-tested |
+| 6b. Assemble corpus JSONL | — | not built |
 | 7. Validate and export for human review | `export_for_review.py` | built |
 
 ## Local generator

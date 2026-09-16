@@ -30,7 +30,8 @@ from .schemas import CORE_CONDITIONS, SEMANTIC_OPTIONS, Condition, Measurements
 from .schemas import ScenarioRecord, SegmenterRef
 from .segmentation import Segmenter
 
-__all__ = ["CorpusScope", "validate_corpus", "with_measurements"]
+__all__ = ["CorpusScope", "validate_corpus", "validate_group",
+           "validate_scenario_text", "with_measurements"]
 
 CorpusScope = Literal["fixture", "pilot", "full"]
 
@@ -115,10 +116,10 @@ def _containment(body: str, scenario_text: str, pattern: re.Pattern[str],
     return unmatched, matched / len(content)
 
 
-def _measure(record: ScenarioRecord, option: str, condition: Condition,
+def _measure(opening: str, block, condition: Condition,
              segmenter: Segmenter, word_re: re.Pattern[str]) -> tuple[Measurements, tuple[str, ...]]:
-    full = record.render(option, condition)          # type: ignore[arg-type]
-    body = record.counterarguments[option].cells[condition].body   # type: ignore[index]
+    body = block.cells[condition].body
+    full = f"{opening} {body}"
     seg_full, seg_body = segmenter.segment(full), segmenter.segment(body)
     info = segmenter.info
     measurements = Measurements(
@@ -146,11 +147,315 @@ def with_measurements(
         for option, block in record.counterarguments.items():
             cells = {}
             for condition, cell in block.cells.items():
-                measurements, _ = _measure(record, option, condition, segmenter, word_re)
+                measurements, _ = _measure(record.counterargument_opening, block,
+                                           condition, segmenter, word_re)
                 cells[condition] = cell.model_copy(update={"measurements": measurements})
             blocks[option] = block.model_copy(update={"cells": cells})
         out.append(record.model_copy(update={"counterarguments": blocks}))
     return out
+
+
+def validate_scenario_text(
+    scenario_text: str,
+    cfg: ExperimentConfig,
+    segmenter: Segmenter,
+    *,
+    loc: dict | None = None,
+) -> list[Finding]:
+    """The machine rules a scenario text can be held to on its own, at drafting
+    time, before any counterargument exists.
+
+    The same codes and the same configured patterns the corpus validator uses:
+    the drafting check is never weaker than the check the text faces later. It
+    is stricter in one respect — forbidden authority and evidence language is
+    screened in the scenario itself, not only in counterarguments — because a
+    scenario that smuggles in an appeal to expertise should be caught before it
+    is built upon. Whether the scenario is genuinely underdetermined,
+    self-contained and neutral stays a human judgement
+    (``H_SCENARIO_VALIDITY``).
+    """
+    c = _Collector()
+    loc = dict(loc or {})
+    word_re = re.compile(cfg.parsed.matching.words.word_regex)
+    band = cfg.raw["corpus"]["scenario_words"]
+    restrictions = cfg.raw["segmentation"]["text_restrictions"]
+
+    words = _count_words(scenario_text, word_re)
+    if not band["min"] <= words <= band["max"]:
+        c.add("W_SCENARIO_WORDS", "warning",
+              f"the scenario is {words} words, outside the drafting band "
+              f"{band['min']}-{band['max']}",
+              "scenario", detail={"words": words, **band}, **loc)
+
+    for pattern, compiled in cfg.compiled_leakage():
+        match = compiled.search(scenario_text)
+        if match is not None:
+            c.add("E_LABEL_LEAKAGE", "error",
+                  f"the scenario references a display label: {match.group(0)!r}",
+                  "scenario", detail={"pattern": pattern, "match": match.group(0)}, **loc)
+
+    for spec, pattern in cfg.compiled_forbidden():
+        match = pattern.search(scenario_text)
+        if match is None:
+            continue
+        severity = "error" if spec.severity == "hard_fail" else "warning"
+        c.add(f"{'E' if severity == 'error' else 'W'}_FORBIDDEN", severity,
+              f"{spec.family} phrase {match.group(0)!r} matched {spec.id}",
+              "scenario",
+              detail={"pattern_id": spec.id, "family": spec.family,
+                      "match": match.group(0)}, **loc)
+
+    prohibited = {"bullet_list": "prohibit_bullet_lists",
+                  "numbered_list": "prohibit_numbered_lists",
+                  "line_break": "single_paragraph"}
+    for kind in segmenter.segment(scenario_text).ambiguity_kinds():
+        if kind in prohibited and restrictions[prohibited[kind]]:
+            c.add("E_PROHIBITED_FORMATTING", "error",
+                  f"the scenario contains {kind.replace('_', ' ')}, which the config prohibits",
+                  "scenario", detail={"kind": kind}, **loc)
+        else:
+            c.add("W_AMBIGUOUS_SEGMENTATION", "warning",
+                  f"{kind.replace('_', ' ')} present; the segmenter is unreliable here and the "
+                  f"sentence count needs human confirmation",
+                  "scenario", detail={"kind": kind}, **loc)
+
+    c.add("H_SCENARIO_VALIDITY", "human_review",
+          HUMAN_REVIEW_CODES["H_SCENARIO_VALIDITY"], "scenario", **loc)
+    return c.findings
+
+
+def validate_group(
+    scenario_text: str,
+    opening: str,
+    block,
+    cfg: ExperimentConfig,
+    segmenter: Segmenter,
+    *,
+    loc: dict | None = None,
+    seen_texts: dict[str, str] | None = None,
+) -> list[Finding]:
+    """Every machine rule that applies to ONE four-cell group, plus that group's
+    unconditional human-review codes.
+
+    Extracted so a freshly drafted group can be checked before the rest of its
+    scenario exists, and checked again once the corpus is assembled — by the
+    same code, so a draft can never pass a weaker rule than the corpus it later
+    joins. ``validate_corpus`` calls this for every group; what a single group
+    cannot see (marker allocation across the corpus, duplicates in other
+    scenarios, fixture shape) stays there.
+
+    ``seen_texts`` carries cross-group duplicate detection when a corpus is
+    being validated; on its own a group is compared only against itself.
+    """
+    c = _Collector()
+    loc = dict(loc or {})
+    scenario_id = loc.get("scenario_id")
+    gloc = {**loc, "supported_option": block.supported_option}
+    seen_texts = {} if seen_texts is None else seen_texts
+    word_re = re.compile(cfg.parsed.matching.words.word_regex)
+    families = cfg.marker_families()
+    realizations = cfg.marker_realizations()
+    marker_res = {m: re.compile(rf"\b{re.escape(m)}\b", re.IGNORECASE)
+                  for m in cfg.permitted_markers()}
+    words_cfg = cfg.parsed.matching.words
+    restrictions = cfg.raw["segmentation"]["text_restrictions"]
+    body_sentences = cfg.raw["corpus"]["body_sentences"]
+    containment = cfg.raw["corpus"]["premise_containment"]
+    pair_content = cfg.parsed.matching.pair_content
+    permitted_differences = {w.casefold() for w in pair_content.permitted_differences}
+
+    if set(block.cells) != set(CORE_CONDITIONS):
+        c.add("E_MISSING_CELL", "error",
+              f"expected the four core cells, got {sorted(block.cells)}", "group", **gloc)
+        return c.findings                      # nothing else can be measured
+
+    # -- realization group (D3b) ------------------------------------
+    if block.marker_realization_id not in realizations:
+        c.add("E_REALIZATION_UNKNOWN", "error",
+              f"realization {block.marker_realization_id!r} is not in the registry",
+              "group", detail={"realization": block.marker_realization_id}, **gloc)
+    elif realizations[block.marker_realization_id]["family"] != block.marker_family:
+        c.add("E_REALIZATION_FAMILY_MISMATCH", "error",
+              f"realization {block.marker_realization_id!r} belongs to family "
+              f"{realizations[block.marker_realization_id]['family']!r}, "
+              f"not {block.marker_family!r}",
+              "group", **gloc)
+
+    if block.marker_family not in families:
+        c.add("E_UNKNOWN_MARKER_FAMILY", "error",
+              f"marker family {block.marker_family!r} is not in the inventory",
+              "group", **gloc)
+    elif block.marker_string not in families[block.marker_family]:
+        c.add("E_MARKER_NOT_IN_FAMILY", "error",
+              f"marker {block.marker_string!r} is not in family {block.marker_family!r}",
+              "group", detail={"family_markers": families[block.marker_family]}, **gloc)
+
+    c.add("H_REALIZATION_YIELDS_REASON_FREE_NS", "human_review",
+          HUMAN_REVIEW_CODES["H_REALIZATION_YIELDS_REASON_FREE_NS"], "group", **gloc)
+
+
+    # -- per-cell checks --------------------------------------------
+    measurements: dict[Condition, Measurements] = {}
+    for condition in CORE_CONDITIONS:
+        cell = block.cells[condition]
+        cloc = {**gloc, "condition": condition}
+        full = f"{opening} {cell.body}"
+
+        m, ambiguities = _measure(opening, block, condition, segmenter, word_re)
+        measurements[condition] = m
+
+        # duplicate text
+        if full in seen_texts:
+            c.add("E_DUPLICATE_TEXT", "error",
+                  f"identical rendered text already used at {seen_texts[full]}",
+                  "cell", detail={"first_seen": seen_texts[full]}, **cloc)
+        seen_texts[full] = f"{scenario_id}/{block.supported_option}/{condition}"
+
+        # marker presence and absence
+        hits = sorted(m for m, r in marker_res.items() if r.search(cell.body))
+        if cell.markers_present:
+            if not marker_res.get(block.marker_string, re.compile(r"$^")).search(cell.body):
+                c.add("E_MARKER_MISSING_IN_STYLED_CELL", "error",
+                      f"styled cell does not contain its marker {block.marker_string!r}",
+                      "cell", detail={"markers_found": hits}, **cloc)
+        elif hits:
+            c.add("E_MARKER_IN_PLAIN_CELL", "error",
+                  f"plain cell contains marker(s) {hits}; marker absence is what "
+                  f"defines RP and NP",
+                  "cell", detail={"markers_found": hits}, **cloc)
+
+        # the shared opening belongs to the scenario and is prepended
+        # once by the renderer; a body that repeats it would show it
+        # twice in the finished reply and inflate every word count.
+        if _normalized(opening) in _normalized(cell.body):
+            c.add("E_OPENING_REPEATED_IN_BODY", "error",
+                  f"the body repeats the shared opening {opening!r}, which the "
+                  f"renderer already prepends; the body is only what follows it",
+                  "cell", detail={"opening": opening}, **cloc)
+
+        # forbidden phrases, by declared severity
+        for spec, pattern in cfg.compiled_forbidden():
+            match = pattern.search(full)
+            if match is None:
+                continue
+            severity = "error" if spec.severity == "hard_fail" else "warning"
+            c.add(f"{'E' if severity == 'error' else 'W'}_FORBIDDEN", severity,
+                  f"{spec.family} phrase {match.group(0)!r} matched {spec.id}",
+                  "cell",
+                  detail={"pattern_id": spec.id, "family": spec.family,
+                          "match": match.group(0), "span": list(match.span())}, **cloc)
+
+        # display-label leakage
+        for pattern, compiled in cfg.compiled_leakage():
+            match = compiled.search(full)
+            if match is not None:
+                c.add("E_LABEL_LEAKAGE", "error",
+                      f"text references a display label: {match.group(0)!r}",
+                      "cell", detail={"pattern": pattern, "match": match.group(0)}, **cloc)
+
+        # text restrictions and segmentation ambiguity
+        prohibited = {"bullet_list": "prohibit_bullet_lists",
+                      "numbered_list": "prohibit_numbered_lists",
+                      "line_break": "single_paragraph"}
+        for kind in ambiguities:
+            if kind in prohibited and restrictions[prohibited[kind]]:
+                c.add("E_PROHIBITED_FORMATTING", "error",
+                      f"text contains {kind.replace('_', ' ')}, which the config prohibits",
+                      "cell", detail={"kind": kind}, **cloc)
+            else:
+                c.add("W_AMBIGUOUS_SEGMENTATION", "warning",
+                      f"{kind.replace('_', ' ')} present; the segmenter is unreliable here "
+                      f"and the sentence count needs human confirmation",
+                      "cell", detail={"kind": kind, "sentence_count": m.sentence_count_full},
+                      **cloc)
+
+        # premise containment: a reason cell's content words should
+        # come from its own scenario. A lexical screen only — it cannot
+        # see paraphrase, and the human judgement stays authoritative.
+        if condition in ("RS", "RP"):
+            unmatched, coverage = _containment(cell.body, scenario_text,
+                                               word_re, containment)
+            if coverage < containment["min_content_word_coverage"]:
+                c.add("W_PREMISE_NOT_IN_SCENARIO", "warning",
+                      f"{coverage:.0%} of this reason cell's content words appear in "
+                      f"its scenario (floor {containment['min_content_word_coverage']:.0%}); "
+                      f"check that it introduces no new claim: {unmatched}",
+                      "cell", detail={"coverage": round(coverage, 4),
+                                      "unmatched": unmatched}, **cloc)
+
+        # unconditional human review, per item
+        for code in ("H_SUPPORT_DIRECTION", "H_SUBSTANTIVE_SUPPORT",
+                     "H_NATURALNESS", "H_PRAGMATIC_COMMITMENT"):
+            c.add(code, "human_review", HUMAN_REVIEW_CODES[code], "cell", **cloc)
+        if condition in ("NS", "NP"):
+            c.add("H_NO_REASON_INTEGRITY", "human_review",
+                  HUMAN_REVIEW_CODES["H_NO_REASON_INTEGRITY"], "cell", **cloc)
+
+    # -- exact sentence-count equality (D1) --------------------------
+    counts = {k: v.sentence_count_full for k, v in measurements.items()}
+    if len(set(counts.values())) != 1:
+        c.add("E_SENTENCE_COUNT_MISMATCH", "error",
+              f"the four cells must have equal sentence counts; got {counts}",
+              "group", detail={"counts": counts}, **gloc)
+    else:
+        # Only once the group agrees with itself: an unequal group is
+        # already reported above, and saying it twice would not help.
+        body_counts = {k: v.sentence_count_body for k, v in measurements.items()}
+        actual = next(iter(set(body_counts.values())))
+        if actual != body_sentences:
+            c.add("E_BODY_SENTENCE_COUNT", "error",
+                  f"a body is exactly {body_sentences} sentences; these are {actual}",
+                  "group", detail={"expected": body_sentences, "actual": actual}, **gloc)
+
+    # -- word-count ratio, on full text and body (D2) ----------------
+    for scope_name, key in (("full_text", "word_count_full"), ("body", "word_count_body")):
+        if scope_name not in (words_cfg.applies_to or ["full_text"]):
+            continue
+        values = {k: getattr(v, key) for k, v in measurements.items()}
+        lo, hi = min(values.values()), max(values.values())
+        ratio = hi / lo if lo else float("inf")
+        detail = {"measurement": scope_name, "counts": values, "ratio": round(ratio, 4)}
+        if ratio > words_cfg.ratio_fail:
+            c.add(f"E_WORD_RATIO_{scope_name.upper()}", "error",
+                  f"{scope_name} word ratio {ratio:.3f} exceeds {words_cfg.ratio_fail}",
+                  "group", detail=detail, **gloc)
+        elif ratio > words_cfg.ratio_warn:
+            c.add(f"W_WORD_RATIO_{scope_name.upper()}", "warning",
+                  f"{scope_name} word ratio {ratio:.3f} exceeds the {words_cfg.ratio_warn} target",
+                  "group", detail=detail, **gloc)
+
+    # -- pair content drift, styled vs plain -------------------------
+    # A lexical screen under the minimal-edit rule (D3b): once the
+    # assigned marker and the configured function words are removed,
+    # the two cells of a pair should contain the same content words.
+    # It catches a claim added, dropped or reworded on one side only.
+    # It cannot establish that two bodies mean the same thing, which is
+    # why H_PROPOSITION_PRESERVATION below stays unconditional.
+    for styled, plain in pair_content.compare_pairs:
+        styled_tokens = _content_tokens(block.cells[styled].body, word_re,
+                                        block.marker_string, permitted_differences)
+        plain_tokens = _content_tokens(block.cells[plain].body, word_re,
+                                       None, permitted_differences)
+        only_styled = sorted((styled_tokens - plain_tokens).elements())
+        only_plain = sorted((plain_tokens - styled_tokens).elements())
+        if only_styled or only_plain:
+            c.add("E_PAIR_CONTENT_DRIFT", "error",
+                  f"{styled} and {plain} must differ only by the marker and function "
+                  f"words, but {styled} has {only_styled} and {plain} has {only_plain}",
+                  "pair",
+                  detail={"pair": [styled, plain], f"only_in_{styled}": only_styled,
+                          f"only_in_{plain}": only_plain,
+                          "marker_removed": block.marker_string,
+                          "permitted_differences":
+                              sorted(permitted_differences)}, **gloc)
+
+    # -- pair-level human review (D13) -------------------------------
+    for first, second in _PAIRS:
+        c.add("H_PROPOSITION_PRESERVATION", "human_review",
+              f"{HUMAN_REVIEW_CODES['H_PROPOSITION_PRESERVATION']} ({first}/{second})",
+              "pair", detail={"pair": [first, second]}, **gloc)
+
+    return c.findings
 
 
 def validate_corpus(
@@ -242,202 +547,17 @@ def validate_corpus(
 
         for option in SEMANTIC_OPTIONS:
             block = record.counterarguments[option]
-            gloc = {**loc, "supported_option": option}
-
-            if set(block.cells) != set(CORE_CONDITIONS):
-                c.add("E_MISSING_CELL", "error",
-                      f"expected the four core cells, got {sorted(block.cells)}", "group", **gloc)
-                continue
-
-            # -- realization group (D3b) ------------------------------------
-            if block.marker_realization_id not in realizations:
-                c.add("E_REALIZATION_UNKNOWN", "error",
-                      f"realization {block.marker_realization_id!r} is not in the registry",
-                      "group", detail={"realization": block.marker_realization_id}, **gloc)
-            elif realizations[block.marker_realization_id]["family"] != block.marker_family:
-                c.add("E_REALIZATION_FAMILY_MISMATCH", "error",
-                      f"realization {block.marker_realization_id!r} belongs to family "
-                      f"{realizations[block.marker_realization_id]['family']!r}, "
-                      f"not {block.marker_family!r}",
-                      "group", **gloc)
-
-            if block.marker_family not in families:
-                c.add("E_UNKNOWN_MARKER_FAMILY", "error",
-                      f"marker family {block.marker_family!r} is not in the inventory",
-                      "group", **gloc)
-            elif block.marker_string not in families[block.marker_family]:
-                c.add("E_MARKER_NOT_IN_FAMILY", "error",
-                      f"marker {block.marker_string!r} is not in family {block.marker_family!r}",
-                      "group", detail={"family_markers": families[block.marker_family]}, **gloc)
-
-            c.add("H_REALIZATION_YIELDS_REASON_FREE_NS", "human_review",
-                  HUMAN_REVIEW_CODES["H_REALIZATION_YIELDS_REASON_FREE_NS"], "group", **gloc)
 
             marker_decisions[block.marker_string].add(record.decision_id)
             marker_domains[block.marker_string][record.domain] += 1
             marker_options[block.marker_string][option] += 1
+            if set(block.cells) == set(CORE_CONDITIONS):
+                n_texts += len(CORE_CONDITIONS)
 
-            # -- per-cell checks --------------------------------------------
-            measurements: dict[Condition, Measurements] = {}
-            for condition in CORE_CONDITIONS:
-                cell = block.cells[condition]
-                cloc = {**gloc, "condition": condition}
-                n_texts += 1
-                full = record.render(option, condition)   # type: ignore[arg-type]
-
-                m, ambiguities = _measure(record, option, condition, segmenter, word_re)
-                measurements[condition] = m
-
-                # duplicate text
-                if full in seen_texts:
-                    c.add("E_DUPLICATE_TEXT", "error",
-                          f"identical rendered text already used at {seen_texts[full]}",
-                          "cell", detail={"first_seen": seen_texts[full]}, **cloc)
-                seen_texts[full] = f"{record.scenario_id}/{option}/{condition}"
-
-                # marker presence and absence
-                hits = sorted(m for m, r in marker_res.items() if r.search(cell.body))
-                if cell.markers_present:
-                    if not marker_res.get(block.marker_string, re.compile(r"$^")).search(cell.body):
-                        c.add("E_MARKER_MISSING_IN_STYLED_CELL", "error",
-                              f"styled cell does not contain its marker {block.marker_string!r}",
-                              "cell", detail={"markers_found": hits}, **cloc)
-                elif hits:
-                    c.add("E_MARKER_IN_PLAIN_CELL", "error",
-                          f"plain cell contains marker(s) {hits}; marker absence is what "
-                          f"defines RP and NP",
-                          "cell", detail={"markers_found": hits}, **cloc)
-
-                # the shared opening belongs to the scenario and is prepended
-                # once by the renderer; a body that repeats it would show it
-                # twice in the finished reply and inflate every word count.
-                if _normalized(opening) in _normalized(cell.body):
-                    c.add("E_OPENING_REPEATED_IN_BODY", "error",
-                          f"the body repeats the shared opening {opening!r}, which the "
-                          f"renderer already prepends; the body is only what follows it",
-                          "cell", detail={"opening": opening}, **cloc)
-
-                # forbidden phrases, by declared severity
-                for spec, pattern in cfg.compiled_forbidden():
-                    match = pattern.search(full)
-                    if match is None:
-                        continue
-                    severity = "error" if spec.severity == "hard_fail" else "warning"
-                    c.add(f"{'E' if severity == 'error' else 'W'}_FORBIDDEN", severity,
-                          f"{spec.family} phrase {match.group(0)!r} matched {spec.id}",
-                          "cell",
-                          detail={"pattern_id": spec.id, "family": spec.family,
-                                  "match": match.group(0), "span": list(match.span())}, **cloc)
-
-                # display-label leakage
-                for pattern, compiled in cfg.compiled_leakage():
-                    match = compiled.search(full)
-                    if match is not None:
-                        c.add("E_LABEL_LEAKAGE", "error",
-                              f"text references a display label: {match.group(0)!r}",
-                              "cell", detail={"pattern": pattern, "match": match.group(0)}, **cloc)
-
-                # text restrictions and segmentation ambiguity
-                prohibited = {"bullet_list": "prohibit_bullet_lists",
-                              "numbered_list": "prohibit_numbered_lists",
-                              "line_break": "single_paragraph"}
-                for kind in ambiguities:
-                    if kind in prohibited and restrictions[prohibited[kind]]:
-                        c.add("E_PROHIBITED_FORMATTING", "error",
-                              f"text contains {kind.replace('_', ' ')}, which the config prohibits",
-                              "cell", detail={"kind": kind}, **cloc)
-                    else:
-                        c.add("W_AMBIGUOUS_SEGMENTATION", "warning",
-                              f"{kind.replace('_', ' ')} present; the segmenter is unreliable here "
-                              f"and the sentence count needs human confirmation",
-                              "cell", detail={"kind": kind, "sentence_count": m.sentence_count_full},
-                              **cloc)
-
-                # premise containment: a reason cell's content words should
-                # come from its own scenario. A lexical screen only — it cannot
-                # see paraphrase, and the human judgement stays authoritative.
-                if condition in ("RS", "RP"):
-                    unmatched, coverage = _containment(cell.body, record.scenario_text,
-                                                       word_re, containment)
-                    if coverage < containment["min_content_word_coverage"]:
-                        c.add("W_PREMISE_NOT_IN_SCENARIO", "warning",
-                              f"{coverage:.0%} of this reason cell's content words appear in "
-                              f"its scenario (floor {containment['min_content_word_coverage']:.0%}); "
-                              f"check that it introduces no new claim: {unmatched}",
-                              "cell", detail={"coverage": round(coverage, 4),
-                                              "unmatched": unmatched}, **cloc)
-
-                # unconditional human review, per item
-                for code in ("H_SUPPORT_DIRECTION", "H_SUBSTANTIVE_SUPPORT",
-                             "H_NATURALNESS", "H_PRAGMATIC_COMMITMENT"):
-                    c.add(code, "human_review", HUMAN_REVIEW_CODES[code], "cell", **cloc)
-                if condition in ("NS", "NP"):
-                    c.add("H_NO_REASON_INTEGRITY", "human_review",
-                          HUMAN_REVIEW_CODES["H_NO_REASON_INTEGRITY"], "cell", **cloc)
-
-            # -- exact sentence-count equality (D1) --------------------------
-            counts = {k: v.sentence_count_full for k, v in measurements.items()}
-            if len(set(counts.values())) != 1:
-                c.add("E_SENTENCE_COUNT_MISMATCH", "error",
-                      f"the four cells must have equal sentence counts; got {counts}",
-                      "group", detail={"counts": counts}, **gloc)
-            else:
-                # Only once the group agrees with itself: an unequal group is
-                # already reported above, and saying it twice would not help.
-                body_counts = {k: v.sentence_count_body for k, v in measurements.items()}
-                actual = next(iter(set(body_counts.values())))
-                if actual != body_sentences:
-                    c.add("E_BODY_SENTENCE_COUNT", "error",
-                          f"a body is exactly {body_sentences} sentences; these are {actual}",
-                          "group", detail={"expected": body_sentences, "actual": actual}, **gloc)
-
-            # -- word-count ratio, on full text and body (D2) ----------------
-            for scope_name, key in (("full_text", "word_count_full"), ("body", "word_count_body")):
-                if scope_name not in (words_cfg.applies_to or ["full_text"]):
-                    continue
-                values = {k: getattr(v, key) for k, v in measurements.items()}
-                lo, hi = min(values.values()), max(values.values())
-                ratio = hi / lo if lo else float("inf")
-                detail = {"measurement": scope_name, "counts": values, "ratio": round(ratio, 4)}
-                if ratio > words_cfg.ratio_fail:
-                    c.add(f"E_WORD_RATIO_{scope_name.upper()}", "error",
-                          f"{scope_name} word ratio {ratio:.3f} exceeds {words_cfg.ratio_fail}",
-                          "group", detail=detail, **gloc)
-                elif ratio > words_cfg.ratio_warn:
-                    c.add(f"W_WORD_RATIO_{scope_name.upper()}", "warning",
-                          f"{scope_name} word ratio {ratio:.3f} exceeds the {words_cfg.ratio_warn} target",
-                          "group", detail=detail, **gloc)
-
-            # -- pair content drift, styled vs plain -------------------------
-            # A lexical screen under the minimal-edit rule (D3b): once the
-            # assigned marker and the configured function words are removed,
-            # the two cells of a pair should contain the same content words.
-            # It catches a claim added, dropped or reworded on one side only.
-            # It cannot establish that two bodies mean the same thing, which is
-            # why H_PROPOSITION_PRESERVATION below stays unconditional.
-            for styled, plain in pair_content.compare_pairs:
-                styled_tokens = _content_tokens(block.cells[styled].body, word_re,
-                                                block.marker_string, permitted_differences)
-                plain_tokens = _content_tokens(block.cells[plain].body, word_re,
-                                               None, permitted_differences)
-                only_styled = sorted((styled_tokens - plain_tokens).elements())
-                only_plain = sorted((plain_tokens - styled_tokens).elements())
-                if only_styled or only_plain:
-                    c.add("E_PAIR_CONTENT_DRIFT", "error",
-                          f"{styled} and {plain} must differ only by the marker and function "
-                          f"words, but {styled} has {only_styled} and {plain} has {only_plain}",
-                          "pair",
-                          detail={"pair": [styled, plain], f"only_in_{styled}": only_styled,
-                                  f"only_in_{plain}": only_plain,
-                                  "marker_removed": block.marker_string,
-                                  "permitted_differences":
-                                      sorted(permitted_differences)}, **gloc)
-
-            # -- pair-level human review (D13) -------------------------------
-            for first, second in _PAIRS:
-                c.add("H_PROPOSITION_PRESERVATION", "human_review",
-                      f"{HUMAN_REVIEW_CODES['H_PROPOSITION_PRESERVATION']} ({first}/{second})",
-                      "pair", detail={"pair": [first, second]}, **gloc)
+            # One implementation of the group rules, shared with drafting.
+            c.findings.extend(validate_group(
+                record.scenario_text, record.counterargument_opening, block, cfg, segmenter,
+                loc=loc, seen_texts=seen_texts))
 
     # -- corpus-level: fixture shape ----------------------------------------
     if corpus_scope == "fixture":
