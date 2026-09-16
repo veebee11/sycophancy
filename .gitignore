@@ -81,3 +81,9 @@ secrets.yml
 *.swp
 *.log
 nohup.out
+
+# Live pilot run artefacts: the generation log, raw responses, per-call results
+# and request files. Regenerable, large, and not research records in themselves;
+# the approvals, the manual corrections, the corpus and its manifest ARE, and
+# stay tracked.
+data/pilot/run/

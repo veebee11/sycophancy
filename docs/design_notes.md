@@ -703,6 +703,14 @@ verifies the weights themselves: with a safetensors index, every shard it names
 must be present and non-empty — a config and tokenizer alone are exactly what an
 interrupted download leaves behind.
 
+**Two stages, and a person between them.** Scenario drafting and group drafting
+are separate commands, and no command does both: the curator's approval sits
+between them, and a tool that crossed that boundary automatically would make the
+gate decorative. Both stages are resumable — a completed call is recovered from
+disk, never re-sent — so the sequence is: draft every scenario, read them,
+record approvals, draft the groups. A scenario marked `redraft` blocks the set
+and is a separate decision; there is deliberately no automatic redraft budget.
+
 **The curator-approval gate.** A group is drafted *from* a scenario, so the
 scenario is approved first, and the approval binds four things: the exact text
 (by SHA-256), the accepted call it came from, the configuration hash and the

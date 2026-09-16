@@ -94,11 +94,12 @@ draft is machine-validated and then reviewed by a person.
 | 2. Check the topic bank (overlap screen, 4 curated per domain) | `prepare_topic_bank.py` | done |
 | 3. Allocate marker family, string and realization to all 48 groups | `allocate_markers.py` | done |
 | 4. Server preflight, launch, one-call smoke test (`--kind group` or `--kind scenario`) | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | two draft-only group smokes run live (15 and 16 Sep 2026); the standalone `--kind scenario` command has not been run |
-| 5. Draft the pilot's 24 scenarios, **stop for curator approval**, then draft its 48 four-condition groups with bounded repair | `pilot.py`, `emit_requests.py`, `import_responses.py` | two resumable stages separated by the approval gate; controller built and tested offline; the live execution path is not built |
+| 5. Draft the pilot's 24 scenarios (`pilot.py scenarios`), **stop for curator approval**, then draft its 48 groups with bounded repair (`pilot.py groups`) | `pilot.py` | two commands, never combined, whole pilot only; built and tested offline; no pilot call authorised yet |
+| 5b. File-based request/response path, separate from the live runner | `emit_requests.py`, `import_responses.py` | built; not part of the two-stage live path |
 | 6. Repair failing groups (≤2 repairs) | `pipeline_smoke.py` | built; run live twice on 2026-09-16, both ending `needs_manual_review`. The mechanism is confirmed: distinct, diagnosed repairs, unchanged output routed to review. No further synthetic repair smoke is planned |
-| 6b. Assemble corpus JSONL and its manifest, corpus-wide | — | not built; the per-scenario assembly and correction core exists (`generation/assemble.py`), the driver over the whole pilot does not |
+| 6b. Assemble corpus JSONL and its manifest, corpus-wide | `pilot.py assemble` | built, offline-tested; writes atomically, refuses a partial pilot, validates before writing |
 | 7. Validate and export the pilot for human review | `export_for_review.py` | built |
-| 8. Approve every scenario (stage two of a two-stage run), then assemble what passes | `pilot.py approvals`, `generation/approvals.py`, `generation/assemble.py` | gate and per-scenario assembly built and offline-tested; the live two-stage execution path is not built |
+| 8. Approve every scenario between the two stages, then assemble what passes | `pilot.py scenario-review`, `pilot.py approvals`, `pilot.py assemble` | built and offline-tested; no pilot call authorised yet |
 | 9. Extend to the full 60 decisions, then validate, review and freeze | — | not started |
 
 ## Local generator
@@ -112,7 +113,9 @@ required, so a missing model is an error, never a download. The weights'
 commit SHA must be resolved from the local cache and recorded in
 `models.generator.model.revision` before the server starts. A live call needs
 both `--send` and `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`. Omitting `--send` is
-the dry run. Details: [`docs/local_generation_proposal.md`](docs/local_generation_proposal.md).
+the dry run. A **pilot stage** (`pilot.py scenarios` or `pilot.py groups`)
+needs a second key as well, `REASONSTYLE_ALLOW_PILOT_GENERATION=1`: drafting a
+corpus is a separate decision from making one smoke call. Details: [`docs/local_generation_proposal.md`](docs/local_generation_proposal.md).
 The earlier Anthropic proposal in `docs/drafting_proposal.md` is withdrawn.
 
 On the server, in order:

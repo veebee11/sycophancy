@@ -1,9 +1,9 @@
 """The two command-line entry points: what they can and cannot do.
 
-``pilot.py`` must not be able to send at all, at any argument or environment
-combination, until the curator-approval gate and the corpus assembler exist.
-``pipeline_smoke.py`` may send exactly one scenario and one group, and only
-with the same authorisations and server checks the one-call smoke test makes.
+``pilot.py`` sends only from its two stage commands, only with both
+authorisation keys, and only over the complete pilot; everything else in it
+reads and reports. ``pipeline_smoke.py`` may send exactly one scenario and one
+group, with the local-generation key alone.
 
 Every test here runs the scripts as subprocesses with a poisoned network: any
 socket use fails loudly rather than reaching a real endpoint.
@@ -61,7 +61,7 @@ def _load_pilot_module():
     return module
 
 
-# --- pilot.py cannot send ----------------------------------------------------
+# --- what pilot.py may and may not do ----------------------------------------
 
 
 ALL_KEYS = {"REASONSTYLE_ALLOW_LOCAL_GENERATION": "1",
@@ -85,59 +85,59 @@ def test_no_pilot_invocation_contacts_a_backend(command, send, tmp_path, no_netw
     dict(zip(ALL_KEYS, combination))
     for combination in itertools.product(["1", ""], repeat=len(ALL_KEYS))
 ])
-def test_no_environment_combination_unlocks_sending(keys, tmp_path, no_network):
+def test_no_environment_combination_makes_plan_send(keys, tmp_path, no_network):
+    """`plan` is a report. No key turns it into a run."""
     result = _run(PILOT, "plan", "--out", str(tmp_path / "run"), "--send",
                   env=keys, sitecustomize=no_network)
     assert result.returncode == 0, result.stderr
-    assert "this script cannot send" in result.stdout
     assert "DRY RUN" in result.stdout
     assert not (tmp_path / "run" / "generation_log.jsonl").exists()
+    assert not (tmp_path / "run" / "raw").exists()
 
 
-def test_the_refusal_names_the_work_that_is_missing(tmp_path, no_network):
-    result = _run(PILOT, "plan", "--out", str(tmp_path / "run"), "--send",
-                  env=ALL_KEYS, sitecustomize=no_network)
-    assert "the live two-stage pilot execution path, which is not written" in result.stdout
-    assert "corpus-wide assembly driver" in result.stdout
-    # A repair succeeding on a fixture is not a prerequisite for anything, and
-    # the refusal does not send the reader back to the finished smoke script.
-    assert "confirmation" not in result.stdout
-    assert "pipeline_smoke.py instead" not in result.stdout
+def test_the_refusal_names_every_missing_key(tmp_path, no_network):
+    result = _run(PILOT, "scenarios", "--out", str(tmp_path / "run"), "--send",
+                  env={k: "" for k in ALL_KEYS}, sitecustomize=no_network)
+    assert "REASONSTYLE_ALLOW_LOCAL_GENERATION" in result.stdout
+    assert "REASONSTYLE_ALLOW_PILOT_GENERATION" in result.stdout
+    assert "HF_HUB_OFFLINE" in result.stdout
+    assert "separate authorisation from a smoke call" in result.stdout
 
 
-def test_the_approvals_command_reads_and_contacts_nothing(tmp_path, no_network):
-    """The gate is reported, never decided, by this script."""
-    result = _run(PILOT, "approvals", "--out", str(tmp_path / "run"),
-                  "--approvals-file", str(tmp_path / "approvals.yaml"),
-                  env=ALL_KEYS, sitecustomize=no_network)
-    assert result.returncode == 0, result.stderr
-    assert "approvals file" in result.stdout
-    assert "attempted to contact a backend" not in result.stderr
-    assert not (tmp_path / "approvals.yaml").exists(), "it decides nothing"
-    assert not (tmp_path / "run" / "generation_log.jsonl").exists()
-
-
-def test_pilot_has_no_live_code_path_at_all():
-    """Not a runtime check: the module imports no backend and no run_pilot, so
-    there is nothing for a future edit to switch on by accident."""
+def test_only_the_two_stage_commands_can_reach_a_backend(tmp_path, no_network):
+    """Everything else in this script reads files and reports."""
     source = PILOT.read_text()
-    for forbidden in ("VLLMOpenAIBackend", "run_pilot", "allow_live", "FakeBackend"):
-        assert forbidden not in source, forbidden
-    module = _load_pilot_module()
-    assert module.live_problems(False) and module.live_problems(True)
-    assert module.live_problems(True, env=ALL_KEYS), "no environment empties the refusal"
+    assert source.count("VLLMOpenAIBackend()") == 1, "one construction, inside _stage"
+    body = source[source.index("def _stage("):source.index("def _scenario_review(")]
+    assert "VLLMOpenAIBackend()" in body
+    for command in ("plan", "status", "approvals", "scenario-review", "assemble"):
+        result = _run(PILOT, command, "--out", str(tmp_path / "run"), "--send",
+                      "--approvals-file", str(tmp_path / "approvals.yaml"),
+                      "--corrections-file", str(tmp_path / "corrections.yaml"),
+                      "--corpus", str(tmp_path / "corpus.jsonl"),
+                      "--review-out", str(tmp_path / "review"),
+                      env=ALL_KEYS, sitecustomize=no_network)
+        assert "attempted to contact a backend" not in result.stderr, command
+        assert not (tmp_path / "run" / "raw").exists(), command
 
 
-def test_one_plan_command_covers_scenarios_and_their_groups(tmp_path, no_network):
-    """No command may suggest a narrower live scope than the pipeline has: the
-    groups of a scenario are drafted from that scenario's own accepted text."""
-    result = _run(PILOT, "plan", "--out", str(tmp_path / "run"),
-                  env=ALL_KEYS, sitecustomize=no_network)
-    assert "scenarios    24 calls" in result.stdout
-    assert "groups       48 drafts" in result.stdout
-    bad = _run(PILOT, "groups", "--out", str(tmp_path / "run2"),
-               sitecustomize=no_network)
-    assert bad.returncode != 0 and "invalid choice" in bad.stderr
+def test_the_two_stages_are_separate_commands(tmp_path, no_network):
+    """No command drafts scenarios and then their groups: the curator's
+    approval sits between them, and crossing it automatically is the thing the
+    gate exists to prevent."""
+    plan = _run(PILOT, "plan", "--out", str(tmp_path / "run"), env=ALL_KEYS,
+                sitecustomize=no_network)
+    assert "scenarios    24 calls" in plan.stdout and "groups       48 drafts" in plan.stdout
+    scenarios = _run(PILOT, "scenarios", "--out", str(tmp_path / "run"),
+                     sitecustomize=no_network)
+    groups = _run(PILOT, "groups", "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  sitecustomize=no_network)
+    assert "stage        scenarios" in scenarios.stdout
+    assert "stage        groups" in groups.stdout
+    unknown = _run(PILOT, "everything", "--out", str(tmp_path / "run2"),
+                   sitecustomize=no_network)
+    assert unknown.returncode != 0 and "invalid choice" in unknown.stderr
 
 
 # --- pipeline_smoke.py: one scenario, one group, four calls ------------------
@@ -283,3 +283,181 @@ def test_an_accepted_scenario_is_judged_on_its_approval(tmp_path, no_network):
                      results={"a" * 64: {"scenario_text": "a drafted scenario"}})
     assert "pending" in stdout and "no approval recorded" in stdout
     assert "not_generated" not in stdout and "blocked_by_machine_errors" not in stdout
+
+
+# --- the two live stages, from the command line ------------------------------
+
+
+STAGE_KEYS = {"REASONSTYLE_ALLOW_LOCAL_GENERATION": "1",
+              "REASONSTYLE_ALLOW_PILOT_GENERATION": "1", "HF_HUB_OFFLINE": "1"}
+
+
+@pytest.mark.parametrize("command", ["scenarios", "groups"])
+@pytest.mark.parametrize("missing", ["REASONSTYLE_ALLOW_LOCAL_GENERATION",
+                                     "REASONSTYLE_ALLOW_PILOT_GENERATION", "HF_HUB_OFFLINE"])
+def test_a_stage_needs_all_three_keys(command, missing, tmp_path, no_network):
+    """Each key is a separate decision, and any one missing stops the stage
+    before a call artefact exists."""
+    env = {**STAGE_KEYS, missing: ""}
+    result = _run(PILOT, command, "--out", str(tmp_path / "run"), "--send",
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  env=env, sitecustomize=no_network)
+    assert result.returncode == 0, result.stderr
+    assert "nothing was sent" in result.stdout and missing in result.stdout
+    assert not (tmp_path / "run" / "generation_log.jsonl").exists()
+    assert not (tmp_path / "run" / "raw").exists()
+
+
+@pytest.mark.parametrize("command", ["scenarios", "groups"])
+def test_a_stage_without_send_reports_and_sends_nothing(command, tmp_path, no_network):
+    result = _run(PILOT, command, "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  env=STAGE_KEYS, sitecustomize=no_network)
+    assert result.returncode == 0
+    assert "nothing was sent" in result.stdout
+    assert not (tmp_path / "run").exists() or not (tmp_path / "run" / "raw").exists()
+
+
+@pytest.mark.parametrize("command", ["scenarios", "groups"])
+def test_a_stage_refuses_before_the_first_call_without_the_server_checks(command, tmp_path,
+                                                                        no_network):
+    """Authorised, but no cached model: it stops before any call artefact."""
+    result = _run(PILOT, command, "--out", str(tmp_path / "run"), "--send",
+                  "--hf-home", str(tmp_path / "empty"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  env=STAGE_KEYS, sitecustomize=no_network)
+    assert result.returncode == 1
+    assert "no call was made" in result.stderr
+    assert not (tmp_path / "run" / "generation_log.jsonl").exists()
+
+
+def test_the_stage_commands_announce_their_own_ceilings(tmp_path, no_network):
+    scenarios = _run(PILOT, "scenarios", "--out", str(tmp_path / "run"),
+                     sitecustomize=no_network)
+    groups = _run(PILOT, "groups", "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  sitecustomize=no_network)
+    assert "24 calls at most" in scenarios.stdout and "no repair path" in scenarios.stdout
+    assert "48 drafts, at most 144 calls" in groups.stdout
+
+
+def test_the_groups_command_reports_the_gate_that_would_block_it(tmp_path, no_network):
+    result = _run(PILOT, "groups", "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  sitecustomize=no_network)
+    assert "24 scenario(s) would block group drafting" in result.stdout
+
+
+def test_no_command_crosses_the_approval_boundary(tmp_path, no_network):
+    """There is no command that drafts scenarios and then their groups."""
+    source = PILOT.read_text()
+    assert "run_scenario_stage" in source and "run_group_stage" in source
+    body = source[source.index("def _stage("):]
+    assert 'kind == "scenarios"' in body and 'kind == "groups"' in body
+    # one stage per invocation: the two calls are in mutually exclusive branches
+    assert body.count("run_scenario_stage(") == 1 and body.count("run_group_stage(") == 1
+
+
+def test_the_scenario_review_template_approves_nothing(tmp_path, no_network):
+    import yaml
+    result = _run(PILOT, "scenario-review", "--out", str(tmp_path / "run"),
+                  "--review-out", str(tmp_path / "review"), "--write-template",
+                  "--only", "climate_01", "--variants", "1", sitecustomize=no_network)
+    assert result.returncode == 0
+    template = yaml.safe_load((tmp_path / "review" /
+                               "scenario_approvals.template.yaml").read_text())
+    entry = template["climate_01_v1"]
+    assert entry["decision"] == "pending"
+    assert set(entry["judgements"].values()) == {None}
+    assert entry["decided_by"] is None
+    assert "approving is" in result.stdout
+    review = (tmp_path / "review" / "scenarios.md").read_text()
+    assert "climate_01_v1" in review and "Judgements to record" in review
+
+
+def test_assemble_refuses_a_partial_pilot_and_writes_nothing(tmp_path, no_network):
+    corpus = tmp_path / "corpus.jsonl"
+    result = _run(PILOT, "assemble", "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  "--corrections-file", str(tmp_path / "corrections.yaml"),
+                  "--corpus", str(corpus), sitecustomize=no_network)
+    assert result.returncode == 1
+    assert "nothing was assembled" in result.stderr
+    assert not corpus.exists() and not corpus.with_suffix(".manifest.json").exists()
+
+
+def test_the_status_command_counts_without_contacting_anything(tmp_path, no_network):
+    result = _run(PILOT, "status", "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  "--corrections-file", str(tmp_path / "corrections.yaml"),
+                  sitecustomize=no_network)
+    assert result.returncode == 0
+    for label in ("scenarios expected", "scenarios generated", "scenarios approved",
+                  "groups expected", "accepted, no repair", "accepted after repair",
+                  "needs_manual_review", "groups with an approved correction",
+                  "groups ready to assemble", "blocking assembly"):
+        assert label in result.stdout, label
+    assert "attempted to contact a backend" not in result.stderr
+
+
+# --- the whole-pilot boundary, from the command line -------------------------
+
+
+@pytest.mark.parametrize("command", ["scenarios", "groups", "assemble"])
+@pytest.mark.parametrize("selection", [
+    ["--only", "climate_01"],
+    ["--variants", "1"],
+    ["--variants", "1", "1"],
+    ["--variants", "1", "2", "3"],
+])
+def test_a_whole_pilot_command_refuses_a_subset(command, selection, tmp_path, no_network):
+    """No live generation or assembly can quietly produce part of a pilot."""
+    corpus = tmp_path / "corpus.jsonl"
+    result = _run(PILOT, command, "--out", str(tmp_path / "run"), "--send", *selection,
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  "--corrections-file", str(tmp_path / "corrections.yaml"),
+                  "--corpus", str(corpus), env=STAGE_KEYS, sitecustomize=no_network)
+    assert result.returncode == 1
+    assert "runs on the complete pilot" in result.stderr
+    assert not (tmp_path / "run").exists() or not (tmp_path / "run" / "raw").exists()
+    assert not corpus.exists()
+
+
+@pytest.mark.parametrize("command", ["scenario-review", "approvals", "status", "log", "plan"])
+def test_a_reporting_command_may_be_filtered(command, tmp_path, no_network):
+    """Targeted reporting is useful and harmless: it reads and prints."""
+    result = _run(PILOT, command, "--out", str(tmp_path / "run"), "--only", "climate_01",
+                  "--variants", "1", "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  "--corrections-file", str(tmp_path / "corrections.yaml"),
+                  "--review-out", str(tmp_path / "review"), sitecustomize=no_network)
+    assert result.returncode == 0, result.stderr
+    assert "runs on the complete pilot" not in result.stderr
+
+
+def test_the_review_page_carries_the_brief_behind_the_judgements(tmp_path, no_network):
+    """A curator should not have to open the topic YAML to judge whether both
+    facts are stated or the options are balanced."""
+    _run(PILOT, "scenario-review", "--out", str(tmp_path / "run"),
+         "--review-out", str(tmp_path / "review"), "--only", "climate_01", "--variants", "1",
+         sitecustomize=no_network)
+    page = (tmp_path / "review" / "scenarios.md").read_text()
+    for heading in ("The brief this scenario was drafted from", "**Decision.**",
+                    "**Option opt_1.**", "**Option opt_2.**", "*competing goal:*",
+                    "**Why underdetermined.**", "**Variant 1 context.**",
+                    "Variant facts", "The generated scenario"):
+        assert heading in page, heading
+    assert "`opt_1`" in page and "`opt_2`" in page
+
+
+def test_status_counts_a_corrected_group_as_ready_not_blocked(tmp_path, no_network):
+    """Counts come from each scenario's own state, and a corrected group is not
+    reported as permanently blocking."""
+    result = _run(PILOT, "status", "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  "--corrections-file", str(tmp_path / "corrections.yaml"),
+                  sitecustomize=no_network)
+    assert "groups ready to assemble" in result.stdout
+    assert "groups with an approved correction" in result.stdout
+    assert "correction record(s), one per cell" in result.stdout
+    assert "blocking assembly" in result.stdout
+    assert "scenario(s) not approved" in result.stdout

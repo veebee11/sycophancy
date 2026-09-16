@@ -63,6 +63,11 @@ __all__ = [
     "group_diagnostics",
     "draft_group",
     "draft_scenario",
+    "gate_problems_for",
+    "recorded_groups",
+    "recorded_scenarios",
+    "run_group_stage",
+    "run_scenario_stage",
     "run_pilot",
 ]
 
@@ -677,6 +682,168 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
 
     return StageResult("group", topic.decision_id, variant_id, option, NEEDS_MANUAL_REVIEW,
                        tuple(attempts), findings=findings)
+
+
+def recorded_scenarios(store: CallStore) -> dict[str, dict[str, Any]]:
+    """Every scenario call this run directory remembers, by scenario id.
+
+    A scenario counts as drafted only when a call produced usable text: a
+    transport failure or a rejected response produced none, so the scenario is
+    absent here however many times it was attempted. An accepted call wins over
+    an earlier usable one.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for entry in store.log.entries():
+        if entry["kind"] != "scenario":
+            continue
+        scenario_id = f"{entry['decision_id']}_v{entry['variant_id']}"
+        out.setdefault(scenario_id, {"attempts": 0})
+        out[scenario_id]["attempts"] += 1
+        if entry["status"] != "ok":
+            continue
+        path = store.result_path(entry["call_id"])
+        fields = json.loads(path.read_text(encoding="utf-8")).get("fields") or {} \
+            if path.is_file() else {}
+        text = fields.get("scenario_text") or ""
+        if not text:
+            continue
+        if out[scenario_id].get("outcome") == ACCEPTED:
+            continue
+        out[scenario_id].update({
+            "scenario_text": text, "call_id": entry["call_id"],
+            "outcome": entry.get("outcome"),
+            "error_codes": list((entry.get("validation") or {}).get("error_codes") or []),
+            "decision_id": entry["decision_id"], "variant_id": entry["variant_id"]})
+    return out
+
+
+def recorded_groups(store: CallStore) -> dict[tuple[str, str], dict[str, Any]]:
+    """Every group this run directory remembers, by (scenario_id, option).
+
+    ``calls`` counts the attempts that consumed budget, so a group accepted on
+    its first call is distinguishable from one accepted after a repair.
+
+    The latest usable bodies are kept **whatever the outcome**, together with
+    the exact call that produced them. A group that ended
+    ``needs_manual_review`` is precisely the case a manual correction exists
+    for: without its text and its call id there would be nothing to correct and
+    nothing to bind a correction to. Keeping them decides nothing — the
+    assembler still refuses such a group unless approved corrections bound to
+    that call make it machine-valid.
+    """
+    out: dict[tuple[str, str], dict[str, Any]] = {}
+    for entry in store.log.entries():
+        if entry["kind"] not in ("group", "repair") or entry["status"] not in _CONSUMES_BUDGET:
+            continue
+        key = (f"{entry['decision_id']}_v{entry['variant_id']}", entry["supported_option"])
+        record = out.setdefault(key, {"calls": 0, "outcome": None, "bodies": None,
+                                      "call_id": None, "error_codes": [], "accepted": False})
+        record["calls"] += 1
+        record["outcome"] = entry.get("outcome")
+        record["error_codes"] = list((entry.get("validation") or {}).get("error_codes") or [])
+        path = store.result_path(entry["call_id"])
+        if not path.is_file():
+            continue
+        fields = json.loads(path.read_text(encoding="utf-8")).get("fields") or {}
+        if not fields:
+            continue
+        # The latest usable response stands; an accepted one is never displaced.
+        if not record["accepted"]:
+            record.update({"bodies": fields, "call_id": entry["call_id"],
+                           "accepted": entry.get("outcome") == ACCEPTED})
+    return out
+
+
+def run_scenario_stage(topics, cfg: ExperimentConfig, segmenter: Segmenter, backend,
+                       store: CallStore, *, allow_live: bool = False,
+                       variants: tuple[int, ...] = (1, 2)) -> list[StageResult]:
+    """Stage one, alone: draft or recover every requested scenario.
+
+    It never drafts a group. The stage ends at the curator's door by
+    construction, because crossing that boundary automatically is exactly what
+    the gate exists to prevent.
+
+    Ceiling: one call per requested scenario, and no scenario repair — there is
+    no scenario repair template, and a failing scenario is a curator decision.
+    """
+    results = []
+    for topic in sorted(topics, key=lambda t: t.decision_id):
+        for variant_id in variants:
+            results.append(draft_scenario(topic, variant_id, cfg, segmenter, backend, store,
+                                          allow_live=allow_live))
+    return results
+
+
+def run_group_stage(topics, allocation_groups, cfg: ExperimentConfig, segmenter: Segmenter,
+                    backend, store: CallStore, *, approvals: dict | None,
+                    topic_bank_content_hash: str | None, allow_live: bool = False,
+                    variants: tuple[int, ...] = (1, 2)) -> list[StageResult]:
+    """Stage two, alone: draft or recover the groups of an approved pilot.
+
+    It makes **no scenario call**. A scenario that is missing from the record is
+    a refusal, never something to generate here as a convenience: drafting it
+    would produce text nobody has approved and then build on it.
+
+    The gate is all-or-nothing and is checked before the first group call.
+    """
+    problems = gate_problems_for(topics, store, cfg, approvals=approvals,
+                                 topic_bank_content_hash=topic_bank_content_hash,
+                                 variants=variants)
+    if problems:
+        raise PipelineAbort(
+            "the curator gate is not satisfied, so no group was drafted:\n  - "
+            + "\n  - ".join(problems))
+
+    scenarios = recorded_scenarios(store)
+    by_group = {(g.decision_id, g.variant_id, g.supported_option): g for g in allocation_groups}
+    results = []
+    for topic in sorted(topics, key=lambda t: t.decision_id):
+        for variant_id in variants:
+            scenario_id = f"{topic.decision_id}_v{variant_id}"
+            text = scenarios[scenario_id]["scenario_text"]
+            for option in ("opt_1", "opt_2"):
+                group = by_group.get((topic.decision_id, variant_id, option))
+                if group is None:
+                    raise PipelineAbort(
+                        f"no marker allocation for {scenario_id} {option}")
+                results.append(draft_group(topic, variant_id, text, group, cfg, segmenter,
+                                           backend, store, allow_live=allow_live))
+    return results
+
+
+def gate_problems_for(topics, store: CallStore, cfg: ExperimentConfig, *,
+                      approvals: dict | None, topic_bank_content_hash: str | None,
+                      variants: tuple[int, ...] = (1, 2)) -> list[str]:
+    """Why group drafting may not begin, over the complete expected set."""
+    problems: list[str] = []
+    if approvals is None:
+        problems.append("no approvals were supplied: group drafting needs the curator's gate")
+    if not topic_bank_content_hash:
+        problems.append("no topic-bank hash was supplied: an approval must bind the briefs "
+                        "its scenario was drafted from")
+    scenarios = recorded_scenarios(store)
+    for topic in sorted(topics, key=lambda t: t.decision_id):
+        for variant_id in variants:
+            scenario_id = f"{topic.decision_id}_v{variant_id}"
+            record = scenarios.get(scenario_id)
+            if not record or not record.get("scenario_text"):
+                problems.append(f"{scenario_id}: no usable scenario draft is recorded")
+                continue
+            if record.get("outcome") != ACCEPTED or record.get("error_codes"):
+                problems.append(f"{scenario_id}: the recorded scenario is "
+                                f"{record.get('outcome')} with "
+                                f"{len(record.get('error_codes') or [])} machine error(s)")
+                continue
+            if approvals is None or not topic_bank_content_hash:
+                continue
+            state, reasons = approval_status(
+                scenario_id, record["scenario_text"], record["call_id"], approvals,
+                config_content_hash=cfg.content_hash,
+                topic_bank_content_hash=topic_bank_content_hash)
+            if state != APPROVAL_GRANTED:
+                detail = "; ".join(r for r in reasons if r)
+                problems.append(f"{scenario_id}: {state}" + (f" ({detail})" if detail else ""))
+    return problems
 
 
 def run_pilot(topics, allocation_groups, cfg: ExperimentConfig, segmenter: Segmenter,

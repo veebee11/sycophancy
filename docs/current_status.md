@@ -17,7 +17,7 @@
 - **Scenario drafting (2026-09-16).** The scenario stage **has run live**, inside `pipeline_smoke.py`, and its scenario was accepted. The standalone `smoke_test.py --kind scenario` command is implemented and offline-tested but has not itself been run.
 - **Bounded repair controller (2026-09-16).** One draft plus at most two validator-driven repairs, then `needs_manual_review`; recorded per call, resumable, transport failures retryable. It **ran live twice** through `scripts/pipeline_smoke.py`. The first run's repairs were identical requests; after the correction, the second run sent two distinct, diagnosed repairs and recorded the model's unchanged replies as no progress — **the corrected mechanism was confirmed live**. Both runs ended `needs_manual_review`. No further synthetic repair smoke is planned.
 - **Live calls so far: four smoke runs, ten model calls in total** — two draft-only group smokes (1 call each) and two repair-path smokes (4 calls each). No pilot generation.
-- **`scripts/pilot.py` (2026-09-16).** Plan and status only. It has no live code path at any argument or environment combination, and `--send` refuses.
+- **`scripts/pilot.py` (2026-09-16).** The two-stage pilot runner: `scenarios` and `groups` as separate commands that cannot be combined, plus `scenario-review`, `approvals`, `assemble`, `status` and `log`. A live stage needs `--send` **and** both authorisation keys, and runs on the complete pilot only — a subset is refused. Built and offline-tested; **no pilot call has been authorised or made**.
 - **Tests.** The full suite passes on a laptop, with no server.
 
 ## Corpus scope (settled 2026-09-16)
@@ -43,9 +43,8 @@ The order this implies:
 
 ## Not yet built
 
-- **A corpus-wide assembly driver.** The per-scenario assembly and correction core is built and offline-tested (`generation/assemble.py`), but nothing yet reads the recorded calls, approvals and corrections for the whole pilot, writes `data/pilot/corpus.jsonl` and its manifest, and produces the review export.
-- **The live two-stage execution path:** the scenario stage, the gate check between the stages, and the group stage, driven against a server. Separately authorised, and not written.
-- **The scenario `redraft` path.** The gate reports `redraft` and blocks the set on it, but nothing re-drafts a scenario, and the budget for doing so is undecided.
+- **The scenario `redraft` path.** The gate reports `redraft` and blocks the set on it, but nothing re-drafts a scenario. There is deliberately no automatic redraft budget: it needs an explicit decision.
+- **A live pilot run.** The two-stage path is implemented and offline-tested; no pilot call has been authorised or made.
 - **The remaining decisions to reach 60** (normally 48 more), then validation, human review and the corpus freeze.
 - **The mechanistic subset's selection rule** — 40 of the 60 — documented before mechanistic analysis.
 - Model adapter, answer-token verification, logit scoring and every later analysis and mechanistic stage.
@@ -220,9 +219,12 @@ than accepted or silently retried. **No further synthetic repair smoke is
 planned.** Whether Qwen3-14B repairs this particular fixture automatically is
 not a prerequisite for anything.
 
-**3. Real pilot generation is hard-disabled.**
-`scripts/pilot.py` plans and reports only. It has no live code path at any
-argument or environment combination, and `--send` refuses.
+**3. Pilot generation is implemented and unauthorised.**
+`scripts/pilot.py` has the live path, in two commands that cannot be combined.
+Each needs `--send`, `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`,
+`REASONSTYLE_ALLOW_PILOT_GENERATION=1` and `HF_HUB_OFFLINE=1`, passes the same
+pre-flight as the smoke tests, and refuses any subset of the pilot. Nothing has
+been run against a server.
 
 **4. The two prerequisites are now built, offline-tested, and unused.**
 `generation/approvals.py` is the curator-approval gate: an approval binds the
@@ -257,16 +259,27 @@ which is separately authorised work and is not written.
 6. **Complete the item, pair and scenario human review**, which is what turns a
    draft corpus into an approved one.
 
-**Not yet implemented in that orchestration:** the live execution path that
-drives steps 1 and 3 against a server, and the `redraft` state — a scenario the
-curator marks for redrafting is reported by the gate and blocks the set, but
-nothing yet re-drafts it, and the scenario budget for doing so is undecided.
+**The orchestration is now implemented, offline.** `scripts/pilot.py` has the
+two stages as two commands — `scenarios` and `groups`, which cannot be combined
+— plus `scenario-review`, `approvals`, `assemble` and `status`. Each live stage
+needs `--send`, `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`,
+`REASONSTYLE_ALLOW_PILOT_GENERATION=1` and `HF_HUB_OFFLINE=1`, and runs the same
+cache, revision, runtime-record and server-setting checks as the smoke tests
+before its first call. Ceilings: 24 scenario calls with no repair path; 48 group
+drafts and at most 144 calls including repairs. `assemble` writes
+`data/pilot/corpus.jsonl` and its manifest atomically, refuses an existing
+corpus without `--overwrite`, and validates the whole corpus before writing.
+
+**Still not implemented:** the scenario `redraft` path. The gate reports
+`redraft` and blocks the set on it, but nothing re-drafts a scenario; there is
+no automatic scenario-redraft budget, and a `redraft` decision needs an explicit
+later choice. **No pilot call has been authorised or made.**
 
 ## Next steps
 
-1. **Review and commit the gate, the assembler and the two-phase controller**, then bring the server checkout up to date. The prepared environment works: four live smoke calls have launched and completed on it.
-2. **Decide whether to implement the live pilot execution path**, which is separately authorised: the scenario stage, the approval gate check between the stages, and the group stage. A `redraft` path for scenarios is part of that decision.
-3. **Then generate the pilot in two stages** — all scenarios, curator approval, then groups — and assemble what passes.
+1. **Review and commit the gate, the assembler and the two-phase controller**, then bring the server checkout up to date. The prepared environment works: four live smoke runs, ten model calls in total, have completed on it.
+2. **Authorise stage one** when ready: `pilot.py scenarios --send` with both keys, 24 calls, no repair.
+3. **Read the scenarios** (`pilot.py scenario-review`), record approvals, then **authorise stage two** (`pilot.py groups --send`), then `pilot.py assemble`. A `redraft` decision needs a separate choice, since nothing re-drafts automatically.
 4. **After the pilot is reviewed**, extend to the full 60 decisions, then validate, human-review and freeze before any evaluated-model run.
 
 ## Open, not resolved

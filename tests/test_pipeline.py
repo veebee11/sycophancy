@@ -754,10 +754,10 @@ def test_an_accepted_scenario_feeds_its_own_text_to_the_groups(topic, cfg, segme
         assert SCENARIO in request.prompt
 
 
-def test_the_pilot_controller_cannot_send_at_all(cfg):
-    """`scripts/pilot.py` plans and reports. The refusal does not depend on the
-    environment: it is blocked on work that does not exist yet. See
-    tests/test_pipeline_cli.py for the end-to-end proof."""
+def test_the_pilot_stages_need_both_authorisations(cfg):
+    """A live stage needs --send, the local-generation key and the pilot key.
+    Pilot generation is a separate decision from one smoke call, and the CLI
+    tests in tests/test_pipeline_cli.py prove no other command can send."""
     import importlib.util
     import pathlib
     spec = importlib.util.spec_from_file_location(
@@ -766,7 +766,8 @@ def test_the_pilot_controller_cannot_send_at_all(cfg):
     spec.loader.exec_module(module)
     every_key = {"REASONSTYLE_ALLOW_LOCAL_GENERATION": "1", "HF_HUB_OFFLINE": "1",
                  module.PILOT_AUTHORIZATION_ENV: "1"}
-    assert module.live_problems(True, cfg, env=every_key), "no key combination unlocks it"
-    assert module.live_problems(False, cfg, env=every_key)
-    assert any("two-stage pilot execution path, which is not written" in p
-               for p in module.live_problems(False))
+    assert module.live_problems(True, cfg, env=every_key) == []
+    assert module.live_problems(False, cfg, env=every_key), "--send is still required"
+    for missing in every_key:
+        problems = module.live_problems(True, cfg, env={**every_key, missing: ""})
+        assert any(missing in p for p in problems), missing

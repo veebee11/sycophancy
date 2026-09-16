@@ -67,7 +67,10 @@ REQUIRED_JUDGEMENTS = (
     "length_without_filler",
 )
 
-_DECISIONS = (APPROVED, REDRAFT, NEEDS_MANUAL_REVIEW)
+#: Decisions a file may record. ``pending`` is what a generated template
+#: carries: it loads, so a partly reviewed file is usable while the curator
+#: works through it, and it never satisfies the gate.
+_DECISIONS = (APPROVED, PENDING, REDRAFT, NEEDS_MANUAL_REVIEW)
 
 
 class ApprovalError(ValueError):
@@ -84,14 +87,14 @@ class ScenarioApproval:
     config_content_hash: str
     topic_bank_content_hash: str
     decision: str
-    judgements: dict[str, bool]
-    decided_by: str
-    decided_at: date
+    judgements: dict[str, bool | None]
+    decided_by: str | None
+    decided_at: date | None
     reason: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         out = asdict(self)
-        out["decided_at"] = self.decided_at.isoformat()
+        out["decided_at"] = self.decided_at.isoformat() if self.decided_at else None
         return out
 
     @property
@@ -100,17 +103,23 @@ class ScenarioApproval:
 
 
 def _approval_from(scenario_id: str, raw: dict[str, Any]) -> ScenarioApproval:
-    missing = [k for k in ("scenario_text_sha256", "call_id", "config_content_hash",
-                           "topic_bank_content_hash", "decision", "judgements",
-                           "decided_by", "decided_at") if k not in raw]
-    if missing:
-        raise ApprovalError(f"{scenario_id}: the approval is missing {missing}")
-    if raw["decision"] not in _DECISIONS:
-        raise ApprovalError(f"{scenario_id}: decision {raw['decision']!r} is not one of "
+    decision = raw.get("decision")
+    if decision not in _DECISIONS:
+        raise ApprovalError(f"{scenario_id}: decision {decision!r} is not one of "
                             f"{list(_DECISIONS)}")
-    if raw["decision"] != APPROVED and not raw.get("reason"):
-        raise ApprovalError(f"{scenario_id}: a decision of {raw['decision']!r} needs a reason")
-    decided_at = raw["decided_at"]
+    required = ("scenario_text_sha256", "call_id", "config_content_hash",
+                "topic_bank_content_hash", "decision", "judgements")
+    if decision == APPROVED:
+        # An approval is a person's act, and says who made it and when.
+        required += ("decided_by", "decided_at")
+    missing = [k for k in required if k not in raw]
+    if missing:
+        raise ApprovalError(f"{scenario_id}: a {decision!r} record is missing {missing}")
+    if decision == APPROVED and not (raw.get("decided_by") and raw.get("decided_at")):
+        raise ApprovalError(f"{scenario_id}: an approval needs its reviewer and date")
+    if decision in (REDRAFT, NEEDS_MANUAL_REVIEW) and not raw.get("reason"):
+        raise ApprovalError(f"{scenario_id}: a decision of {decision!r} needs a reason")
+    decided_at = raw.get("decided_at")
     return ScenarioApproval(
         scenario_id=scenario_id,
         scenario_text_sha256=raw["scenario_text_sha256"],
@@ -119,8 +128,9 @@ def _approval_from(scenario_id: str, raw: dict[str, Any]) -> ScenarioApproval:
         topic_bank_content_hash=raw["topic_bank_content_hash"],
         decision=raw["decision"],
         judgements=dict(raw["judgements"] or {}),
-        decided_by=raw["decided_by"],
-        decided_at=decided_at if isinstance(decided_at, date) else date.fromisoformat(decided_at),
+        decided_by=raw.get("decided_by"),
+        decided_at=(decided_at if isinstance(decided_at, date) or decided_at is None
+                    else date.fromisoformat(decided_at)),
         reason=raw.get("reason"))
 
 
@@ -165,8 +175,12 @@ def approval_status(scenario_id: str, scenario_text: str, call_id: str,
     approval = approvals.get(scenario_id)
     if approval is None:
         return PENDING, ("no approval recorded",)
+    if approval.decision == PENDING:
+        return PENDING, ("recorded but not yet reviewed",)
     if approval.decision != APPROVED:
         return approval.decision, (approval.reason or "",)
+    if not (approval.decided_by and approval.decided_at):
+        return NEEDS_MANUAL_REVIEW, ("the approval does not say who approved it, or when",)
 
     reasons = []
     if approval.scenario_text_sha256 != sha256_of(scenario_text):

@@ -224,14 +224,26 @@ Both scripts refuse to run if `/data/$USER` does not exist.
 brief, checked with `validate_scenario_text`. Either way it is one call, with no
 redraft, no repair and no continuation.
 
+Pilot generation itself is `scripts/pilot.py`, in two commands that cannot be
+combined: `scenarios` (24 calls, no repair path) and, after the curator has
+approved every scenario against its exact text, `groups` (48 drafts, at most 144
+calls with repairs). Each needs `--send`, `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`,
+`REASONSTYLE_ALLOW_PILOT_GENERATION=1` and `HF_HUB_OFFLINE=1`, runs the same
+pre-flight checks as the smoke tests, and refuses any subset of the pilot.
+`pilot.py assemble` then writes the corpus and its manifest, each replaced
+atomically. None of it has been run against a server.
+
+A smoke call needs the local-generation key only; a pilot stage needs the
+pilot-generation key as well.
+
 The bounded repair path lives in `scripts/pipeline_smoke.py`: one scenario and
 one group, four calls at most. It ran live twice on 2026-09-16. The first run
 exhausted the ceiling because both repair requests were identical; the second,
 after the correction, sent two distinct repairs carrying numerical diagnostics
 and recorded the model's unchanged replies as no progress. Both ended
 `needs_manual_review`, which is the designed outcome for a group the model does
-not repair. **No further synthetic repair smoke is planned.** Pilot generation,
-in `scripts/pilot.py`, remains unavailable: that script cannot send.
+not repair. **No further synthetic repair smoke is planned.** Pilot generation
+itself has not been authorised, and no pilot call has been made.
 
 Exactly **one four-condition group** from the **synthetic fixture** —
 `data/fixtures/topics.yaml`, decision `energy_fixture_001` (§11), variant v1, `opt_1`, with the

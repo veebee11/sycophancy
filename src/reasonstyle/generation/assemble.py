@@ -22,6 +22,7 @@ afterwards.
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
@@ -41,10 +42,12 @@ __all__ = [
     "AssemblyError",
     "AssemblyRefused",
     "ManualCorrection",
+    "assemble_pilot",
     "assemble_scenario",
     "correction_problems",
     "load_corrections",
     "save_corrections",
+    "write_pilot_corpus",
 ]
 
 #: Every field an auditable correction must carry. A correction missing any of
@@ -333,3 +336,182 @@ def assembly_manifest(record: ScenarioRecord, *, scenario_call_id: str,
         "validation_status": record.validation.status,
         "manual_corrections": [c.as_dict() for c in corrections],
     }
+
+
+# --------------------------------------------------------------------------
+# The corpus-wide driver
+# --------------------------------------------------------------------------
+
+
+def assemble_pilot(*, topics, allocation_groups, approvals: dict[str, ScenarioApproval],
+                   corrections: list[ManualCorrection], scenarios: dict[str, dict[str, Any]],
+                   groups: dict[tuple[str, str], dict[str, Any]], cfg: ExperimentConfig,
+                   segmenter: Segmenter, topic_bank_content_hash: str,
+                   variants: tuple[int, ...] = (1, 2)) -> tuple[list, dict[str, Any]]:
+    """Every record of the pilot, or nothing.
+
+    A corpus assembled from whatever happened to be ready would not be the
+    pilot; it would be a subset chosen by which calls succeeded, with a marker
+    allocation no longer balanced over the decisions it was built for. So a
+    single missing scenario, unaccepted group, unresolved machine error or
+    unapproved correction refuses the whole build.
+
+    The records come back validated at pilot scope and still marked ``draft``:
+    machine-valid and scenario-approved is not item-approved.
+    """
+    from ..corpus.validate import validate_corpus
+
+    by_group = {(g.decision_id, g.variant_id, g.supported_option): g
+                for g in allocation_groups}
+    records, manifests = [], []
+    missing: list[str] = []
+
+    for topic in sorted(topics, key=lambda t: t.decision_id):
+        for variant_id in variants:
+            scenario_id = f"{topic.decision_id}_v{variant_id}"
+            scenario = scenarios.get(scenario_id) or {}
+            if not scenario.get("scenario_text"):
+                missing.append(f"{scenario_id}: no accepted scenario draft")
+                continue
+            bodies, call_ids, allocations = {}, {}, {}
+            for option in ("opt_1", "opt_2"):
+                recorded = groups.get((scenario_id, option)) or {}
+                if not recorded.get("bodies"):
+                    missing.append(f"{scenario_id}/{option}: no usable group response "
+                                   f"({recorded.get('outcome') or 'no call recorded'})")
+                    continue
+                if not recorded.get("accepted"):
+                    # A group the model never got right may still be assembled,
+                    # but only through recorded corrections bound to this exact
+                    # call — and only if the corrected cells then validate.
+                    corrected = [c for c in corrections
+                                 if (c.scenario_id, c.supported_option) == (scenario_id, option)]
+                    if not corrected:
+                        missing.append(
+                            f"{scenario_id}/{option}: ended "
+                            f"{recorded.get('outcome')} and has no recorded correction")
+                        continue
+                allocation = by_group.get((topic.decision_id, variant_id, option))
+                if allocation is None:
+                    missing.append(f"{scenario_id}/{option}: no marker allocation")
+                    continue
+                bodies[option] = recorded["bodies"]
+                call_ids[option] = recorded["call_id"]
+                allocations[option] = allocation
+            if len(bodies) != 2:
+                continue
+
+            mine = [c for c in corrections if c.scenario_id == scenario_id]
+            record, applied = assemble_scenario(
+                topic=topic, variant_id=variant_id,
+                scenario_text=scenario["scenario_text"],
+                scenario_call_id=scenario["call_id"], groups=bodies,
+                group_call_ids=call_ids, allocations=allocations, approvals=approvals,
+                cfg=cfg, segmenter=segmenter, corrections=mine,
+                topic_bank_content_hash=topic_bank_content_hash)
+            records.append(record)
+            manifests.append(assembly_manifest(record, scenario_call_id=scenario["call_id"],
+                                               group_call_ids=call_ids, corrections=applied))
+
+    if missing:
+        raise AssemblyRefused(
+            "the pilot is incomplete, so nothing was assembled:\n  - " + "\n  - ".join(missing))
+
+    report = validate_corpus(records, cfg, segmenter, corpus_scope="pilot")
+    if report.errors:
+        codes = sorted({f.code for f in report.errors})
+        raise AssemblyRefused(
+            f"full-corpus validation found {len(report.errors)} error(s) {codes}; a machine "
+            f"error is never assembled, and no approval overrides one")
+
+    manifest = {
+        "config_version": cfg.config_version,
+        "config_content_hash": cfg.content_hash,
+        "topic_bank_content_hash": topic_bank_content_hash,
+        "corpus_scope": report.corpus_scope,
+        "n_scenarios": len(records),
+        "n_texts": report.n_texts,
+        "machine_errors": len(report.errors),
+        "machine_warnings": len(report.warnings),
+        "outstanding_human_review": len(report.human_review),
+        "validation_status": "draft",
+        "scenarios": manifests,
+        "note": ("Machine-valid and scenario-approved. Every item, pair and scenario "
+                 "judgement is still outstanding, and every record stays draft until they "
+                 "are recorded."),
+    }
+    return records, manifest
+
+
+def corpus_matches_manifest(corpus_path: str | Path,
+                            manifest_path: str | Path) -> tuple[bool, str]:
+    """``(consistent, why)`` for a corpus and the manifest beside it.
+
+    The manifest records the corpus's SHA-256, so a pair left mismatched by an
+    interruption is detectable rather than merely unlikely. Run this before
+    trusting a corpus you did not just build.
+    """
+    corpus_path, manifest_path = Path(corpus_path), Path(manifest_path)
+    if not corpus_path.is_file():
+        return (False, f"{corpus_path} is missing")
+    if not manifest_path.is_file():
+        return (False, f"{manifest_path} is missing: the corpus was written but its manifest "
+                       f"was not, so rebuild or re-run assembly")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    actual = sha256_of(corpus_path.read_text(encoding="utf-8"))
+    if manifest.get("corpus_sha256") != actual:
+        return (False, f"{manifest_path} describes corpus {str(manifest.get('corpus_sha256'))[:12]}, "
+                       f"but {corpus_path} hashes to {actual[:12]}")
+    return (True, "the corpus and its manifest agree")
+
+
+def write_pilot_corpus(records, manifest: dict[str, Any], *, corpus_path: str | Path,
+                       manifest_path: str | Path | None = None,
+                       overwrite: bool = False) -> tuple[Path, Path]:
+    """Write the corpus, then its manifest, each replaced atomically.
+
+    What this guarantees, exactly: every byte of each file is written to a
+    temporary file beside its destination and only then renamed into place, so
+    **neither file is ever seen half-written**, and a failure before the first
+    rename leaves both destinations untouched.
+
+    What it does not guarantee: the *pair* is not written in one transaction.
+    An interruption between the two renames can leave a new corpus beside an
+    old or absent manifest. That state is detectable rather than silent — the
+    manifest carries the corpus's SHA-256, and
+    :func:`corpus_matches_manifest` compares them — and the fix is to run the
+    assembly again, which is deterministic.
+
+    An existing corpus is never replaced silently: overwriting is an explicit
+    act, because the file it replaces may be what a reviewer has been reading.
+    """
+    from ..corpus.store import dumps_record
+
+    corpus_path = Path(corpus_path)
+    manifest_path = Path(manifest_path or corpus_path.with_suffix(".manifest.json"))
+    existing = [p for p in (corpus_path, manifest_path) if p.exists()]
+    if existing and not overwrite:
+        raise AssemblyRefused(
+            f"{', '.join(str(p) for p in existing)} already exists; pass overwrite=True to "
+            f"replace it deliberately")
+
+    corpus_path.parent.mkdir(parents=True, exist_ok=True)
+    body = "".join(dumps_record(record) + "\n" for record in records)
+    manifest = {**manifest, "corpus_sha256": sha256_of(body),
+                "corpus_file": corpus_path.name}
+    temporary = []
+    try:
+        corpus_tmp = corpus_path.with_name(corpus_path.name + ".tmp")
+        corpus_tmp.write_text(body, encoding="utf-8")
+        temporary.append(corpus_tmp)
+        manifest_tmp = manifest_path.with_name(manifest_path.name + ".tmp")
+        manifest_tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False,
+                                           sort_keys=True) + "\n", encoding="utf-8")
+        temporary.append(manifest_tmp)
+        corpus_tmp.replace(corpus_path)
+        manifest_tmp.replace(manifest_path)
+    finally:
+        for path in temporary:
+            if path.exists():
+                path.unlink()
+    return corpus_path, manifest_path
