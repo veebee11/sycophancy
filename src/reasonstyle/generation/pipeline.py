@@ -42,6 +42,8 @@ from ..corpus.schemas import CORE_CONDITIONS, Cell, DirectionBlock
 from ..corpus.segmentation import Segmenter
 from ..corpus.validate import validate_group, validate_scenario_text
 from .allocation import GroupAllocation
+from .approvals import APPROVED as APPROVAL_GRANTED
+from .approvals import approval_status
 from .backends import BackendError, BackendUnavailable, LiveCallRefused, vllm_payload
 from .environment import CachedModel, describe_run
 from .log import GenerationLog, LogEntry, utc_now
@@ -77,6 +79,11 @@ TRANSPORT_ERROR = "transport_error"
 #: response. The controller re-judges it and records the research outcome.
 RECOVERED = "recovered_from_raw"
 SKIPPED_SCENARIO_NOT_ACCEPTED = "skipped_scenario_not_accepted"
+#: The curator gate refused: the scenario exists but is not approved for use.
+SKIPPED_SCENARIO_NOT_APPROVED = "skipped_scenario_not_approved"
+#: This scenario was approved, but another one in the set was not. The gate is
+#: all-or-nothing, so its groups wait too.
+SKIPPED_GATE_NOT_SATISFIED = "skipped_gate_not_satisfied"
 
 #: Statuses that consume one call of a budget. A transport error or a refusal
 #: never does: nothing usable came back, and nothing was decided.
@@ -674,34 +681,99 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
 
 def run_pilot(topics, allocation_groups, cfg: ExperimentConfig, segmenter: Segmenter,
               backend, store: CallStore, *, allow_live: bool = False,
-              variants: tuple[int, ...] = (1, 2)) -> list[StageResult]:
-    """Scenarios first, then the groups of every scenario that was accepted.
+              variants: tuple[int, ...] = (1, 2),
+              approvals: dict | None = None,
+              topic_bank_content_hash: str | None = None) -> list[StageResult]:
+    """Two phases: draft every scenario, then — only if the whole set is
+    approved — draft the groups.
 
-    Strictly sequential and deterministic: decisions in sorted order, variants
-    in order, ``opt_1`` before ``opt_2``. A scenario that is not accepted takes
-    its own groups out of the run — and nothing here approves anything: a
-    machine-valid group still needs the human judgements the validator lists.
+    **Phase one** drafts or recovers every requested scenario, and stops there.
+    That is the intended first invocation: it produces the texts a curator has
+    to read, and no group call is made while any of them is unread.
+
+    **Phase two** evaluates the complete set against the curator's gate. It is
+    all-or-nothing: one scenario that is pending, stale, marked for redraft,
+    awaiting a judgement, or blocked by machine errors stops group drafting for
+    *every* scenario, approved ones included. Splitting the set would unbalance
+    a marker allocation built over all the decisions at once, and would quietly
+    turn "the pilot" into whichever subset happened to pass first.
+
+    **Phase three** drafts the groups, reading each scenario's text from the
+    draft the curator actually approved.
+
+    The workflow this supports is resumable by construction: run it, approve the
+    scenarios, run it again. The second run recovers every scenario call from
+    disk instead of re-sending it, re-checks the gate, and proceeds to groups.
+
+    ``approvals`` is required for group drafting. ``None`` means no gate was
+    supplied, which is itself a gate failure: no group is ever drafted without
+    one. The same holds for a missing ``topic_bank_content_hash`` — an approval
+    that cannot be bound to the briefs it was drafted from is not an approval.
     """
     by_group = {(g.decision_id, g.variant_id, g.supported_option): g for g in allocation_groups}
     results: list[StageResult] = []
+    requested: list[tuple[Any, int, StageResult]] = []
 
+    # -- phase one: every requested scenario ---------------------------------
     for topic in sorted(topics, key=lambda t: t.decision_id):
         for variant_id in variants:
             scenario = draft_scenario(topic, variant_id, cfg, segmenter, backend, store,
                                       allow_live=allow_live)
             results.append(scenario)
-            if not scenario.accepted:
-                for option in ("opt_1", "opt_2"):
-                    results.append(StageResult(
-                        "group", topic.decision_id, variant_id, option,
-                        SKIPPED_SCENARIO_NOT_ACCEPTED))
-                continue
+            requested.append((topic, variant_id, scenario))
+
+    # -- phase two: the gate, over the complete set --------------------------
+    states: dict[str, str] = {}
+    blocking: list[str] = []
+    if approvals is None:
+        blocking.append("no approvals were supplied: group drafting needs the curator's gate")
+    if not topic_bank_content_hash:
+        blocking.append("no topic-bank hash was supplied: an approval must bind the briefs "
+                        "its scenario was drafted from")
+
+    for topic, variant_id, scenario in requested:
+        scenario_id = f"{topic.decision_id}_v{variant_id}"
+        if not scenario.accepted:
+            states[scenario_id] = SKIPPED_SCENARIO_NOT_ACCEPTED
+            blocking.append(f"{scenario_id}: {scenario.outcome}")
+            continue
+        if blocking and (approvals is None or not topic_bank_content_hash):
+            states[scenario_id] = "gate_unavailable"
+            continue
+        state, reasons = approval_status(
+            scenario_id, scenario.payload["scenario_text"], scenario.attempts[-1].call_id,
+            approvals, config_content_hash=cfg.content_hash,
+            topic_bank_content_hash=topic_bank_content_hash)
+        states[scenario_id] = state
+        if state != APPROVAL_GRANTED:
+            detail = "; ".join(r for r in reasons if r)
+            blocking.append(f"{scenario_id}: {state}" + (f" ({detail})" if detail else ""))
+
+    if blocking:
+        # Not one group, anywhere. The reason recorded against each scenario is
+        # its own state, so an approved scenario held up by another one says so.
+        for topic, variant_id, scenario in requested:
+            scenario_id = f"{topic.decision_id}_v{variant_id}"
+            state = states.get(scenario_id, "gate_unavailable")
+            if state == SKIPPED_SCENARIO_NOT_ACCEPTED:
+                outcome = SKIPPED_SCENARIO_NOT_ACCEPTED
+            elif state == APPROVAL_GRANTED:
+                outcome = SKIPPED_GATE_NOT_SATISFIED
+            else:
+                outcome = f"{SKIPPED_SCENARIO_NOT_APPROVED}:{state}"
             for option in ("opt_1", "opt_2"):
-                group = by_group.get((topic.decision_id, variant_id, option))
-                if group is None:
-                    raise PipelineAbort(
-                        f"no marker allocation for {topic.decision_id} v{variant_id} {option}")
-                results.append(draft_group(
-                    topic, variant_id, scenario.payload["scenario_text"], group, cfg,
-                    segmenter, backend, store, allow_live=allow_live))
+                results.append(StageResult("group", topic.decision_id, variant_id, option,
+                                           outcome))
+        return results
+
+    # -- phase three: the groups ---------------------------------------------
+    for topic, variant_id, scenario in requested:
+        for option in ("opt_1", "opt_2"):
+            group = by_group.get((topic.decision_id, variant_id, option))
+            if group is None:
+                raise PipelineAbort(
+                    f"no marker allocation for {topic.decision_id} v{variant_id} {option}")
+            results.append(draft_group(
+                topic, variant_id, scenario.payload["scenario_text"], group, cfg,
+                segmenter, backend, store, allow_live=allow_live))
     return results

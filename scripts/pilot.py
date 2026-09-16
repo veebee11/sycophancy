@@ -2,24 +2,38 @@
 
     uv run python scripts/pilot.py plan --config configs/experiment.yaml
     uv run python scripts/pilot.py status --config configs/experiment.yaml
+    uv run python scripts/pilot.py approvals --config configs/experiment.yaml
 
 **This script cannot send.** It plans and it reports, and that is all it can do:
 there is no live code path in it at any argument or environment combination.
-``plan`` covers the whole pilot — scenarios *and* their groups — because they
-are one run: the groups of a scenario are drafted from that scenario's accepted
-text, so no command here can offer a narrower live scope than the whole pilot.
+``plan`` covers the whole pilot — scenarios *and* their groups — because a
+group is drafted from its scenario's approved text, so no command here can offer
+a narrower live scope than the whole pilot. Generation itself is **two
+resumable stages separated by curator approval**, not one uninterrupted run.
 
-Two things must exist before live pilot generation is implemented at all, and
-neither does yet:
+Two things had to exist before live pilot generation could be implemented at
+all. Both are now built and offline-tested — the **curator-approval gate**
+(``generation/approvals.py``) and the **corpus assembler**
+(``generation/assemble.py``). What is still missing is the live pilot execution
+path itself, which is separately authorised work and is not written here, so
+``--send`` refuses whatever the environment says.
 
-1. the **curator-approval gate** — every scenario approved against its exact
-   text hash before any group is drafted from it;
-2. the **corpus assembler** — the step that turns accepted drafts into
-   ``data/pilot/corpus.jsonl``.
+The two synthetic repair smokes are finished and no further one is planned. They
+showed what they were for: the controller sends distinct, diagnosed repairs and
+routes unchanged output to ``needs_manual_review``. Whether this model repairs
+this fixture automatically is not a prerequisite for anything — an unrepaired
+group is a reviewed group, which is what ``needs_manual_review`` means.
 
-Until then ``--send`` refuses, whatever the environment says. The controller
-itself is exercised by ``scripts/pipeline_smoke.py``, which drafts ONE synthetic
-group with its repair path and nothing else.
+Pilot generation is **two resumable stages, not one run**: every scenario is
+drafted first, the curator approves each one against its exact text, and only
+then are groups drafted. ``approvals`` reports where that gate stands.
+
+``approvals`` reports the gate: which scenarios are approved, pending, stale,
+refused or blocked by machine errors. It reads files and contacts nothing. The controller
+itself was exercised by ``scripts/pipeline_smoke.py``, which drafts ONE
+synthetic group with its repair path and nothing else. It ran twice on
+2026-09-16 and those runs are finished; no further synthetic repair smoke is
+planned.
 
 What the controller does, when it is eventually authorised, is in
 ``src/reasonstyle/generation/pipeline.py``: one call per scenario, one draft
@@ -31,8 +45,10 @@ the human judgements the validator lists stay outstanding either way.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
+from typing import Any
 
 from reasonstyle.config import load_config
 from reasonstyle.corpus.topics import load_topic_bank
@@ -47,9 +63,10 @@ PILOT_AUTHORIZATION_ENV = "REASONSTYLE_ALLOW_PILOT_GENERATION"
 #: What must be built before a live pilot path may be written at all. While this
 #: is non-empty, `--send` refuses regardless of the environment.
 MISSING_PREREQUISITES = (
-    "the curator-approval gate: every scenario approved against its exact text hash "
-    "before any group is drafted from it",
-    "the corpus assembler: accepted drafts written to data/pilot/corpus.jsonl",
+    "the live two-stage pilot execution path, which is not written: the gate "
+    "(generation/approvals.py) and the per-scenario assembly core "
+    "(generation/assemble.py) exist and are offline-tested, but nothing drives them "
+    "against a server, and no corpus-wide assembly driver writes data/pilot/corpus.jsonl",
 )
 
 
@@ -65,8 +82,7 @@ def live_problems(send: bool, cfg=None, env=None) -> list[str]:
     if send:
         problems.append(
             f"--send is refused: even with {PILOT_AUTHORIZATION_ENV}=1 this script has no "
-            f"live path. One synthetic group with its repair path can be run through "
-            f"scripts/pipeline_smoke.py instead.")
+            f"live path, and the two-stage pilot execution it would need is not written.")
     return problems
 
 
@@ -126,12 +142,89 @@ def _status(store: CallStore) -> int:
     return 0
 
 
+def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
+    """Report the gate over the EXPECTED pilot, not only over what exists.
+
+    Every requested topic and variant is listed, including the ones that have
+    not been drafted at all — a report that counted only accepted drafts would
+    say "0 blocking" for a pilot that has generated nothing. It reads the
+    approvals file and the recorded calls, writes nothing, decides nothing and
+    contacts nothing: approving is the curator's act, made in the file itself.
+    """
+    from reasonstyle.generation.approvals import approval_status, load_approvals
+    approvals = load_approvals(args.approvals_file)
+    bank_hash = content_hash(bank.model_dump(mode="json"))
+
+    # A scenario counts as drafted only when a call produced usable text. A
+    # transport failure or a schema rejection produced none, so the scenario is
+    # "not generated" however many times it was attempted.
+    drafted: dict[str, dict[str, Any]] = {}
+    for entry in store.log.entries():
+        if entry["kind"] != "scenario":
+            continue
+        scenario_id = f"{entry['decision_id']}_v{entry['variant_id']}"
+        drafted.setdefault(scenario_id, {})
+        if entry["status"] != "ok":
+            continue
+        result = store.result_path(entry["call_id"])
+        fields = {}
+        if result.is_file():
+            fields = json.loads(result.read_text(encoding="utf-8")).get("fields") or {}
+        text = fields.get("scenario_text") or ""
+        if not text:
+            continue
+        candidate = {"text": text, "call_id": entry["call_id"],
+                     "errors": len((entry.get("validation") or {}).get("error_codes") or []),
+                     "outcome": entry.get("outcome")}
+        # An accepted call wins; otherwise the latest usable one stands.
+        if drafted[scenario_id].get("outcome") != "accepted":
+            drafted[scenario_id] = candidate
+
+    expected = [f"{topic.decision_id}_v{variant_id}"
+                for topic in sorted(topics, key=lambda t: t.decision_id)
+                for variant_id in args.variants]
+
+    print(f"approvals file {args.approvals_file} ({len(approvals)} record(s))")
+    print(f"expected scenarios {len(expected)}; scenario calls recorded {len(drafted)}")
+    blocking = 0
+    for scenario_id in expected:
+        record = drafted.get(scenario_id) or {}
+        if not record.get("text"):
+            state = "not_generated"
+            detail = ("no scenario call recorded" if scenario_id not in drafted
+                      else "no call produced usable text (transport failure or rejected "
+                           "response)")
+        elif record["errors"]:
+            state, reasons = approval_status(
+                scenario_id, record["text"], record["call_id"], approvals,
+                config_content_hash=cfg.content_hash, topic_bank_content_hash=bank_hash,
+                machine_errors=record["errors"])
+            detail = "; ".join(r for r in reasons if r)
+        elif record.get("outcome") != "accepted":
+            state = "needs_manual_review"
+            detail = f"the scenario call ended {record.get('outcome')!r}, not accepted"
+        else:
+            state, reasons = approval_status(
+                scenario_id, record["text"], record["call_id"], approvals,
+                config_content_hash=cfg.content_hash, topic_bank_content_hash=bank_hash)
+            detail = "; ".join(r for r in reasons if r)
+        print(f"  {scenario_id:<28} {state}" + (f"  ({detail})" if detail else ""))
+        blocking += state != "approved"
+
+    print(f"\n{blocking} of {len(expected)} expected scenario(s) not approved. Group drafting "
+          f"needs EVERY expected scenario drafted, machine-valid and approved against its "
+          f"exact text, call, configuration and topic bank; an edit makes an approval stale.")
+    print("A machine error can never be approved past: fix or redraft instead.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["plan", "status"],
-                    help="plan the whole pilot (scenarios and their groups), or report "
-                         "what has been recorded so far")
+    ap.add_argument("command", choices=["plan", "status", "approvals"],
+                    help="plan the whole pilot (scenarios and their groups), report what has "
+                         "been recorded so far, or report the curator-approval gate")
+    ap.add_argument("--approvals-file", default="data/pilot/scenario_approvals.yaml")
     ap.add_argument("--config", required=True)
     ap.add_argument("--topics", default="data/topics/pilot_topics.yaml")
     ap.add_argument("--allocation", default="data/pilot/marker_allocation.yaml")
@@ -150,6 +243,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "status":
         return _status(store)
+    if args.command == "approvals":
+        return _approvals(args, cfg, bank, topics, store)
 
     # There is no live branch in this file. `--send` reaches this refusal and
     # stops; nothing below it can contact a backend.

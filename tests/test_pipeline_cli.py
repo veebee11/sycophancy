@@ -69,7 +69,7 @@ ALL_KEYS = {"REASONSTYLE_ALLOW_LOCAL_GENERATION": "1",
             "HF_HUB_OFFLINE": "1"}
 
 
-@pytest.mark.parametrize("command", ["plan", "status"])
+@pytest.mark.parametrize("command", ["plan", "status", "approvals"])
 @pytest.mark.parametrize("send", [[], ["--send"]])
 def test_no_pilot_invocation_contacts_a_backend(command, send, tmp_path, no_network):
     """Every command, with and without --send, with every key set."""
@@ -97,9 +97,24 @@ def test_no_environment_combination_unlocks_sending(keys, tmp_path, no_network):
 def test_the_refusal_names_the_work_that_is_missing(tmp_path, no_network):
     result = _run(PILOT, "plan", "--out", str(tmp_path / "run"), "--send",
                   env=ALL_KEYS, sitecustomize=no_network)
-    assert "curator-approval gate" in result.stdout
-    assert "corpus assembler" in result.stdout
-    assert "pipeline_smoke.py" in result.stdout
+    assert "the live two-stage pilot execution path, which is not written" in result.stdout
+    assert "corpus-wide assembly driver" in result.stdout
+    # A repair succeeding on a fixture is not a prerequisite for anything, and
+    # the refusal does not send the reader back to the finished smoke script.
+    assert "confirmation" not in result.stdout
+    assert "pipeline_smoke.py instead" not in result.stdout
+
+
+def test_the_approvals_command_reads_and_contacts_nothing(tmp_path, no_network):
+    """The gate is reported, never decided, by this script."""
+    result = _run(PILOT, "approvals", "--out", str(tmp_path / "run"),
+                  "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  env=ALL_KEYS, sitecustomize=no_network)
+    assert result.returncode == 0, result.stderr
+    assert "approvals file" in result.stdout
+    assert "attempted to contact a backend" not in result.stderr
+    assert not (tmp_path / "approvals.yaml").exists(), "it decides nothing"
+    assert not (tmp_path / "run" / "generation_log.jsonl").exists()
 
 
 def test_pilot_has_no_live_code_path_at_all():
@@ -190,3 +205,81 @@ def test_the_pipeline_smoke_names_only_the_fixture_decision():
         cwd=ROOT, text=True))
     for pilot_decision in bank:
         assert pilot_decision not in source, f"a pilot brief is named: {pilot_decision}"
+
+
+# --- the approvals report distinguishes why a scenario is not usable ---------
+
+
+def _log_line(**overrides):
+    entry = {"call_id": "a" * 64, "kind": "scenario", "attempt": 1,
+             "decision_id": "climate_01", "variant_id": 1, "supported_option": None,
+             "template_name": "scenario_draft_v1", "template_sha256": "b" * 64,
+             "prompt_sha256": "c" * 64, "model": "Qwen/Qwen3-14B", "model_returned": None,
+             "request_fields": {}, "config_content_hash": "d" * 64,
+             "topic_bank_content_hash": "e" * 64, "allocation_content_hash": None,
+             "response_sha256": None, "stop_reason": "stop", "usage": None,
+             "status": "ok", "error": None, "generated_at": "2026-09-16T10:00:00+00:00",
+             "outcome": "accepted", "validation": {"error_codes": [], "warning_codes": []}}
+    return {**entry, **overrides}
+
+
+def _recorded(tmp_path, entries, results=None):
+    """A run directory with hand-written log lines and result files."""
+    run = tmp_path / "run"
+    (run / "results").mkdir(parents=True)
+    (run / "generation_log.jsonl").write_text(
+        "".join(json.dumps(e) + "\n" for e in entries))
+    for call_id, fields in (results or {}).items():
+        (run / "results" / f"{call_id}.json").write_text(
+            json.dumps({"call_id": call_id, "kind": "scenario", "fields": fields}))
+    return run
+
+
+def _report(tmp_path, entries, no_network, results=None):
+    run = _recorded(tmp_path, entries, results)
+    result = _run(PILOT, "approvals", "--out", str(run), "--only", "climate_01",
+                  "--variants", "1", "--approvals-file", str(tmp_path / "approvals.yaml"),
+                  sitecustomize=no_network)
+    assert result.returncode == 0, result.stderr
+    return result.stdout
+
+
+def test_a_transport_failure_leaves_the_scenario_not_generated(tmp_path, no_network):
+    """No response arrived, so there is no text to approve — whatever the log
+    shows about the attempt."""
+    stdout = _report(tmp_path, [_log_line(status="error", outcome="transport_error",
+                                          stop_reason=None)], no_network)
+    assert "climate_01_v1" in stdout and "not_generated" in stdout
+    assert "1 of 1 expected scenario(s) not approved" in stdout
+
+
+def test_a_rejected_response_leaves_the_scenario_not_generated(tmp_path, no_network):
+    stdout = _report(tmp_path, [_log_line(status="rejected", outcome="needs_manual_review",
+                                          stop_reason="length")], no_network)
+    assert "not_generated" in stdout
+    assert "transport failure or rejected response" in stdout
+
+
+def test_a_scenario_with_machine_errors_is_reported_as_blocked(tmp_path, no_network):
+    """A machine error is not something approval can be recorded against."""
+    entry = _log_line(outcome="needs_manual_review",
+                      validation={"error_codes": ["E_LABEL_LEAKAGE"], "warning_codes": []})
+    stdout = _report(tmp_path, [entry], no_network,
+                     results={"a" * 64: {"scenario_text": "text with option A in it"}})
+    assert "blocked_by_machine_errors" in stdout
+    assert "cannot override the validator" in stdout
+
+
+def test_an_unaccepted_but_error_free_scenario_needs_manual_review(tmp_path, no_network):
+    entry = _log_line(outcome="needs_manual_review")
+    stdout = _report(tmp_path, [entry], no_network,
+                     results={"a" * 64: {"scenario_text": "a drafted scenario"}})
+    assert "needs_manual_review" in stdout
+    assert "not accepted" in stdout
+
+
+def test_an_accepted_scenario_is_judged_on_its_approval(tmp_path, no_network):
+    stdout = _report(tmp_path, [_log_line()], no_network,
+                     results={"a" * 64: {"scenario_text": "a drafted scenario"}})
+    assert "pending" in stdout and "no approval recorded" in stdout
+    assert "not_generated" not in stdout and "blocked_by_machine_errors" not in stdout

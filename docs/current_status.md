@@ -15,7 +15,8 @@
 - **Reliability sampler.** Stratified quotas plus an exactly optimal marginal opt_1/opt_2 balance; any shortfall is reported (2026-09-15).
 - **No hidden sampling defaults.** The launcher passes `--generation-config vllm` and records it; all sampling fields are sent at explicit neutral values.
 - **Scenario drafting (2026-09-16).** The scenario stage **has run live**, inside `pipeline_smoke.py`, and its scenario was accepted. The standalone `smoke_test.py --kind scenario` command is implemented and offline-tested but has not itself been run.
-- **Bounded repair controller (2026-09-16).** One draft plus at most two validator-driven repairs, then `needs_manual_review`; recorded per call, resumable, transport failures retryable. It **has run live once**, through `scripts/pipeline_smoke.py`: the group exhausted the four-call ceiling and ended `needs_manual_review` because both repair requests were identical (see below). The no-progress correction is implemented and offline-tested; **it has not yet been confirmed by another live smoke**.
+- **Bounded repair controller (2026-09-16).** One draft plus at most two validator-driven repairs, then `needs_manual_review`; recorded per call, resumable, transport failures retryable. It **ran live twice** through `scripts/pipeline_smoke.py`. The first run's repairs were identical requests; after the correction, the second run sent two distinct, diagnosed repairs and recorded the model's unchanged replies as no progress — **the corrected mechanism was confirmed live**. Both runs ended `needs_manual_review`. No further synthetic repair smoke is planned.
+- **Live calls so far: four smoke runs, ten model calls in total** — two draft-only group smokes (1 call each) and two repair-path smokes (4 calls each). No pilot generation.
 - **`scripts/pilot.py` (2026-09-16).** Plan and status only. It has no live code path at any argument or environment combination, and `--send` refuses.
 - **Tests.** The full suite passes on a laptop, with no server.
 
@@ -42,8 +43,9 @@ The order this implies:
 
 ## Not yet built
 
-- **Curator-approval gate:** every scenario approved against its exact text hash before any group is drafted from it. Required before pilot generation.
-- **Corpus assembler:** accepted drafts into `data/pilot/corpus.jsonl`, then full validation and a pilot review export. Required before pilot generation.
+- **A corpus-wide assembly driver.** The per-scenario assembly and correction core is built and offline-tested (`generation/assemble.py`), but nothing yet reads the recorded calls, approvals and corrections for the whole pilot, writes `data/pilot/corpus.jsonl` and its manifest, and produces the review export.
+- **The live two-stage execution path:** the scenario stage, the gate check between the stages, and the group stage, driven against a server. Separately authorised, and not written.
+- **The scenario `redraft` path.** The gate reports `redraft` and blocks the set on it, but nothing re-drafts a scenario, and the budget for doing so is undecided.
 - **The remaining decisions to reach 60** (normally 48 more), then validation, human review and the corpus freeze.
 - **The mechanistic subset's selection rule** — 40 of the 60 — documented before mechanistic analysis.
 - Model adapter, answer-token verification, logit scoring and every later analysis and mechanistic stage.
@@ -149,10 +151,8 @@ NP two, because dropping `because` split the plain member of each pair into two
 sentences. The finding reported full-text counts of 2/3 while the rule is two
 **body** sentences, which the prompt never made explicit.
 
-**Status: corrected offline, not yet reconfirmed live.** The fix below is
-implemented and covered by regression tests built on this run's verbatim bodies,
-but no live call has exercised it. **Exactly one confirmation repair-path smoke
-is the next live gate.**
+**Status: corrected, and the correction was confirmed live** by the run
+recorded in the next section.
 
 **The fix (2026-09-16, offline):** a repair now carries its attempt number, the
 history of what earlier attempts did, and the measurements behind the findings —
@@ -164,11 +164,37 @@ repair request that would exactly repeat its predecessor is refused rather than
 sent. The budget, the thresholds, the validators and the seed are unchanged, and
 an exhausted group is still `needs_manual_review`.
 
+## Confirmation repair smoke (2026-09-16)
+
+The gate the previous section asked for. Evidence, read-only and gitignored, in
+`data/pilot/smoke/pipeline_repair_confirmation_2026-09-16/`.
+
+- **The correction worked as designed.** The two repair requests were
+  **distinct** — prompt hashes `4cca3674ad7cb3e2…` and `7caa5aad170dbc4f…`, not
+  the single repeated hash of the first run — and both carried the numerical
+  diagnostics: per-condition body and full-text sentence and word counts, the
+  required count, the 1.10 target against the 1.15 ceiling, and which conditions
+  to shorten or lengthen. The second repair also stated that the first had
+  changed nothing.
+- **The model did not use them.** Qwen3-14B returned **the original four bodies
+  unchanged on both repairs**; every attempt is recorded with `no_progress: true`.
+- **All three structural errors remained** at every attempt:
+  `E_SENTENCE_COUNT_MISMATCH`, `E_WORD_RATIO_BODY`, `E_WORD_RATIO_FULL_TEXT`.
+- **Terminal outcome `needs_manual_review`**, after the scenario was accepted and
+  the four permitted calls were used.
+- **No pilot generation occurred.**
+
+So the repair *mechanism* is now correct and observable — distinct requests,
+measured findings, no-progress recorded — while this model, on this item, did not
+act on them. No further repair-prompt change and no model change were made in
+response; what that means for drafting is a question for the pilot, not for
+another prompt revision.
+
 ## Offline pipeline (2026-09-16)
 
 Four separate states, deliberately kept apart:
 
-**1. The controller is implemented, offline-tested, and has run live once.**
+**1. The controller is implemented, offline-tested, and has run live twice.**
 `generation/pipeline.py`: one scenario call, one group draft plus at most two
 validator-driven repairs, stopping as soon as a group is machine-valid or the
 budget is spent. A scenario that fails its machine checks stops its own groups
@@ -182,37 +208,66 @@ as `rejected` and never as an accepted draft. A transport failure is logged as
 an aborted transport event, consumes no budget position, and is retried on the
 next run. `validate_group` and `validate_scenario_text` are shared by drafting
 and corpus validation, so a draft is held to the rules it will face later.
-Developed against `FakeBackend`, and exercised live once on 2026-09-16 through
-`scripts/pipeline_smoke.py` (see *Live synthetic repair smoke* above).
+Developed against `FakeBackend`, and exercised live **twice** on 2026-09-16
+through `scripts/pipeline_smoke.py` (both runs are recorded above).
 
-**2. That first repair smoke ended `needs_manual_review`, and the correction
-awaits one confirmation smoke.** The scenario was accepted; the group used all
-four permitted calls and stopped unrepaired, because both repair requests were
-byte-identical. The no-progress logic that fixes it — attempt number, history,
-measured diagnostics, and a refusal to repeat a repair request — is implemented
-and covered by regression tests on that run's verbatim bodies, but **no live
-call has exercised it yet**. Exactly one confirmation run of
-`scripts/pipeline_smoke.py` is the next live gate: the fixture decision
-`energy_fixture_001`, one scenario, one `opt_1` group, at most four calls, its
-own output directory, and the same pre-flight checks as the one-call smoke
-test. It needs `--send`, `REASONSTYLE_ALLOW_LOCAL_GENERATION=1` and offline
-mode, and no pilot authorisation.
+**2. The repair mechanism is confirmed; the synthetic smokes are finished.**
+Both runs ended `needs_manual_review`: the first because the two repair requests
+were byte-identical, the second — after the correction — because the model
+returned unchanged bodies despite two distinct, diagnosed repairs. That second
+outcome is the mechanism working: an unrepaired group is routed to review rather
+than accepted or silently retried. **No further synthetic repair smoke is
+planned.** Whether Qwen3-14B repairs this particular fixture automatically is
+not a prerequisite for anything.
 
 **3. Real pilot generation is hard-disabled.**
 `scripts/pilot.py` plans and reports only. It has no live code path at any
 argument or environment combination, and `--send` refuses.
 
-**4. Two things must exist before pilot generation is written at all:** the
-curator-approval gate (every scenario approved against its exact text hash
-before any group is drafted from it) and the corpus assembler.
+**4. The two prerequisites are now built, offline-tested, and unused.**
+`generation/approvals.py` is the curator-approval gate: an approval binds the
+exact scenario text, the accepted call id, the configuration hash and the
+topic-bank hash, and a change to any one of them makes it stale. `run_pilot`
+drafts a group only from an approved scenario. `generation/assemble.py` builds
+corpus records from approved scenarios and machine-valid groups, and carries an
+auditable manual-correction record — original call id and text, corrected text,
+editor, reason, validator result, approval state — kept beside the generated
+material rather than replacing it. **A human approval never overrides a machine
+error:** corrected text is re-validated by the same code, and an assembled
+record still leaves `validation.status: draft` until the human judgements are
+recorded. **The one remaining live blocker is the pilot execution path itself**,
+which is separately authorised work and is not written.
+
+### The workflow these two pieces imply
+
+1. **Generate all scenarios.** The first invocation drafts every requested
+   scenario and stops: no group is drafted while any scenario is unread.
+2. **Approve all scenarios.** The curator records a decision per scenario,
+   bound to its exact text, call, configuration and topic bank. The gate is
+   all-or-nothing: one pending, stale, refused or machine-blocked scenario stops
+   group drafting for the whole set, approved scenarios included.
+3. **Draft the groups.** The second invocation recovers the scenario calls from
+   disk rather than re-sending them, re-checks the complete gate, and only then
+   drafts groups with their bounded repair.
+4. **Correct and re-validate where required.** A human correction is a separate
+   record naming the call it corrects; corrected text goes through the same
+   validator, and material that still fails is still refused.
+5. **Assemble.** Approved scenarios plus machine-valid groups become corpus
+   records, which remain `validation.status: draft`.
+6. **Complete the item, pair and scenario human review**, which is what turns a
+   draft corpus into an approved one.
+
+**Not yet implemented in that orchestration:** the live execution path that
+drives steps 1 and 3 against a server, and the `redraft` state — a scenario the
+curator marks for redrafting is reported by the gate and blocks the set, but
+nothing yet re-drafts it, and the scenario budget for doing so is undecided.
 
 ## Next steps
 
-1. **Review and commit the offline controller**, then bring the server checkout up to date. The prepared environment works: two live smoke calls have since launched and completed on it.
-2. **Authorise one confirmation repair-path smoke test** on one announced GPU: `scripts/pipeline_smoke.py` again, at most four calls, on `energy_fixture_001`, to check that a repair now receives new information and can make progress. Stop there.
-3. **Review that result**, and only then decide whether the repair path is sound enough to build the curator-approval gate and the corpus assembler on.
-4. **Pilot generation** stays hard-disabled until both of those exist and are separately authorised.
-5. **After the pilot is reviewed**, extend to the full 60 decisions, then validate, human-review and freeze before any evaluated-model run.
+1. **Review and commit the gate, the assembler and the two-phase controller**, then bring the server checkout up to date. The prepared environment works: four live smoke calls have launched and completed on it.
+2. **Decide whether to implement the live pilot execution path**, which is separately authorised: the scenario stage, the approval gate check between the stages, and the group stage. A `redraft` path for scenarios is part of that decision.
+3. **Then generate the pilot in two stages** — all scenarios, curator approval, then groups — and assemble what passes.
+4. **After the pilot is reviewed**, extend to the full 60 decisions, then validate, human-review and freeze before any evaluated-model run.
 
 ## Open, not resolved
 

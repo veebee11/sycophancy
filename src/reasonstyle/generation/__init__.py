@@ -25,6 +25,24 @@ from .allocation import (
     load_allocation,
     save_allocation,
 )
+from .approvals import (
+    APPROVED,
+    ApprovalError,
+    ScenarioApproval,
+    approval_status,
+    gate_problems,
+    load_approvals,
+    save_approvals,
+)
+from .assemble import (
+    AssemblyError,
+    AssemblyRefused,
+    ManualCorrection,
+    assemble_scenario,
+    correction_problems,
+    load_corrections,
+    save_corrections,
+)
 from .backends import (
     AUTHORIZATION_ENV,
     BackendError,
@@ -74,6 +92,20 @@ from .provenance import ProvenanceMismatch, check_request_provenance
 
 __all__ = [
     "ABORTED",
+    "APPROVED",
+    "ApprovalError",
+    "AssemblyError",
+    "AssemblyRefused",
+    "ManualCorrection",
+    "ScenarioApproval",
+    "approval_status",
+    "assemble_scenario",
+    "correction_problems",
+    "gate_problems",
+    "load_approvals",
+    "load_corrections",
+    "save_approvals",
+    "save_corrections",
     "ACCEPTED",
     "AUTHORIZATION_ENV",
     "AllocationError",

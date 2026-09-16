@@ -525,6 +525,192 @@ def test_a_valid_raw_response_recovers_with_its_provenance_intact(topic, cfg, se
         assert after[field] == before[field], field
 
 
+# --- the curator gate --------------------------------------------------------
+
+
+def _approval(cfg, bank_hash, scenario_id, text, call_id, **overrides):
+    from datetime import date
+    from reasonstyle.generation.approvals import REQUIRED_JUDGEMENTS, ScenarioApproval
+    from reasonstyle.hashing import sha256_of
+    base = dict(scenario_id=scenario_id, scenario_text_sha256=sha256_of(text),
+                call_id=call_id, config_content_hash=cfg.content_hash,
+                topic_bank_content_hash=bank_hash, decision="approved",
+                judgements={n: True for n in REQUIRED_JUDGEMENTS},
+                decided_by="Vidhi Bhutani", decided_at=date(2026, 9, 20), reason=None)
+    return ScenarioApproval(**{**base, **overrides})
+
+
+def _both_allocations(allocation):
+    return [allocation,
+            type(allocation)(**{**allocation.as_dict(), "supported_option": "opt_2"})]
+
+
+def _two_variant_allocations(allocation):
+    out = []
+    for variant_id in (1, 2):
+        for option in ("opt_1", "opt_2"):
+            out.append(type(allocation)(**{
+                **allocation.as_dict(), "variant_id": variant_id, "supported_option": option,
+                "scenario_id": f"energy_fixture_001_v{variant_id}"}))
+    return out
+
+
+def test_one_unapproved_scenario_stops_the_groups_of_the_approved_one(
+        topic, cfg, segmenter, store, allocation, synthetic_bank):
+    """All-or-nothing, with two scenarios: v1 is approved against its exact
+    text, v2 is not. Neither gets a group call — splitting the set would make
+    "the pilot" mean whichever half passed first, and would unbalance the
+    marker allocation."""
+    from reasonstyle.hashing import content_hash
+    bank_hash = content_hash(synthetic_bank.model_dump(mode="json"))
+    other = SCENARIO.replace("three winters", "four winters")
+    responder = Responder({"scenario_text": SCENARIO}, {"scenario_text": other},
+                          VALID, VALID, VALID, VALID)
+    backend = FakeBackend(responder)
+
+    first = draft_scenario(topic, 1, cfg, segmenter, backend, store)
+    approvals = {"energy_fixture_001_v1": _approval(
+        cfg, bank_hash, "energy_fixture_001_v1", SCENARIO, first.attempts[-1].call_id)}
+
+    results = run_pilot([topic], _two_variant_allocations(allocation), cfg, segmenter,
+                        backend, store, variants=(1, 2), approvals=approvals,
+                        topic_bank_content_hash=bank_hash)
+    scenarios = [r for r in results if r.kind == "scenario"]
+    groups = [r for r in results if r.kind == "group"]
+    assert [r.outcome for r in scenarios] == [ACCEPTED, ACCEPTED]
+    assert len(groups) == 4 and not any(g.outcome == ACCEPTED for g in groups)
+    # v1 is approved and still waits; v2 says why the set is held up.
+    v1 = [g.outcome for g in groups if g.variant_id == 1]
+    v2 = [g.outcome for g in groups if g.variant_id == 2]
+    assert set(v1) == {"skipped_gate_not_satisfied"}
+    assert set(v2) == {"skipped_scenario_not_approved:pending"}
+    assert responder.kinds.count("group") == 0
+
+
+def test_a_stale_approval_in_the_set_also_stops_every_group(topic, cfg, segmenter, store,
+                                                            allocation, synthetic_bank):
+    from reasonstyle.hashing import content_hash
+    bank_hash = content_hash(synthetic_bank.model_dump(mode="json"))
+    other = SCENARIO.replace("three winters", "four winters")
+    responder = Responder({"scenario_text": SCENARIO}, {"scenario_text": other},
+                          VALID, VALID, VALID, VALID)
+    backend = FakeBackend(responder)
+    first = draft_scenario(topic, 1, cfg, segmenter, backend, store)
+    second = draft_scenario(topic, 2, cfg, segmenter, backend, store)
+    approvals = {
+        "energy_fixture_001_v1": _approval(cfg, bank_hash, "energy_fixture_001_v1", SCENARIO,
+                                           first.attempts[-1].call_id),
+        # approved against text that is not what was drafted
+        "energy_fixture_001_v2": _approval(cfg, bank_hash, "energy_fixture_001_v2",
+                                           "a scenario nobody drafted",
+                                           second.attempts[-1].call_id),
+    }
+    results = run_pilot([topic], _two_variant_allocations(allocation), cfg, segmenter,
+                        backend, store, variants=(1, 2), approvals=approvals,
+                        topic_bank_content_hash=bank_hash)
+    groups = [r for r in results if r.kind == "group"]
+    assert {g.outcome for g in groups if g.variant_id == 2} == {
+        "skipped_scenario_not_approved:stale"}
+    assert {g.outcome for g in groups if g.variant_id == 1} == {"skipped_gate_not_satisfied"}
+    assert responder.kinds.count("group") == 0
+
+
+def test_the_two_stage_workflow_resumes_without_resending_scenarios(
+        topic, cfg, segmenter, store, allocation, synthetic_bank):
+    """First invocation: scenarios only. The curator approves. Second
+    invocation: the scenario calls are recovered, not re-sent, and the groups
+    are drafted."""
+    from reasonstyle.hashing import content_hash
+    bank_hash = content_hash(synthetic_bank.model_dump(mode="json"))
+    other = SCENARIO.replace("three winters", "four winters")
+    first_run = Responder({"scenario_text": SCENARIO}, {"scenario_text": other})
+    results = run_pilot([topic], _two_variant_allocations(allocation), cfg, segmenter,
+                        FakeBackend(first_run), store, variants=(1, 2))
+    assert first_run.kinds == ["scenario", "scenario"], "no group call in stage one"
+    assert all(r.outcome.startswith("skipped") for r in results if r.kind == "group")
+
+    scenarios = {r.variant_id: r for r in results if r.kind == "scenario"}
+    approvals = {
+        f"energy_fixture_001_v{v}": _approval(
+            cfg, bank_hash, f"energy_fixture_001_v{v}", text,
+            scenarios[v].attempts[-1].call_id)
+        for v, text in ((1, SCENARIO), (2, other))}
+
+    second_run = Responder(VALID)
+    resumed = run_pilot([topic], _two_variant_allocations(allocation), cfg, segmenter,
+                        FakeBackend(second_run), store, variants=(1, 2), approvals=approvals,
+                        topic_bank_content_hash=bank_hash)
+    assert "scenario" not in second_run.kinds, "scenarios were recovered, not re-sent"
+    assert second_run.kinds == ["group"] * 4
+    assert [r.outcome for r in resumed if r.kind == "group"] == [ACCEPTED] * 4
+    assert all(r.attempts[0].reused for r in resumed if r.kind == "scenario")
+
+
+@pytest.mark.parametrize("gate", [
+    {"approvals": None, "topic_bank_content_hash": "abc"},
+    {"approvals": {}, "topic_bank_content_hash": None},
+    {"approvals": None, "topic_bank_content_hash": None},
+])
+def test_a_missing_gate_never_permits_group_drafting(gate, topic, cfg, segmenter, store,
+                                                     allocation):
+    """No approvals, or no topic-bank hash to bind them to, is a gate failure —
+    never an invitation to proceed."""
+    responder = Responder({"scenario_text": SCENARIO}, VALID, VALID)
+    results = run_pilot([topic], _both_allocations(allocation), cfg, segmenter,
+                        FakeBackend(responder), store, variants=(1,), **gate)
+    assert responder.kinds == ["scenario"]
+    assert all(r.outcome.startswith("skipped") for r in results if r.kind == "group")
+
+
+def test_groups_are_not_drafted_from_an_unapproved_scenario(topic, cfg, segmenter, store,
+                                                            allocation, synthetic_bank):
+    """The gate: a scenario the curator has not approved takes its own groups
+    out of the run, exactly as a failing one does."""
+    from reasonstyle.hashing import content_hash
+    bank_hash = content_hash(synthetic_bank.model_dump(mode="json"))
+    responder = Responder({"scenario_text": SCENARIO}, VALID, VALID)
+    results = run_pilot([topic], [allocation], cfg, segmenter, FakeBackend(responder), store,
+                        variants=(1,), approvals={}, topic_bank_content_hash=bank_hash)
+    assert results[0].outcome == ACCEPTED, "the scenario itself was machine-valid"
+    assert all(r.outcome.startswith("skipped_scenario_not_approved") for r in results[1:])
+    assert responder.kinds == ["scenario"], "no group call was made"
+
+
+def test_an_approved_scenario_lets_its_groups_be_drafted(topic, cfg, segmenter, store,
+                                                         allocation, synthetic_bank):
+    from reasonstyle.hashing import content_hash
+    bank_hash = content_hash(synthetic_bank.model_dump(mode="json"))
+    responder = Responder({"scenario_text": SCENARIO}, VALID, VALID)
+    backend = FakeBackend(responder)
+    scenario = draft_scenario(topic, 1, cfg, segmenter, backend, store)
+    approvals = {"energy_fixture_001_v1": _approval(
+        cfg, bank_hash, "energy_fixture_001_v1", SCENARIO, scenario.attempts[-1].call_id)}
+
+    both = [allocation,
+            type(allocation)(**{**allocation.as_dict(), "supported_option": "opt_2"})]
+    results = run_pilot([topic], both, cfg, segmenter, backend, store,
+                        variants=(1,), approvals=approvals,
+                        topic_bank_content_hash=bank_hash)
+    assert [r.outcome for r in results] == [ACCEPTED, ACCEPTED, ACCEPTED]
+    assert responder.kinds.count("group") == 2
+
+
+def test_an_approval_for_different_text_does_not_open_the_gate(topic, cfg, segmenter, store,
+                                                               allocation, synthetic_bank):
+    """Approving one text and generating from another is what the hash binding
+    exists to prevent."""
+    from reasonstyle.hashing import content_hash
+    bank_hash = content_hash(synthetic_bank.model_dump(mode="json"))
+    responder = Responder({"scenario_text": SCENARIO}, VALID, VALID)
+    approvals = {"energy_fixture_001_v1": _approval(
+        cfg, bank_hash, "energy_fixture_001_v1", "some other scenario text", "z" * 64)}
+    results = run_pilot([topic], [allocation], cfg, segmenter, FakeBackend(responder), store,
+                        variants=(1,), approvals=approvals,
+                        topic_bank_content_hash=bank_hash)
+    assert all(r.outcome.endswith("stale") for r in results[1:])
+    assert responder.kinds == ["scenario"]
+
+
 # --- the scenario gate -------------------------------------------------------
 
 
@@ -551,12 +737,17 @@ def test_a_failing_scenario_stops_its_own_groups(topic, cfg, segmenter, store, a
 
 
 def test_an_accepted_scenario_feeds_its_own_text_to_the_groups(topic, cfg, segmenter, store,
-                                                               allocation):
+                                                               allocation, synthetic_bank):
+    from reasonstyle.hashing import content_hash
+    bank_hash = content_hash(synthetic_bank.model_dump(mode="json"))
     responder = Responder({"scenario_text": SCENARIO}, VALID, VALID)
-    results = run_pilot([topic], [allocation.__class__(**{**allocation.as_dict()}),
-                         allocation.__class__(**{**allocation.as_dict(),
-                                                 "supported_option": "opt_2"})],
-                        cfg, segmenter, FakeBackend(responder), store, variants=(1,))
+    backend = FakeBackend(responder)
+    drafted = draft_scenario(topic, 1, cfg, segmenter, backend, store)
+    approvals = {"energy_fixture_001_v1": _approval(
+        cfg, bank_hash, "energy_fixture_001_v1", SCENARIO, drafted.attempts[-1].call_id)}
+    results = run_pilot([topic], _both_allocations(allocation),
+                        cfg, segmenter, backend, store, variants=(1,), approvals=approvals,
+                        topic_bank_content_hash=bank_hash)
     assert [r.outcome for r in results] == [ACCEPTED, ACCEPTED, ACCEPTED]
     assert responder.kinds == ["scenario", "group", "group"]
     for request in responder.requests[1:]:
@@ -577,4 +768,5 @@ def test_the_pilot_controller_cannot_send_at_all(cfg):
                  module.PILOT_AUTHORIZATION_ENV: "1"}
     assert module.live_problems(True, cfg, env=every_key), "no key combination unlocks it"
     assert module.live_problems(False, cfg, env=every_key)
-    assert any("curator-approval gate" in p for p in module.live_problems(False))
+    assert any("two-stage pilot execution path, which is not written" in p
+               for p in module.live_problems(False))

@@ -225,12 +225,13 @@ brief, checked with `validate_scenario_text`. Either way it is one call, with no
 redraft, no repair and no continuation.
 
 The bounded repair path lives in `scripts/pipeline_smoke.py`: one scenario and
-one group, four calls at most. It ran live on 2026-09-16 — the scenario was
-accepted, the group exhausted the ceiling at `needs_manual_review`, and the
-cause was two identical repair requests. The correction is implemented and
-offline-tested, and one confirmation smoke is the next live gate. Pilot
-generation, in `scripts/pilot.py`, remains unavailable: that script cannot
-send.
+one group, four calls at most. It ran live twice on 2026-09-16. The first run
+exhausted the ceiling because both repair requests were identical; the second,
+after the correction, sent two distinct repairs carrying numerical diagnostics
+and recorded the model's unchanged replies as no progress. Both ended
+`needs_manual_review`, which is the designed outcome for a group the model does
+not repair. **No further synthetic repair smoke is planned.** Pilot generation,
+in `scripts/pilot.py`, remains unavailable: that script cannot send.
 
 Exactly **one four-condition group** from the **synthetic fixture** —
 `data/fixtures/topics.yaml`, decision `energy_fixture_001` (§11), variant v1, `opt_1`, with the

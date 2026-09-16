@@ -94,11 +94,12 @@ draft is machine-validated and then reviewed by a person.
 | 2. Check the topic bank (overlap screen, 4 curated per domain) | `prepare_topic_bank.py` | done |
 | 3. Allocate marker family, string and realization to all 48 groups | `allocate_markers.py` | done |
 | 4. Server preflight, launch, one-call smoke test (`--kind group` or `--kind scenario`) | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | two draft-only group smokes run live (15 and 16 Sep 2026); the standalone `--kind scenario` command has not been run |
-| 5. Draft the pilot's 24 scenarios, then its 48 four-condition groups with bounded repair | `pilot.py`, `emit_requests.py`, `import_responses.py` | controller built and tested offline; live pilot generation not authorised |
-| 6. Repair failing groups (≤2 repairs) | `pilot.py`, `pipeline_smoke.py` | built; run live once on 2026-09-16, which ended `needs_manual_review`; the no-progress fix awaits one confirmation smoke |
-| 6b. Assemble corpus JSONL | — | not built |
+| 5. Draft the pilot's 24 scenarios, **stop for curator approval**, then draft its 48 four-condition groups with bounded repair | `pilot.py`, `emit_requests.py`, `import_responses.py` | two resumable stages separated by the approval gate; controller built and tested offline; the live execution path is not built |
+| 6. Repair failing groups (≤2 repairs) | `pipeline_smoke.py` | built; run live twice on 2026-09-16, both ending `needs_manual_review`. The mechanism is confirmed: distinct, diagnosed repairs, unchanged output routed to review. No further synthetic repair smoke is planned |
+| 6b. Assemble corpus JSONL and its manifest, corpus-wide | — | not built; the per-scenario assembly and correction core exists (`generation/assemble.py`), the driver over the whole pilot does not |
 | 7. Validate and export the pilot for human review | `export_for_review.py` | built |
-| 8. Extend to the full 60 decisions, then validate, review and freeze | — | not started |
+| 8. Approve every scenario (stage two of a two-stage run), then assemble what passes | `pilot.py approvals`, `generation/approvals.py`, `generation/assemble.py` | gate and per-scenario assembly built and offline-tested; the live two-stage execution path is not built |
+| 9. Extend to the full 60 decisions, then validate, review and freeze | — | not started |
 
 ## Local generator
 

@@ -703,6 +703,28 @@ verifies the weights themselves: with a safetensors index, every shard it names
 must be present and non-empty — a config and tokenizer alone are exactly what an
 interrupted download leaves behind.
 
+**The curator-approval gate.** A group is drafted *from* a scenario, so the
+scenario is approved first, and the approval binds four things: the exact text
+(by SHA-256), the accepted call it came from, the configuration hash and the
+topic-bank hash. A change to any one makes the approval **stale**, so there is
+no way to approve one text and generate from another. Approval is all-or-nothing
+across the pilot's scenarios: excluding one would unbalance a marker allocation
+built over every decision at once. **Approval adds a requirement and never
+removes one** — a scenario with machine errors is reported as blocked however
+the approvals file reads, and is fixed or redrafted, never approved past.
+
+**Assembly and manual correction.** A record is assembled only from an approved
+scenario and machine-valid groups. A human correction is never an edit to what
+the model returned: it is a separate record naming the original call id and its
+original text, the corrected text, the editor, the reason, the date, its
+approval state and the validator result of the corrected material. The
+correction is bound to the text it replaces, so it cannot be carried silently on
+to a different draft; corrected text is re-validated by the same validator, and
+material that still fails is still refused. The generation log and the raw
+responses keep what the model produced, so model output and human edit stay
+distinguishable afterwards. An assembled record remains `validation.status:
+draft` until the item, pair and scenario judgements are recorded.
+
 **Repair.** Items failing validation are redrafted with a separate repair
 template, versioned and hash-pinned like the others. The *template* is fixed;
 the *rendered request* varies by scenario, bodies, findings, measurements,
