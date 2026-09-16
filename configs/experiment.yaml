@@ -586,9 +586,10 @@ prompts:
           NP: {type: string}
     repair_v1:
       path: prompts/repair_v1.txt
-      template_sha256: "61e411b2c13bbcb134fe6dcc4c7a9057a3a2981b7ea1e038bb6050aad368aa45"
+      template_sha256: "15f8691ea1f51e9d6f769c77ff8dfeb18d5e08cec7f536cd7c7640a922a82b28"
       placeholders: [scenario_text, supported_option_text, supported_option_fact,
-                     rs, rp, ns, np, findings, marker_string, sentence_count]
+                     rs, rp, ns, np, findings, marker_string, sentence_count,
+                     repair_attempt, attempt_history, diagnostics]
       response_schema:
         type: object
         additionalProperties: false

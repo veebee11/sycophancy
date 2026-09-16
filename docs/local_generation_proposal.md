@@ -222,8 +222,15 @@ Both scripts refuse to run if `/data/$USER` does not exist.
 `--kind group` (the default) sends the one four-condition group described here.
 `--kind scenario` sends one scenario draft from the same synthetic fixture
 brief, checked with `validate_scenario_text`. Either way it is one call, with no
-redraft, no repair and no continuation. The bounded repair path lives in
-`scripts/pilot.py`, whose live use needs a separate authorisation.
+redraft, no repair and no continuation.
+
+The bounded repair path lives in `scripts/pipeline_smoke.py`: one scenario and
+one group, four calls at most. It ran live on 2026-09-16 — the scenario was
+accepted, the group exhausted the ceiling at `needs_manual_review`, and the
+cause was two identical repair requests. The correction is implemented and
+offline-tested, and one confirmation smoke is the next live gate. Pilot
+generation, in `scripts/pilot.py`, remains unavailable: that script cannot
+send.
 
 Exactly **one four-condition group** from the **synthetic fixture** —
 `data/fixtures/topics.yaml`, decision `energy_fixture_001` (§11), variant v1, `opt_1`, with the
@@ -310,6 +317,7 @@ the backend speaks HTTP through `urllib`.
 | Network | localhost only; the vLLM endpoint binds `127.0.0.1` |
 | Etiquette | announce the GPU and expected duration in `#01-servers` before starting |
 | Runtime | the pilot is 72 calls of ≤700 new tokens plus at most 96 repairs: expected minutes on one A6000, not yet measured |
+| Scope | **pilot generation only**: 12 decisions, 24 scenarios, 48 groups. The main corpus of 60 decisions (120 scenarios, 240 groups) is a separate, later milestone; at the same per-call cost it is roughly five times this table, and it is not authorised here |
 
 **Compute beyond generation (unresolved).** The A6000 is being used for corpus
 generation. It may also support the first Llama-3.1-8B compatibility and

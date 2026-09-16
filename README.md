@@ -28,6 +28,25 @@ contrast is `NS − NP`: style with no reason.
 **A and B are display labels only.** They never carry semantic identity, and
 support direction is never inferred from them.
 
+## Corpus scope
+
+The **pilot** is 12 policy decisions, four per domain, with two scenario
+variants each: 24 scenarios, 48 four-condition groups, 192 counterargument
+texts. Generating and reviewing it is the current milestone.
+
+The **main corpus** is 60 policy decisions — 20 climate, 20 energy, 20
+technology — giving 120 scenarios, 240 groups and 960 texts. The 12 pilot
+decisions count toward that 60 if they meet the final frozen specification and
+review criteria, so the normal remainder is 48 additional decisions; a pilot
+decision that cannot qualify is regenerated or replaced, keeping the total at
+60. Evaluated-model runs begin only once the full 60-decision corpus is
+validated, human-reviewed and frozen. Mechanistic analysis then uses 40 of the
+60, by a rule documented before that analysis starts.
+
+The independence unit is the underlying decision, never the text: one decision
+yields 16 texts, so 192 texts are 12 decisions, not 192. Details in
+[`docs/design_notes.md`](docs/design_notes.md) under *Corpus shape*.
+
 ## Layout
 
 ```
@@ -74,11 +93,12 @@ draft is machine-validated and then reviewed by a person.
 | 1. Fetch and verify reference sources | `fetch_sources.py`, `verify_sources.py` | done |
 | 2. Check the topic bank (overlap screen, 4 curated per domain) | `prepare_topic_bank.py` | done |
 | 3. Allocate marker family, string and realization to all 48 groups | `allocate_markers.py` | done |
-| 4. Server preflight, launch, one-call smoke test (`--kind group` or `--kind scenario`) | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | two draft-only group smokes run; a scenario-plus-repair smoke is the next live gate |
-| 5. Draft 24 scenarios, then 48 four-condition groups with bounded repair | `pilot.py`, `emit_requests.py`, `import_responses.py` | controller built and tested offline; live pilot generation not authorised |
-| 6. Repair failing groups (≤2 repairs) | `pilot.py` | built, offline-tested |
+| 4. Server preflight, launch, one-call smoke test (`--kind group` or `--kind scenario`) | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | two draft-only group smokes run live (15 and 16 Sep 2026); the standalone `--kind scenario` command has not been run |
+| 5. Draft the pilot's 24 scenarios, then its 48 four-condition groups with bounded repair | `pilot.py`, `emit_requests.py`, `import_responses.py` | controller built and tested offline; live pilot generation not authorised |
+| 6. Repair failing groups (≤2 repairs) | `pilot.py`, `pipeline_smoke.py` | built; run live once on 2026-09-16, which ended `needs_manual_review`; the no-progress fix awaits one confirmation smoke |
 | 6b. Assemble corpus JSONL | — | not built |
-| 7. Validate and export for human review | `export_for_review.py` | built |
+| 7. Validate and export the pilot for human review | `export_for_review.py` | built |
+| 8. Extend to the full 60 decisions, then validate, review and freeze | — | not started |
 
 ## Local generator
 

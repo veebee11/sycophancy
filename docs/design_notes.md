@@ -63,9 +63,47 @@ and `perceived_unstated_support`.
 
 ## Corpus shape
 
-60 underlying decisions — 20 climate, 20 energy, 20 technology — with two
-scenario variants each, giving 120 scenarios and 960 counterargument texts. The
-pilot is 12 decisions, four per domain: 24 scenarios, 192 texts.
+**Both sizes are fixed; only the main corpus is still unbuilt.** The pilot is
+**12 underlying decisions**, four per domain, with two scenario variants each:
+24 scenarios, 48 four-condition groups, 192 counterargument texts. That is what
+is being generated and reviewed now. The main corpus is 60 decisions, and
+constructing the rest of it comes after the pilot is reviewed.
+
+**192 texts are not 192 independent items.** One decision yields 2 variants × 2
+supported options × 4 conditions = 16 texts, all built on the same underlying
+policy decision. The independence unit is `decision_id`, which is why the
+analysis clusters on it and every split is grouped by it. A count of texts,
+groups or scenarios must never be reported as a number of independent policy
+decisions.
+
+**The main corpus is 60 policy decisions** — 20 climate, 20 energy, 20
+technology — giving 120 scenarios, 240 four-condition groups and 960
+counterargument texts (Research_Plan_v6 §5). That target is settled, and
+`configs/experiment.yaml` carries it in `corpus.decisions_full`,
+`corpus.texts_full`, `domains.decisions_per_domain_full`, the `splits.decisions`
+counts (36/12/12 decisions) and `mechanistic.subset.n_decisions` (40). Those are
+confirmed values, not placeholders.
+
+**The pilot's 12 decisions are candidate members of the 60**, and count toward
+it when they satisfy the final frozen specification and review criteria. Where they do, they reduce what is
+left to build: the normal remainder is **48 additional decisions, not 60**. A
+pilot decision that cannot meet the final criteria is regenerated under the
+final procedure or replaced, and the total stays at 60.
+
+**Changing 60 is a design amendment**, documented before any main evaluated-model
+outcome is examined — never a quiet adjustment afterwards.
+
+### The order of work
+
+1. **Now (engineering).** Generate and human-review the 12-decision pilot.
+2. **Then (design gate).** Approve the coverage plan and the candidate decision
+   list for the remaining decisions. The number is settled at 60.
+3. **Then (production).** Generate, validate, human-review and freeze the
+   expanded main corpus.
+4. **Only then.** Run the main behavioural evaluation at scale.
+5. **After that.** Mechanistic analysis runs over **40 of the 60 decisions**
+   (Research_Plan_v6 §8). The count is fixed; the rule that selects those 40 is
+   documented and preregistered before the mechanistic analysis begins.
 
 Each scenario has two immutable semantic options, `opt_1` and `opt_2`, and eight
 counterarguments: four conditions supporting each option. **A and B are display
@@ -558,13 +596,14 @@ topics, so extra candidates can be proposed and rejected freely. Drafting may
 begin only with **exactly four curated decisions per domain** and no machine
 errors.
 
-**Whether pilot decisions count toward the final 60.** The 12 pilot decisions
-may be included in the main corpus only if (a) the experimental definitions,
-prompts and validation rules do not materially change after the pilot; (b) they
-pass the same final validation and review criteria as every other item; and (c)
-their inclusion is decided without looking at any model outcome results. If the
-pilot leads to substantive design changes, the affected decisions are
-regenerated under the final rules or excluded.
+**Whether pilot decisions count toward the main corpus.** They are candidate
+members of the 60 and count when they satisfy the final criteria: (a) the
+experimental definitions, prompts and validation rules do not materially change
+after the pilot; (b) they pass the same final validation and review criteria,
+under the frozen specification, as every other item; and (c) their inclusion is
+decided without looking at any model outcome results. If the pilot leads to substantive
+design changes, the affected decisions are regenerated under the final rules or
+excluded, keeping the main corpus at 60 decisions (*Corpus shape*).
 
 **Drafting.** Marker allocation is planned before drafting. Each scenario takes
 three drafting calls: the scenario itself, then one four-condition group per
@@ -664,10 +703,14 @@ verifies the weights themselves: with a safetensors index, every shard it names
 must be present and non-empty — a config and tokenizer alone are exactly what an
 interrupted download leaves behind.
 
-**Repair.** Items failing validation are redrafted with a separate, fixed,
-hashed repair prompt. The budget is **one draft plus at most two repairs, three
+**Repair.** Items failing validation are redrafted with a separate repair
+template, versioned and hash-pinned like the others. The *template* is fixed;
+the *rendered request* varies by scenario, bodies, findings, measurements,
+attempt number and the history of earlier attempts, and each rendered prompt is
+individually content-hashed and recorded. The budget is **one draft plus at most two repairs, three
 calls per group**. The findings passed to the repair are the validator's own
-codes and messages, so the prompt stays fixed rather than becoming per-item.
+codes and messages, and the measurements behind them, so no advice is composed
+by hand for an item.
 A group that still fails is marked **`needs_manual_review` and stops there**: it
 is never silently hand-corrected or accepted. Any later human correction is a
 separate, recorded and separately approved act, with the editor and reason in

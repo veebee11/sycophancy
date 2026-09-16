@@ -210,10 +210,28 @@ def group_request(topic: TopicBrief, variant_id: int, scenario_text: str,
 
 def repair_request(topic: TopicBrief, variant_id: int, scenario_text: str,
                    allocation: GroupAllocation, bodies: dict[str, str],
-                   findings: list[str], attempt: int, cfg: ExperimentConfig) -> DraftRequest:
+                   findings: list[str], attempt: int, cfg: ExperimentConfig,
+                   *, diagnostics: str = "", history: str = "") -> DraftRequest:
     """A repair of one group. The findings are the validator's own codes and
-    messages — never advice composed for this item, which would make the
-    repair prompt per-item and unhashable."""
+    messages, never advice composed by hand for this item.
+
+    What is fixed is the **versioned template**, whose SHA-256 is pinned in the
+    configuration and checked at load. The **rendered request** necessarily
+    varies: it carries this scenario, these bodies, these findings, these
+    measurements, the attempt number and the history of earlier attempts. Every
+    rendered prompt is hashed individually (``prompt_sha256``), and that hash is
+    recorded in the log and in the raw traffic, so each call is identified by
+    exactly what was sent.
+
+    ``diagnostics`` are the measurements behind those findings — per-condition
+    body sentence and word counts against the configured rule — and ``history``
+    says what earlier attempts did, in particular whether the last one changed
+    anything at all. Both are derived mechanically from the validator and the
+    stored attempts, so the template stays fixed; what varies is the measured
+    state, which is exactly what a second repair needs in order not to repeat
+    the first. A repair after one that changed nothing must not be the same
+    request again.
+    """
     budget = cfg.raw["corpus"]["repair"]
     if not 2 <= attempt <= budget["max_calls_per_group"]:
         raise RequestError(
@@ -230,6 +248,9 @@ def repair_request(topic: TopicBrief, variant_id: int, scenario_text: str,
         "findings": "\n".join(f"- {f}" for f in findings),
         "marker_string": allocation.marker_string,
         "sentence_count": cfg.raw["corpus"]["body_sentences"],
+        "repair_attempt": attempt,
+        "attempt_history": history or "This is the first repair of this group.",
+        "diagnostics": diagnostics or "  (no measurements were recorded)",
     })
     return DraftRequest(
         kind="repair", template_name="repair_v1", template_sha256=digest,
@@ -240,7 +261,9 @@ def repair_request(topic: TopicBrief, variant_id: int, scenario_text: str,
                  "marker_family": allocation.marker_family,
                  "marker_string": allocation.marker_string,
                  "marker_realization_id": allocation.marker_realization_id,
-                 "findings": list(findings)},
+                 "findings": list(findings),
+                 "diagnostics": diagnostics,
+                 "history": history},
     )
 
 

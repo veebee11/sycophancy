@@ -31,6 +31,7 @@ given, and the live authorisations are checked by the backend and the caller.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -57,6 +58,7 @@ __all__ = [
     "REFUSED",
     "TRANSPORT_ERROR",
     "StageResult",
+    "group_diagnostics",
     "draft_group",
     "draft_scenario",
     "run_pilot",
@@ -100,6 +102,8 @@ class Attempt:
     error: str | None = None
     #: True when a restart re-read this call instead of sending it again.
     reused: bool = False
+    #: True when a repair returned the four bodies it was given, unchanged.
+    no_progress: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -342,19 +346,22 @@ class CallStore:
                         "warning_codes": result.get("warning_codes", []),
                         "machine_valid": result["status"] == "ok"
                         and not result.get("error_codes"),
+                        "no_progress": bool(result.get("no_progress")),
                         "recovered_after_interruption": recovered},
             outcome=result["outcome"]))
 
     def record(self, request: DraftRequest, *, status: str, outcome: str,
                fields: Any = None, error: str | None = None,
                error_codes: tuple[str, ...] = (), warning_codes: tuple[str, ...] = (),
-               response: Any = None, meta: dict[str, Any] | None = None) -> dict[str, Any]:
+               response: Any = None, meta: dict[str, Any] | None = None,
+               no_progress: bool = False) -> dict[str, Any]:
         """Write the result file and append exactly one log line for a call."""
         meta = meta or _meta_from(response)
         result = self._result(request, status=status, outcome=outcome, fields=fields,
                               error=error, error_codes=error_codes,
                               warning_codes=warning_codes, meta=meta,
                               recovered=bool(meta) and response is None)
+        result["no_progress"] = no_progress
         self._write_result(result)
         if self.completed_entry_for(request.call_id) is None:
             self._append_log(request, result)
@@ -447,6 +454,79 @@ def _codes(findings, severity: str) -> tuple[str, ...]:
     return tuple(sorted({f.code for f in findings if f.severity == severity}))
 
 
+def group_diagnostics(bodies: dict[str, str], opening: str, cfg: ExperimentConfig,
+                      segmenter: Segmenter) -> str:
+    """The measurements behind the findings, per condition.
+
+    A repair that is handed only error codes has to guess what to change. These
+    are the same numbers the validator used: body sentence counts against the
+    configured rule, body word counts against the configured ratios, and which
+    conditions are the long and the short ones. Body and full-text counts are
+    labelled separately, because the opening sentence makes every full-text
+    count one higher and it is the BODY the rules are about.
+
+    Two ratios, and they are not interchangeable. ``ratio_warn`` (1.10) is the
+    matching target the drafting prompts ask for; ``ratio_fail`` (1.15) is where
+    the validator raises an error. The actionable advice — what to shorten, what
+    to lengthen, by how much — is computed from the **target**, so that a repair
+    aiming at it lands inside the rule rather than on its edge. Both numbers are
+    stated, and neither is weakened.
+    """
+    import re as _re
+    word_re = _re.compile(cfg.parsed.matching.words.word_regex)
+    required = cfg.raw["corpus"]["body_sentences"]
+    ratio_warn = cfg.parsed.matching.words.ratio_warn
+    ratio_fail = cfg.parsed.matching.words.ratio_fail
+
+    body_sentences, full_sentences, body_words, full_words = {}, {}, {}, {}
+    for condition in CORE_CONDITIONS:
+        body = bodies[condition]
+        full = f"{opening} {body}"
+        body_sentences[condition] = segmenter.segment(body).count
+        full_sentences[condition] = segmenter.segment(full).count
+        body_words[condition] = len(word_re.findall(body))
+        full_words[condition] = len(word_re.findall(full))
+
+    shortest, longest = min(body_words.values()), max(body_words.values())
+    ratio = longest / shortest if shortest else float("inf")
+    # Aim at the target, not at the error threshold.
+    target_max = int(shortest * ratio_warn)          # keeping the shortest body
+    target_min = math.ceil(longest / ratio_warn)     # or lengthening the short ones
+    hard_max = int(shortest * ratio_fail)
+    too_long = [c for c in CORE_CONDITIONS if body_words[c] > target_max]
+    too_short = [c for c in CORE_CONDITIONS if body_words[c] < target_min]
+
+    lines = [
+        "  BODY sentences (the rule: exactly "
+        f"{required} per body): " + ", ".join(
+            f"{c} {body_sentences[c]}" for c in CORE_CONDITIONS),
+        "  full-text sentences, opening included, for reference only: " + ", ".join(
+            f"{c} {full_sentences[c]}" for c in CORE_CONDITIONS),
+    ]
+    wrong = [c for c in CORE_CONDITIONS if body_sentences[c] != required]
+    if wrong:
+        lines.append(f"  -> wrong body sentence count: {', '.join(wrong)}; each must be "
+                     f"exactly {required} sentences.")
+    lines += [
+        "  BODY words: " + ", ".join(f"{c} {body_words[c]}" for c in CORE_CONDITIONS),
+        "  full-text words, opening included: " + ", ".join(
+            f"{c} {full_words[c]}" for c in CORE_CONDITIONS),
+        f"  shortest body {shortest} words, longest {longest}, current ratio {ratio:.2f}.",
+        f"  target ratio {ratio_warn} (what to aim for); hard-error ceiling {ratio_fail} "
+        f"(where the check fails).",
+        f"  to reach the {ratio_warn} target: keep the shortest body at {shortest} words and "
+        f"bring every body to {target_max} words or fewer, or keep the longest at {longest} "
+        f"and bring every body to at least {target_min} words.",
+        f"  for reference, the hard ceiling alone would allow up to {hard_max} words against "
+        f"a {shortest}-word shortest body; do not aim there.",
+    ]
+    if too_long:
+        lines.append(f"  -> shorten to meet the {ratio_warn} target: {', '.join(too_long)}")
+    if too_short:
+        lines.append(f"  -> or lengthen to meet it: {', '.join(too_short)}")
+    return "\n".join(lines)
+
+
 def _repair_findings(findings) -> list[str]:
     """What a repair is asked to fix: the validator's own errors, sorted.
 
@@ -512,6 +592,8 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
     bodies: dict[str, str] | None = None
     repair_notes: list[str] = []
     findings: tuple[Finding, ...] = ()
+    history: list[str] = []
+    previous_repair_prompt: str | None = None
 
     while len(attempts) < budget:
         attempt_no = len(attempts) + 1
@@ -519,8 +601,20 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
             request = group_request(topic, variant_id, scenario_text, allocation, cfg,
                                     attempt=attempt_no)
         else:
-            request = repair_request(topic, variant_id, scenario_text, allocation, bodies,
-                                     repair_notes, attempt_no, cfg)
+            request = repair_request(
+                topic, variant_id, scenario_text, allocation, bodies, repair_notes,
+                attempt_no, cfg,
+                diagnostics=group_diagnostics(bodies, opening, cfg, segmenter),
+                history="\n".join(history))
+            if request.prompt_sha256 == previous_repair_prompt:
+                # A repair that is byte-identical to the one that just failed
+                # asks a deterministic server the same question twice. It
+                # happened live on 2026-09-16 and is what this guard prevents.
+                raise PipelineAbort(
+                    f"{topic.decision_id} v{variant_id} {option}: the next repair would "
+                    f"repeat the previous failed repair request exactly "
+                    f"({request.prompt_sha256[:16]}); refusing to spend a call on it")
+            previous_repair_prompt = request.prompt_sha256
 
         status, fields, error, reused, response = _send_or_resume(
             store, request, backend, cfg, allow_live=allow_live)
@@ -541,11 +635,21 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
             outcome = NEEDS_MANUAL_REVIEW if last_call else REPAIR_NEEDED
             bodies, repair_notes, findings = None, [], ()
             errors = warnings = ()
+            no_progress = False
         else:
             block = _block_from(fields, allocation)
             findings = tuple(validate_group(scenario_text, opening, block, cfg, segmenter,
                                             loc=loc))
             errors, warnings = _codes(findings, "error"), _codes(findings, "warning")
+            # A repair that returns exactly what it was given changed nothing.
+            # It is recorded as such and the next one is told so explicitly.
+            no_progress = bodies is not None and dict(fields) == bodies
+            if no_progress:
+                history.append(
+                    f"Repair attempt {attempt_no} returned the four bodies UNCHANGED: it made "
+                    f"no progress, and the same findings stand. Do not return these bodies "
+                    f"again. Make a materially different correction this time, using the "
+                    f"measurements below, while keeping every substantive rule.")
             if not errors:
                 outcome = ACCEPTED
             else:
@@ -554,9 +658,11 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
 
         store.record(request, status=status, outcome=outcome, fields=fields, error=error,
                      error_codes=errors, warning_codes=warnings, response=response,
-                     meta=_stored_meta(store, request) if reused else None)
+                     meta=_stored_meta(store, request) if reused else None,
+                     no_progress=no_progress)
         attempts.append(Attempt(request.call_id, request.kind, attempt_no, status, outcome,
-                                request.prompt_sha256, errors, warnings, error, reused))
+                                request.prompt_sha256, errors, warnings, error, reused,
+                                no_progress=no_progress))
 
         if outcome == ACCEPTED:
             return StageResult("group", topic.decision_id, variant_id, option, ACCEPTED,

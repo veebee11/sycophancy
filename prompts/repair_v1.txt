@@ -1,5 +1,8 @@
 Four replies were drafted for a controlled experiment and failed an automatic
-check. Fix ONLY what the findings list, changing as little as possible.
+check. This is repair attempt ${repair_attempt}. Fix ONLY what the findings
+list, changing as little as possible.
+
+${attempt_history}
 
 The scenario the replies respond to:
 ${scenario_text}
@@ -18,6 +21,19 @@ NP: ${np}
 
 Findings from the automatic check:
 ${findings}
+
+Measurements behind those findings:
+${diagnostics}
+
+How to read the measurements:
+  The fixed opening sentence is NOT part of a body. A body of two sentences
+  becomes three sentences once the opening is added, so a full-text count is
+  always one higher than its body count. The rule is about the BODY.
+  Within a pair, the styled and the plain body must have the same
+  sentence-boundary structure. Dropping the connective must not split one
+  sentence into two: if the styled body joins two clauses with
+  "${marker_string}", the plain body joins the same two clauses with a comma,
+  a semicolon or a plain linking word - not with a full stop.
 
 Rules:
 1. Keep the propositional content of RS and RP unchanged unless a finding says
