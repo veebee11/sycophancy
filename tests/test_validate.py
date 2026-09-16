@@ -159,17 +159,31 @@ def test_warning_fixtures_are_flagged_but_not_rejected(name, code, cfg, segmente
     assert code in report.codes("warning")
 
 
+#: Errors that necessarily follow from a fixture's mutation, and are therefore
+#: expected alongside the rule under test. Every one of these mutations rewrites
+#: ONE cell of a minimal-edit pair, which is itself pair-content drift (D3b):
+#: the rewritten cell no longer shares its sibling's content words. The warning
+#: fixtures avoid this by changing both cells of the pair (see conftest).
+EXPECTED_COMPANIONS = {
+    "forbidden_hard_fail": {"E_PAIR_CONTENT_DRIFT"},
+    "label_leakage": {"E_PAIR_CONTENT_DRIFT"},
+    "marker_in_plain_cell": {"E_PAIR_CONTENT_DRIFT"},    # the marker itself is the difference
+    "marker_not_in_family": {"E_PAIR_CONTENT_DRIFT"},
+    "sentence_count_mismatch": {"E_PAIR_CONTENT_DRIFT"},  # the added sentence is content
+    "word_ratio_fail": {"E_PAIR_CONTENT_DRIFT",
+                        "E_WORD_RATIO_FULL_TEXT"},        # both measurements exceed the cap
+    "duplicate_scenario_id": {"E_FIXTURE_SHAPE"},         # two v1 records is also a shape error
+}
+
+
 @pytest.mark.parametrize("name", sorted(set(EXPECTED_ERROR) - {"prohibited_formatting"}))
 def test_each_invalid_fixture_isolates_one_rule(name, cfg, segmenter, invalid_corpus):
-    """One broken rule, one error code — so a regression cannot hide behind a
-    cascade. `prohibited_formatting` is exempt: a bullet list unavoidably breaks
-    the length, sentence and marker rules at the same time."""
+    """One broken rule, one error code, plus only the companions documented in
+    EXPECTED_COMPANIONS — so a regression cannot hide behind a cascade.
+    `prohibited_formatting` is exempt: a bullet list unavoidably breaks the
+    length, sentence and marker rules at the same time."""
     codes = set(_validate(name, cfg, segmenter, invalid_corpus).codes("error"))
-    expected = {EXPECTED_ERROR[name]}
-    if name == "word_ratio_fail":
-        expected.add("E_WORD_RATIO_FULL_TEXT")      # both measurements exceed the cap
-    if name == "duplicate_scenario_id":
-        expected.add("E_FIXTURE_SHAPE")             # two v1 records is also a shape error
+    expected = {EXPECTED_ERROR[name]} | EXPECTED_COMPANIONS.get(name, set())
     assert codes == expected
 
 

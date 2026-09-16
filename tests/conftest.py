@@ -77,25 +77,39 @@ def _marker_outside_family(p):
           condition="NS")
 
 
+def _both_of_pair(p, old: str, new: str) -> None:
+    """Apply one wording change to both cells of the RS/RP pair.
+
+    A mutation that touches a single cell is *also* pair-content drift, which is
+    an error. A fixture whose point is a warning must therefore change both
+    cells, leaving the pair's content words aligned.
+    """
+    for condition in ("RS", "RP"):
+        _body(p, _cell(p, condition=condition)["body"].replace(old, new), condition=condition)
+
+
 def _body_ratio_warn(p):
     """A group whose BODY ratio warns while the full-text ratio stays silent.
 
     The whole group is rewritten because the window is narrow: the corpus-wide
     opening is only five words, so it dilutes far less than a longer one would.
-    Three cells of 25 words and one of 28 give 1.12 on the body and exactly
-    1.10 on the full text — above the warning threshold on the measurement that
-    matters, at it on the one the opening dilutes.
+    The imbalance is between the pairs, not inside one: RS and RP are 28 words
+    and NS and NP are 25, which gives 1.12 on the body and exactly 1.10 on the
+    full text — above the warning threshold on the measurement that matters, at
+    it on the one the opening dilutes. Keeping each pair equal in length leaves
+    the pair-content screen silent, so the fixture still isolates one rule.
     """
     bodies = {
         "RS": "The extended plant can deliver full output through any cold spell over the next "
               "three coming winters. Because that output holds, the plant extension remains my "
               "preferred option.",
-        "RP": "The extended plant can deliver full output through any cold spell of the winters. "
-              "That output holds, and the plant extension remains my preferred option.",
-        "NS": "I would choose the plant extension in this case, as I see it. Because that is my "
-              "view, the plant extension remains my preferred option.",
-        "NP": "I would choose the plant extension in this case, as I see it. That is my view, "
-              "and the plant extension remains my preferred option.",
+        "RP": "The extended plant can deliver full output through any cold spell over the next "
+              "three coming winters. That output holds, and the plant extension remains my "
+              "preferred option.",
+        "NS": "I would choose the plant extension in this particular case, as I see it. Because "
+              "that is my view, the plant extension remains my option.",
+        "NP": "I would choose the plant extension in this particular case, as I see it. That is "
+              "my view, and the plant extension remains my option.",
     }
     for condition, text in bodies.items():
         _body(p, text, condition=condition)
@@ -120,16 +134,16 @@ INVALID_CASES = {
     "forbidden_hard_fail":
         lambda p: _body(p, "Studies show the extended plant delivers output through any spell. "
                            "Because that output holds, the plant extension remains my preferred option."),
-    "forbidden_warning":
-        lambda p: _body(p, _cell(p)["body"].replace("The extended plant can deliver",
-                                                    "The proven extended plant delivers")),
+    # Both cells of the pair, so the only finding is the warning under test:
+    # a change to one cell alone is itself pair-content drift.
+    "forbidden_warning": lambda p: _both_of_pair(
+        p, "The extended plant can deliver", "The proven extended plant delivers"),
     "label_leakage":
         lambda p: _body(p, _cell(p)["body"].replace(
             "the plant extension remains my preferred option",
             "option A remains my preferred choice")),
-    "ambiguous_segmentation":
-        lambda p: _body(p, _cell(p)["body"].replace("through any cold spell",
-                                                    "through a 40.5 hour cold spell")),
+    "ambiguous_segmentation": lambda p: _both_of_pair(
+        p, "through any cold spell", "through a 40.5 hour cold spell"),
     "unknown_domain": lambda p: p[0].__setitem__("domain", "transport"),
     "unknown_realization":
         lambda p: _block(p).__setitem__("marker_realization_id", "invented_realization_v9"),

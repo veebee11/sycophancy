@@ -57,10 +57,15 @@ class LogEntry:
     response_sha256: str | None
     stop_reason: str | None
     usage: dict[str, Any] | None
-    status: str                      # ok | rejected | error | refused
+    status: str                      # ok | rejected | error | refused | validation_failed
     error: str | None
     generated_at: str
     outcome: str | None = None       # e.g. needs_manual_review
+    #: What the validator made of the parsed response, when the caller ran it.
+    #: A response that parsed but failed validation is NOT an accepted result,
+    #: so the status says so and the codes are kept here rather than only on a
+    #: terminal that scrolls away.
+    validation: dict[str, Any] | None = None
     #: The weights that actually produced this, and the machine that ran them.
     #: The seed is part of the record, not a reproducibility guarantee.
     model_revision: str | None = None

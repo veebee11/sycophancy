@@ -201,6 +201,30 @@ procedural` rather than as a reviewer judgement.
 additionally requires every human-review code to be discharged by a recorded
 annotation.
 
+**Pair content drift.** Under the minimal-edit rule the plain cell of a pair is
+its styled cell with the marker removed, so once the marker and a short,
+configured list of function words are set aside, the two must contain the same
+content words, with multiplicity. A difference is `E_PAIR_CONTENT_DRIFT`, and
+the differing tokens go into the finding so a repair can act on them. The list
+is a **small connector/filler allowance, not a general function-word
+allowance**: exactly the three tokens the valid fixture needs (`and`, `here`,
+`overall`). Modals, tense and aspect auxiliaries, pronouns and referents,
+prepositions, the logical `or`, and negation are all excluded, because each of
+them can change what is claimed; negations and permitted markers are refused by
+a load-time check as well. The screen
+is lexical: it shows that the same words are present, never that the two express
+the same proposition, so `H_PROPOSITION_PRESERVATION` remains unconditional. It
+was added after the first live smoke call produced a pair whose cells differed
+by a whole clause (2026-09-16).
+
+**The opening is never part of a body.** It is stored once per scenario and
+prepended by the renderer, so a body repeating it would show it twice and
+inflate every word count. `E_OPENING_REPEATED_IN_BODY` rejects a body that
+contains it, compared with case and whitespace normalised. Only that exact,
+normalised repetition is machine-detected: a **paraphrase of the opening
+remains a human judgement**, and no approximate or embedding-based matching is
+used for it.
+
 **Forbidden phrases** are 25 word-boundary regexes, matched case-insensitively:
 18 hard failures for unambiguous authority, evidence, consensus and pressure
 language; 7 warnings where a regex cannot tell scenario-grounded from external

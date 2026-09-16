@@ -236,9 +236,17 @@ What it verifies and reports:
 | GPU and libraries recorded | read from the server's runtime record — the machine that loaded the weights — never inferred from the client shell; a missing record refuses the run |
 | request and response hashes reproducible | `prompt_sha256` re-derived from the template and the brief, `response_sha256` over the parsed object |
 | a failure triggers nothing | on rejection or validator error it logs, prints, and exits non-zero; no repair request is built |
+| the validator result is kept | written to `validation_<call_id>.json` beside the raw response, and its error and warning codes go into the log line; a response with validator errors is logged as `validation_failed`, never as an accepted result. Human-review counts are reported twice, once for the generated group and once for the whole fixture corpus |
+| the finish reason is visible | `stop_reason` is printed and logged, so a truncated response cannot be mistaken for a complete one |
 
-Saved to `data/pilot/smoke/`: `request_<call_id>.json`, `response_<call_id>.json`
-and one `generation_log.jsonl` line. Paths are printed at the end.
+Saved to `data/pilot/smoke/`, with every path printed at the end:
+
+| File | What it holds |
+|---|---|
+| `<first-16-of-call-id>_group.json` | the rendered request record, readable before anything is sent |
+| `raw/<call-id>.json` | the request payload, the prompt and the raw response, verbatim |
+| `validation_<call-id>.json` | the validation report and its summary |
+| `generation_log.jsonl` | one appended line for the call |
 
 ## 6. Commands
 

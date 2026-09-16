@@ -178,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
                         raw_dir=Path(args.out) / "raw")
     backend = VLLMOpenAIBackend(base_url=args.base_url)
 
-    def record_call(status, error, response=None, fields=None):
+    def record_call(status, error, response=None, fields=None, validation=None):
         env = describe_run(
             cfg, cached=cached, endpoint=gen["vllm"]["base_url"], server=server,
             prompt_sha256=request.prompt_sha256,
@@ -201,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             status=status, error=error, generated_at=utc_now(),
             model_revision=cached.revision, seed=gen["decoding"]["seed"],
             gpu=server.get("gpu_name"), runtime=env.as_dict(),
+            validation=validation,
             outcome="smoke_test_only"))
         return env
 
@@ -226,8 +227,6 @@ def main(argv: list[str] | None = None) -> int:
         print("No retry was attempted and no repair request was built.", file=sys.stderr)
         return 1
 
-    env = record_call("ok", None, response, fields)
-
     # -- validate, by assembling a record from what came back ----------------
     cells = {c: Cell(condition=c, body=fields[c],
                      markers_present=c in ("RS", "NS"),
@@ -243,21 +242,62 @@ def main(argv: list[str] | None = None) -> int:
             if f.scenario_id in (None, drafted.scenario_id)
             and f.supported_option in (None, args.option)]
 
+    # The findings belonging to THIS group, kept apart from the rest of the
+    # fixture corpus, which the smoke test did not generate.
+    group_errors = [f for f in mine if f.severity == "error"]
+    group_warnings = [f for f in mine if f.severity == "warning"]
+    validation = {
+        "generated_group": {"scenario_id": drafted.scenario_id,
+                            "supported_option": args.option,
+                            "error_codes": sorted(f.code for f in group_errors),
+                            "warning_codes": sorted(f.code for f in group_warnings),
+                            "human_review_outstanding": sum(1 for f in mine
+                                                            if f.severity == "human_review")},
+        "whole_fixture_corpus": {"error_codes": sorted(f.code for f in report.errors),
+                                 "warning_codes": sorted(f.code for f in report.warnings),
+                                 "human_review_outstanding": len(report.human_review)},
+        "corpus_scope": report.corpus_scope,
+        "ok": report.ok,
+        # Set BEFORE the file is written, so the saved summary and the log
+        # entry name the same path rather than the file saying "null".
+        "report_file": str(Path(args.out) / f"validation_{request.call_id}.json"),
+    }
+    # Persisted, not just printed: a validator result that lives only in a
+    # terminal cannot be cited, and the log line must not call a response with
+    # validator errors an accepted result.
+    report_path = Path(validation["report_file"])
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(
+        {"call_id": request.call_id, "summary": validation, "report": report.as_dict()},
+        indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    env = record_call("validation_failed" if group_errors or report.errors else "ok",
+                      "; ".join(sorted({f.code for f in group_errors})) or None,
+                      response, fields, validation=validation)
+
     print("\n--- the four bodies ---")
     for condition in ("RS", "RP", "NS", "NP"):
         print(f"\n{condition}: {fields[condition]}")
 
     print("\n--- validator ---")
-    print(f"errors {len(report.errors)}, warnings {len(report.warnings)}, "
-          f"human judgements outstanding {len(report.human_review)}")
+    print(f"generated group ({drafted.scenario_id}/{args.option}): "
+          f"errors {len(group_errors)}, warnings {len(group_warnings)}, "
+          f"human judgements outstanding for this group "
+          f"{validation['generated_group']['human_review_outstanding']}")
+    print(f"whole fixture corpus (scope {report.corpus_scope}): errors {len(report.errors)}, "
+          f"warnings {len(report.warnings)}, human judgements outstanding "
+          f"{len(report.human_review)}")
     for finding in mine:
         if finding.severity in ("error", "warning"):
             print(f"  {finding.severity}: {finding.code} — {finding.message[:160]}")
+    print(f"validation   {report_path}")
 
     print("\n--- record ---")
     print(f"model            {repo_id}")
     print(f"revision         {cached.revision}")
     print(f"served as        {response.model_returned}")
+    print(f"stop_reason      {response.stop_reason}"
+          f"{'' if response.stop_reason == 'stop' else '  (not a clean stop)'}")
     print(f"decoding         {json.dumps(env.decoding)}")
     print(f"seed             {env.seed}")
     print(f"gpu              {server.get('gpu_index')} ({env.gpu}), dtype {env.dtype}")
@@ -270,9 +310,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"request file     {request_path}")
     print(f"raw response     {raw_path}")
     print(f"log              {log.path}")
+    print(f"log status       {'validation_failed' if group_errors or report.errors else 'ok'}")
     print(f"\n{env.reproducibility_note}")
     print("\nThis was a smoke test: one call, no retry, no pilot generation.")
-    return 1 if report.errors else 0
+    if group_errors or report.errors:
+        print("The response parsed but FAILED validation: it is not an accepted draft. "
+              "No repair request was built and nothing was retried.", file=sys.stderr)
+        return 1
+    print("No machine errors. That is not an approved group: the human judgements above "
+          "are still outstanding.")
+    return 0
 
 
 if __name__ == "__main__":

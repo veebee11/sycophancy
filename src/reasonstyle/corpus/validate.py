@@ -58,6 +58,28 @@ HUMAN_REVIEW_CODES: dict[str, str] = {
 _PAIRS: tuple[tuple[Condition, Condition], ...] = (("RS", "RP"), ("NS", "NP"))
 
 
+def _normalized(text: str) -> str:
+    """Case- and whitespace-insensitive form, for substring comparison."""
+    return " ".join(text.casefold().split())
+
+
+def _content_tokens(body: str, word_re: re.Pattern[str], marker: str | None,
+                    permitted: set[str]) -> Counter[str]:
+    """Content words of one cell body, as a multiset.
+
+    The assigned marker is removed first — its presence in the styled cell and
+    absence from the plain cell is the difference the pair is *supposed* to
+    have — and so are the configured function words, which are what a
+    styled-to-plain transformation is permitted to change. Multiplicity is
+    kept: a content word used twice in one body and once in the other is a
+    difference.
+    """
+    tokens = Counter(w.casefold() for w in word_re.findall(body))
+    for token in (word_re.findall(marker) if marker else ()):
+        tokens[token.casefold()] -= 1        # one occurrence of the marker phrase
+    return Counter({w: n for w, n in tokens.items() if n > 0 and w not in permitted})
+
+
 class _Collector:
     def __init__(self) -> None:
         self.findings: list[Finding] = []
@@ -156,6 +178,8 @@ def validate_corpus(
     scenario_band = cfg.raw["corpus"]["scenario_words"]
     containment = cfg.raw["corpus"]["premise_containment"]
     opening = cfg.raw["corpus"]["counterargument_opening"]
+    pair_content = cfg.parsed.matching.pair_content
+    permitted_differences = {w.casefold() for w in pair_content.permitted_differences}
 
     seen_scenarios: dict[str, str] = {}
     seen_texts: dict[str, str] = {}
@@ -284,6 +308,15 @@ def validate_corpus(
                           f"defines RP and NP",
                           "cell", detail={"markers_found": hits}, **cloc)
 
+                # the shared opening belongs to the scenario and is prepended
+                # once by the renderer; a body that repeats it would show it
+                # twice in the finished reply and inflate every word count.
+                if _normalized(opening) in _normalized(cell.body):
+                    c.add("E_OPENING_REPEATED_IN_BODY", "error",
+                          f"the body repeats the shared opening {opening!r}, which the "
+                          f"renderer already prepends; the body is only what follows it",
+                          "cell", detail={"opening": opening}, **cloc)
+
                 # forbidden phrases, by declared severity
                 for spec, pattern in cfg.compiled_forbidden():
                     match = pattern.search(full)
@@ -374,6 +407,31 @@ def validate_corpus(
                     c.add(f"W_WORD_RATIO_{scope_name.upper()}", "warning",
                           f"{scope_name} word ratio {ratio:.3f} exceeds the {words_cfg.ratio_warn} target",
                           "group", detail=detail, **gloc)
+
+            # -- pair content drift, styled vs plain -------------------------
+            # A lexical screen under the minimal-edit rule (D3b): once the
+            # assigned marker and the configured function words are removed,
+            # the two cells of a pair should contain the same content words.
+            # It catches a claim added, dropped or reworded on one side only.
+            # It cannot establish that two bodies mean the same thing, which is
+            # why H_PROPOSITION_PRESERVATION below stays unconditional.
+            for styled, plain in pair_content.compare_pairs:
+                styled_tokens = _content_tokens(block.cells[styled].body, word_re,
+                                                block.marker_string, permitted_differences)
+                plain_tokens = _content_tokens(block.cells[plain].body, word_re,
+                                               None, permitted_differences)
+                only_styled = sorted((styled_tokens - plain_tokens).elements())
+                only_plain = sorted((plain_tokens - styled_tokens).elements())
+                if only_styled or only_plain:
+                    c.add("E_PAIR_CONTENT_DRIFT", "error",
+                          f"{styled} and {plain} must differ only by the marker and function "
+                          f"words, but {styled} has {only_styled} and {plain} has {only_plain}",
+                          "pair",
+                          detail={"pair": [styled, plain], f"only_in_{styled}": only_styled,
+                                  f"only_in_{plain}": only_plain,
+                                  "marker_removed": block.marker_string,
+                                  "permitted_differences":
+                                      sorted(permitted_differences)}, **gloc)
 
             # -- pair-level human review (D13) -------------------------------
             for first, second in _PAIRS:

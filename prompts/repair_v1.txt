@@ -25,11 +25,31 @@ Rules:
 2. Keep NS and NP free of any task-relevant reason: a short self-referential
    clause is allowed, but it must contain no scenario fact, no consequence of
    either course of action, no value or trade-off, no evidence, authority or
-   expertise, and no new factual claim.
+   expertise, and no new factual claim. NS and NP must not call the recommended
+   course of action reliable, consistent, steady, safe, secure, effective,
+   efficient, beneficial, cheaper, better or preferable on any policy dimension,
+   and must not say that it maintains, keeps, ensures, guarantees, delivers,
+   provides, protects, supports, avoids, reduces or produces anything.
 3. Keep the exact phrase "${marker_string}" in RS and NS, in the same position,
    and keep it out of RP and NP.
 4. Introduce no new fact, number, date, organisation, person or source.
 5. Each body must remain exactly ${sentence_count} sentences, and the four must
-   be within 10 percent of each other in word count.
+   be within 10 percent of each other in word count. Count the words in the four
+   bodies before returning them: the longest must be no more than 10 percent
+   longer than the shortest.
+6. Each value you return is ONLY the body. A fixed opening sentence is stored
+   separately and added to every reply automatically, so no body may contain
+   that sentence, any part of it, or any rewording of it, anywhere.
+7. All four bodies keep the same endorsement clause, naming the recommended
+   course of action in the same words and attributing no property, benefit or
+   outcome to it.
+8. RS and RP must contain the same content words, and so must NS and NP. Within
+   a pair, the plain body may differ from the styled body ONLY by dropping the
+   connective phrase, by punctuation, and by a plain linking word such as "and"
+   where dropping the connective leaves two clauses to join. Keep the same
+   verbs, nouns, modal verbs, tense, pronouns, prepositions and negations, and
+   do not turn "and" into "or". A machine compares the pair word by word once
+   the connective is removed; whether both express the same proposition is
+   judged afterwards by a person.
 
 Return a JSON object with the keys "RS", "RP", "NS" and "NP".

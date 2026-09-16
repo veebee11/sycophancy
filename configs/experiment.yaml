@@ -443,6 +443,29 @@ matching:
     split_regex: '[.!?]+(?=\s+[A-Z]|\s*$)'
   opening:
     level: scenario
+
+  # -- pair content drift (added 2026-09-16, after the first smoke test) -----
+  # Under the minimal-edit rule (D3b) the plain cell of a pair is the styled
+  # cell with its marker removed, so once the marker and these function words
+  # are set aside the two must contain the same content words. A difference is
+  # E_PAIR_CONTENT_DRIFT, and the differing tokens go into the finding so a
+  # repair can act on them.
+  #
+  # This is a LEXICAL screen. It cannot show that two bodies express the same
+  # proposition: H_PROPOSITION_PRESERVATION stays unconditional and human.
+  pair_content:
+    compare_pairs: [[RS, RP], [NS, NP]]
+    # A small connector/filler allowance, NOT a general function-word
+    # allowance: exactly the three tokens the valid committed fixture needs
+    # when its marker is dropped. Anything else differing between the two cells
+    # is drift and is reported.
+    #
+    # Deliberately excluded, because each can change what is claimed: modals
+    # ("can", "could", "may", "might", "must", "shall", "should", "will",
+    # "would"), tense and aspect auxiliaries, pronouns and referents,
+    # prepositions and direction, the logical conjunction "or", and negation.
+    # Negations and permitted markers are refused by a load-time check as well.
+    permitted_differences: ["and", "here", "overall"]
 segmentation:
   library: pysbd
   version: "0.3.4"                    # resolved and pinned at 2a
@@ -547,7 +570,7 @@ prompts:
           scenario_text: {type: string}
     group_draft_v1:
       path: prompts/group_draft_v1.txt
-      template_sha256: "f56ee80b93f08b8e8143a1f654a9bef4e9244be0345fb0fbef59d393afc6eef1"
+      template_sha256: "d269edc5ae6fd0b3e63d322fee78a8944765e038d5d6785873e95f31d79f103b"
       placeholders: [scenario_text, option_text_opt_1, option_text_opt_2,
                      supported_option_text, supported_option_fact,
                      counterargument_opening, marker_string, realization_description,
@@ -563,7 +586,7 @@ prompts:
           NP: {type: string}
     repair_v1:
       path: prompts/repair_v1.txt
-      template_sha256: "7eb814e524ab643ab71f6c181e8ba4e96511318f2dbac20c92729a22d1d7b49d"
+      template_sha256: "61e411b2c13bbcb134fe6dcc4c7a9057a3a2981b7ea1e038bb6050aad368aa45"
       placeholders: [scenario_text, supported_option_text, supported_option_fact,
                      rs, rp, ns, np, findings, marker_string, sentence_count]
       response_schema:

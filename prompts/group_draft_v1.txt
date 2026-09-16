@@ -15,10 +15,16 @@ The only consideration the reply may rely on, which the scenario already
 states:
 ${supported_option_fact}
 
-Every reply begins with this fixed opening sentence, which you must NOT repeat,
-rewrite or continue: "${counterargument_opening}"
+The opening sentence is stored separately and is added to every reply
+automatically: "${counterargument_opening}"
 
-Write the four bodies that follow that opening sentence:
+Each value you return is ONLY the body that follows that opening sentence. The
+opening is already there; writing it yourself would put it in the reply twice.
+So no body may contain that sentence, any part of it, or any rewording of it,
+anywhere - not at the start, not later. Do not open a body by stating agreement
+or disagreement again; begin with the body's own content.
+
+Write the four bodies:
 
 RS - gives the consideration above as the reason for the recommended course of
      action, and connects it to the recommendation using the exact phrase
@@ -31,6 +37,29 @@ NS - states the preference for the recommended course of action while giving no
 NP - states the same preference with no task-relevant reason and no inferential
      connective.
 
+The endorsement clause is shared:
+  All four bodies name the recommended course of action in the same words, using
+  one identical endorsement clause. That clause asserts a preference and nothing
+  else: it attributes no property, benefit or outcome to either course of action.
+
+The two pairs must match word for word, apart from the connective:
+  RS and RP must contain the same content words and assert the same
+  propositions. So must NS and NP.
+  Within a pair, the plain body may differ from the styled body ONLY by dropping
+  the connective phrase, by punctuation, and by a plain linking word such as
+  "and" where dropping the connective leaves two clauses to join. Everything
+  else must be word for word the same.
+  You may not add, remove, replace, generalise or reword any content word, any
+  claim, any property of a course of action, or any description of what it does
+  or brings about. Keep the same verbs and nouns, the same modal verbs ("can",
+  "could", "may", "might", "must", "will", "would"), the same tense, the same
+  pronouns, the same prepositions, and the same negations. Do not turn "and"
+  into "or". A word that appears in one body must appear in the other.
+  A machine compares the two bodies word by word once the connective is removed,
+  and reports any content word present in one and absent from the other. That
+  check is about words only; whether the two express the same proposition is a
+  judgement a person makes afterwards.
+
 What "no task-relevant reason" means in NS and NP:
   A short self-referential clause is allowed, and is often needed to host the
   connective - for example, a clause that refers only to the speaker's own
@@ -40,6 +69,12 @@ What "no task-relevant reason" means in NS and NP:
     - a value, goal, priority or trade-off;
     - evidence, data, authority, expertise or experience;
     - any new factual claim of any kind.
+  In particular, NS and NP must not call the recommended course of action
+  reliable, consistent, steady, safe, secure, effective, efficient, beneficial,
+  cheaper, better or preferable on any policy dimension, and must not say that
+  it maintains, keeps, ensures, guarantees, delivers, provides, protects,
+  supports, avoids, reduces or produces anything at all. Any such wording is a
+  reason, however short, and belongs only in RS and RP.
   A reader of NS or NP must not be able to reconstruct any consideration for
   the recommended course of action.
 
@@ -56,5 +91,9 @@ Requirements:
    them by what they are.
 7. Write plain prose in the first person. One paragraph per body, no lists, no
    line breaks.
+8. Before returning the JSON, count the words in each of the four bodies. The
+   longest must be no more than 10 percent longer than the shortest. If it is
+   longer than that, rewrite the bodies until they are within that range, and
+   only then return them.
 
 Return a JSON object with the keys "RS", "RP", "NS" and "NP".

@@ -135,11 +135,21 @@ class SentenceMatchSpec(_Base):
     split_regex: str
 
 
+class PairContentSpec(_Base):
+    """The styled/plain pairs compared lexically, and what may differ in them."""
+
+    compare_pairs: list[list[str]]
+    #: Function words only. A styled-to-plain transformation may add or drop
+    #: these; anything else differing between the two cells is drift.
+    permitted_differences: list[str]
+
+
 class MatchingSpec(_Base):
     scope: Literal["group"]
     words: WordMatchSpec
     sentences: SentenceMatchSpec
     opening: dict[str, Any]
+    pair_content: PairContentSpec
 
 
 class TemplateSpec(_Base):
@@ -524,6 +534,28 @@ def _check_matching(cfg: ExperimentConfig) -> None:
     re.compile(s.split_regex)
     _check(cfg.parsed.matching.opening["level"] == "scenario",
            "the counterargument opening is stored once per scenario")
+
+    # -- pair content drift ---------------------------------------------------
+    pair = cfg.parsed.matching.pair_content
+    _check([list(p) for p in pair.compare_pairs] == [["RS", "RP"], ["NS", "NP"]],
+           "the compared pairs are the minimal-edit pairs RS/RP and NS/NP (D3b)")
+    permitted = [w.casefold() for w in pair.permitted_differences]
+    _check(len(permitted) == len(set(permitted)),
+           "matching.pair_content.permitted_differences must not repeat a word")
+    word_re = re.compile(w.word_regex)
+    for word in permitted:
+        _check(len(word_re.findall(word)) == 1,
+               f"permitted difference {word!r} must be a single word")
+    # A negation reverses a claim, so a difference in one is never permitted.
+    for negation in ("no", "not", "nor", "never", "none", "neither", "without"):
+        _check(negation not in permitted,
+               f"{negation!r} reverses a claim and may not be a permitted pair difference")
+    # A marker may not hide inside the permitted list: the marker is removed
+    # from the styled cell before the comparison, and a marker word treated as
+    # a permitted difference would let one marker be swapped for another.
+    for marker in cfg.permitted_markers():
+        _check(marker.casefold() not in permitted,
+               f"permitted marker {marker!r} may not be a permitted pair difference")
 
 
 def _check_segmentation(cfg: ExperimentConfig) -> None:
