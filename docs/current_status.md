@@ -189,6 +189,47 @@ act on them. No further repair-prompt change and no model change were made in
 response; what that means for drafting is a question for the pilot, not for
 another prompt revision.
 
+## Live scenario stage and human review (2026-09-16 / 17)
+
+**The scenario stage ran live on 2026-09-16.** All 24 scenarios were drafted,
+one call each, and **24/24 passed the machine checks**. The run is read-only
+evidence under `data/pilot/run/pilot_scenarios_2026-09-16/` (gitignored).
+
+**Vidhi reviewed all 24 on 2026-09-17**, recorded in the tracked
+`data/pilot/scenario_approvals.yaml`: **15 approved**, **9 marked `redraft`**.
+Each decision binds the exact text, the call, the configuration hash and the
+topic-bank hash, and every one of the seven judgements is answered.
+
+The nine, with what failed:
+
+| scenario | failed judgements |
+|---|---|
+| `climate_01_v1` | added facts; option neutrality |
+| `climate_01_v2` | both facts stated; added facts |
+| `climate_04_v1` | added facts; length without filler |
+| `energy_01_v1` | length without filler (140 words) |
+| `energy_03_v1` | option neutrality |
+| `energy_03_v2` | both facts stated; added facts |
+| `technology_03_v1` | both facts stated; added facts |
+| `technology_03_v2` | added facts; length without filler (132 words) |
+| `technology_04_v1` | added facts |
+
+**No group generation has occurred**, and the gate keeps it blocked: 15 of 24
+scenarios approved is not a pilot.
+
+**The redraft stage is implemented as of this pass and has not run live.**
+`pilot.py redraft-scenarios` drafts exactly the scenarios marked `redraft` —
+the set comes from the approvals file, never from `--only` — one call each, no
+group call, no automatic second attempt, and the same authorisation and
+pre-flight requirements as any other live stage. Its template,
+`prompts/scenario_redraft_v1.txt`, is versioned and hashed **outside**
+`configs/experiment.yaml`: recording it there would change the configuration
+hash and make all 15 approvals stale. Each redraft is a new call recording
+`supersedes_call_id`, both text hashes, the reviewer's reason, the template and
+prompt hashes, the model revision, the server record, the sampling fields, usage
+and its machine findings. A redraft that comes back unchanged or machine-invalid
+supersedes nothing. All nine stay unapproved until Vidhi reads their new text.
+
 ## Offline pipeline (2026-09-16)
 
 Four separate states, deliberately kept apart:

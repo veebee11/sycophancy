@@ -360,13 +360,15 @@ class CallStore:
                         and not result.get("error_codes"),
                         "no_progress": bool(result.get("no_progress")),
                         "recovered_after_interruption": recovered},
+            extra=dict(result.get("extra") or {}),
             outcome=result["outcome"]))
 
     def record(self, request: DraftRequest, *, status: str, outcome: str,
                fields: Any = None, error: str | None = None,
                error_codes: tuple[str, ...] = (), warning_codes: tuple[str, ...] = (),
                response: Any = None, meta: dict[str, Any] | None = None,
-               no_progress: bool = False) -> dict[str, Any]:
+               no_progress: bool = False,
+               extra: dict[str, Any] | None = None) -> dict[str, Any]:
         """Write the result file and append exactly one log line for a call."""
         meta = meta or _meta_from(response)
         result = self._result(request, status=status, outcome=outcome, fields=fields,
@@ -374,6 +376,7 @@ class CallStore:
                               warning_codes=warning_codes, meta=meta,
                               recovered=bool(meta) and response is None)
         result["no_progress"] = no_progress
+        result["extra"] = dict(extra or {})
         self._write_result(result)
         if self.completed_entry_for(request.call_id) is None:
             self._append_log(request, result)
@@ -777,7 +780,8 @@ def run_scenario_stage(topics, cfg: ExperimentConfig, segmenter: Segmenter, back
 def run_group_stage(topics, allocation_groups, cfg: ExperimentConfig, segmenter: Segmenter,
                     backend, store: CallStore, *, approvals: dict | None,
                     topic_bank_content_hash: str | None, allow_live: bool = False,
-                    variants: tuple[int, ...] = (1, 2)) -> list[StageResult]:
+                    variants: tuple[int, ...] = (1, 2),
+                    scenarios: dict[str, dict[str, Any]] | None = None) -> list[StageResult]:
     """Stage two, alone: draft or recover the groups of an approved pilot.
 
     It makes **no scenario call**. A scenario that is missing from the record is
@@ -786,15 +790,15 @@ def run_group_stage(topics, allocation_groups, cfg: ExperimentConfig, segmenter:
 
     The gate is all-or-nothing and is checked before the first group call.
     """
+    scenarios = recorded_scenarios(store) if scenarios is None else scenarios
     problems = gate_problems_for(topics, store, cfg, approvals=approvals,
                                  topic_bank_content_hash=topic_bank_content_hash,
-                                 variants=variants)
+                                 variants=variants, scenarios=scenarios)
     if problems:
         raise PipelineAbort(
             "the curator gate is not satisfied, so no group was drafted:\n  - "
             + "\n  - ".join(problems))
 
-    scenarios = recorded_scenarios(store)
     by_group = {(g.decision_id, g.variant_id, g.supported_option): g for g in allocation_groups}
     results = []
     for topic in sorted(topics, key=lambda t: t.decision_id):
@@ -813,15 +817,21 @@ def run_group_stage(topics, allocation_groups, cfg: ExperimentConfig, segmenter:
 
 def gate_problems_for(topics, store: CallStore, cfg: ExperimentConfig, *,
                       approvals: dict | None, topic_bank_content_hash: str | None,
-                      variants: tuple[int, ...] = (1, 2)) -> list[str]:
-    """Why group drafting may not begin, over the complete expected set."""
+                      variants: tuple[int, ...] = (1, 2),
+                      scenarios: dict[str, dict[str, Any]] | None = None) -> list[str]:
+    """Why group drafting may not begin, over the complete expected set.
+
+    ``scenarios`` lets the caller supply the *current* text of each scenario —
+    which, once a redraft supersedes an original, is not simply the recorded
+    draft. Omitted, the recorded drafts are used.
+    """
     problems: list[str] = []
     if approvals is None:
         problems.append("no approvals were supplied: group drafting needs the curator's gate")
     if not topic_bank_content_hash:
         problems.append("no topic-bank hash was supplied: an approval must bind the briefs "
                         "its scenario was drafted from")
-    scenarios = recorded_scenarios(store)
+    scenarios = recorded_scenarios(store) if scenarios is None else scenarios
     for topic in sorted(topics, key=lambda t: t.decision_id):
         for variant_id in variants:
             scenario_id = f"{topic.decision_id}_v{variant_id}"

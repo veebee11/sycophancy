@@ -107,9 +107,11 @@ def test_the_refusal_names_every_missing_key(tmp_path, no_network):
 def test_only_the_two_stage_commands_can_reach_a_backend(tmp_path, no_network):
     """Everything else in this script reads files and reports."""
     source = PILOT.read_text()
-    assert source.count("VLLMOpenAIBackend()") == 1, "one construction, inside _stage"
-    body = source[source.index("def _stage("):source.index("def _scenario_review(")]
-    assert "VLLMOpenAIBackend()" in body
+    # The backend is constructed only in the two stage functions and the
+    # redraft stage; every other command reads files and prints.
+    generating = (source[source.index("def _stage("):source.index("def _scenario_review(")])
+    assert source.count("VLLMOpenAIBackend()") == 2
+    assert generating.count("VLLMOpenAIBackend()") == 2
     for command in ("plan", "status", "approvals", "scenario-review", "assemble"):
         result = _run(PILOT, command, "--out", str(tmp_path / "run"), "--send",
                       "--approvals-file", str(tmp_path / "approvals.yaml"),
@@ -370,7 +372,7 @@ def test_the_scenario_review_template_approves_nothing(tmp_path, no_network):
     assert entry["decision"] == "pending"
     assert set(entry["judgements"].values()) == {None}
     assert entry["decided_by"] is None
-    assert "approving is" in result.stdout
+    assert "Approving is" in result.stdout
     review = (tmp_path / "review" / "scenarios.md").read_text()
     assert "climate_01_v1" in review and "Judgements to record" in review
 
@@ -403,7 +405,7 @@ def test_the_status_command_counts_without_contacting_anything(tmp_path, no_netw
 # --- the whole-pilot boundary, from the command line -------------------------
 
 
-@pytest.mark.parametrize("command", ["scenarios", "groups", "assemble"])
+@pytest.mark.parametrize("command", ["scenarios", "groups", "redraft-scenarios", "assemble"])
 @pytest.mark.parametrize("selection", [
     ["--only", "climate_01"],
     ["--variants", "1"],

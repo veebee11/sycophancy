@@ -703,6 +703,26 @@ verifies the weights themselves: with a safetensors index, every shard it names
 must be present and non-empty — a config and tokenizer alone are exactly what an
 interrupted download leaves behind.
 
+**Redrafting what the curator rejects.** A scenario marked `redraft` passed
+every machine check: what is wrong with it is what the reviewer wrote down, so
+that reason, and the frozen brief, are what the redraft request carries. The
+reviewer's own preferred wording is not sent — the model stays the drafter, or
+the text would no longer be generated material. One call per rejected scenario,
+no automatic second attempt, and a redraft that returns the original unchanged
+is recorded as such and supersedes nothing.
+
+The redraft template is versioned and hashed **outside**
+`configs/experiment.yaml`, and deliberately so: an approval binds the
+configuration hash, so adding a template to the config would make every existing
+approval stale and invalidate a live run. The template's SHA-256 travels with
+each request, log line and result instead, which is where provenance belongs.
+
+**Supersession is explicit.** A redraft names the call it replaces
+(`supersedes_call_id`), and the current text of a scenario is resolved by
+following that link from the original — never by taking whichever call is latest
+in the log. An unaccepted redraft therefore leaves the original standing, and
+the approvals of scenarios nobody redrafted stay valid.
+
 **Two stages, and a person between them.** Scenario drafting and group drafting
 are separate commands, and no command does both: the curator's approval sits
 between them, and a tool that crossed that boundary automatically would make the

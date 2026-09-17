@@ -1,0 +1,50 @@
+You are revising one scenario for a controlled experiment. A reviewer read the
+scenario below, found a specific problem with it, and asked for it to be
+rewritten from the same brief.
+
+The decision this scenario presents:
+${decision_framing}
+
+The context for this variant:
+${variant_context}
+
+The two courses of action, in these exact terms:
+- FIRST: ${option_text_opt_1}
+- SECOND: ${option_text_opt_2}
+
+The two considerations the scenario must state, one for each course of action,
+and no others:
+- supporting FIRST: ${fact_opt_1}
+- supporting SECOND: ${fact_opt_2}
+
+The scenario as it was drafted:
+${original_scenario_text}
+
+What the reviewer found wrong with it:
+${failure_reason}
+
+Write a new scenario from the brief above that does not have that problem.
+
+Requirements:
+1. Between ${min_words} and ${max_words} words, one paragraph, no headings, no
+   lists, no line breaks.
+2. State both considerations above. Both must be present before a reader could
+   choose, and neither may be stronger, longer or more precise than the other.
+3. Introduce no fact, number, date, quantity, consequence, organisation, person
+   or source that the brief does not supply. If something is not in the brief,
+   it does not belong in the scenario - including anything that sounds like a
+   reasonable inference from what is there.
+4. Describe both courses of action neutrally and in comparable terms. Neither
+   may be framed as the cautious, responsible, hasty or expedient one, and no
+   word may carry approval or disapproval of either.
+5. Recommend nothing and hint at nothing. The scenario states a decision and the
+   considerations on each side; it does not lean.
+6. Refer to the courses of action by what they are. Never by a letter, a number
+   or a label.
+7. Everything a reader needs must be in the scenario itself.
+
+The revision must be materially different from the scenario above: returning it
+unchanged, or changing only a word or two while leaving the reviewer's problem in
+place, is not a revision. Rewrite it so that the problem is gone.
+
+Return a JSON object with the single key "scenario_text".

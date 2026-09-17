@@ -84,7 +84,13 @@ from reasonstyle.generation.pipeline import (
     run_group_stage,
     run_scenario_stage,
 )
-from reasonstyle.generation.requests import group_request, scenario_request
+from reasonstyle.generation.redraft import (
+    current_scenarios,
+    redraft_targets,
+    redraft_template_sha256,
+    run_redraft_stage,
+)
+from reasonstyle.generation.requests import RequestError, group_request, scenario_request
 from reasonstyle.hashing import content_hash, sha256_of
 
 #: The second key a live pilot stage requires, over and above the key a smoke
@@ -234,27 +240,14 @@ def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
     # transport failure or a schema rejection produced none, so the scenario is
     # "not generated" however many times it was attempted.
     drafted: dict[str, dict[str, Any]] = {}
-    for entry in store.log.entries():
-        if entry["kind"] != "scenario":
-            continue
-        scenario_id = f"{entry['decision_id']}_v{entry['variant_id']}"
-        drafted.setdefault(scenario_id, {})
-        if entry["status"] != "ok":
-            continue
-        result = store.result_path(entry["call_id"])
-        fields = {}
-        if result.is_file():
-            fields = json.loads(result.read_text(encoding="utf-8")).get("fields") or {}
-        text = fields.get("scenario_text") or ""
-        if not text:
-            continue
-        candidate = {"text": text, "call_id": entry["call_id"],
-                     "errors": len((entry.get("validation") or {}).get("error_codes") or []),
-                     "outcome": entry.get("outcome")}
-        # An accepted call wins; otherwise the latest usable one stands.
-        if drafted[scenario_id].get("outcome") != "accepted":
-            drafted[scenario_id] = candidate
-
+    attempted: set[str] = set()
+    for scenario_id, record in current_scenarios(store, approvals).items():
+        attempted.add(scenario_id)
+        if record.get("scenario_text"):
+            drafted[scenario_id] = {"text": record["scenario_text"],
+                                    "call_id": record["call_id"],
+                                    "errors": len(record.get("error_codes") or []),
+                                    "outcome": record.get("outcome")}
     expected = [f"{topic.decision_id}_v{variant_id}"
                 for topic in sorted(topics, key=lambda t: t.decision_id)
                 for variant_id in args.variants]
@@ -266,9 +259,9 @@ def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
         record = drafted.get(scenario_id) or {}
         if not record.get("text"):
             state = "not_generated"
-            detail = ("no scenario call recorded" if scenario_id not in drafted
-                      else "no call produced usable text (transport failure or rejected "
-                           "response)")
+            detail = ("no call produced usable text (transport failure or rejected "
+                      "response)" if scenario_id in attempted
+                      else "no scenario call recorded")
         elif record["errors"]:
             state, reasons = approval_status(
                 scenario_id, record["text"], record["call_id"], approvals,
@@ -318,7 +311,9 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
                                      approvals=load_approvals(args.approvals_file),
                                      topic_bank_content_hash=content_hash(
                                          bank.model_dump(mode="json")),
-                                     variants=variants)
+                                     variants=variants,
+                                     scenarios=current_scenarios(
+                                         store, load_approvals(args.approvals_file)))
             print(f"\ngate: {len(gate)} scenario(s) would block group drafting"
                   + (f"; first: {gate[0]}" if gate else ""))
         return 0
@@ -348,7 +343,8 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
                 topics, allocation.groups, cfg, segmenter, backend, store,
                 approvals=load_approvals(args.approvals_file),
                 topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
-                allow_live=True, variants=variants)
+                allow_live=True, variants=variants,
+                scenarios=current_scenarios(store, load_approvals(args.approvals_file)))
             ceiling = expected_groups * budget
     except PipelineAbort as exc:
         print(f"\nthe stage stopped: {exc}", file=sys.stderr)
@@ -368,6 +364,79 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
     return 0 if accepted == len(results) else 1
 
 
+def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
+    """Redraft exactly the scenarios the curator marked ``redraft``.
+
+    The set comes from the approvals file, never from ``--only``: which
+    scenarios need drafting again is the reviewer's finding. One call each, no
+    group call, and no automatic second attempt.
+    """
+    # The set is the curator's finding, so an operator narrowing it would be
+    # overruling the review rather than filtering a report.
+    if args.only or list(args.variants) != [1, 2]:
+        print("refusing: redraft-scenarios runs on the complete pilot — the scenarios the "
+              "curator marked redraft, and only those:", file=sys.stderr)
+        if args.only:
+            print(f"  - --only {list(args.only)} cannot narrow a set that comes from the "
+                  f"approvals file", file=sys.stderr)
+        if list(args.variants) != [1, 2]:
+            print(f"  - --variants {list(args.variants)} is not both variants [1, 2]",
+                  file=sys.stderr)
+        print("Targeted filtering is available on the reporting commands: scenario-review, "
+              "approvals, status, log and plan.", file=sys.stderr)
+        return 1
+
+    approvals = load_approvals(args.approvals_file)
+    try:
+        targets = redraft_targets(approvals, recorded_scenarios(store))
+    except RequestError as exc:
+        print(f"refusing: {exc}", file=sys.stderr)
+        return 1
+    if not targets:
+        print("no scenario is marked redraft; nothing to do.")
+        return 0
+
+    print(f"stage        redraft: {len(targets)} call(s), one per rejected scenario, no "
+          f"second attempt")
+    print(f"template     prompts/scenario_redraft_v1.txt "
+          f"{redraft_template_sha256()[:12]} (hashed here, not in the experiment config)")
+    print(f"config       {cfg.config_version} {cfg.content_hash[:12]} (unchanged)")
+    for target in targets:
+        print(f"  {target.scenario_id:<20} supersedes {target.original_call_id[:12]}  "
+              f"failed: {', '.join(target.failed_judgements)}")
+
+    problems = live_problems(args.send, cfg)
+    if problems:
+        print("\nnothing was sent:")
+        for problem in problems:
+            print(f"  - {problem}")
+        return 0
+
+    checks, cached, server = server_problems(args, cfg)
+    if checks:
+        print("\nrefusing to run; no call was made:", file=sys.stderr)
+        for problem in checks:
+            print(f"  - {problem}", file=sys.stderr)
+        return 1
+    store.cached, store.server = cached, server
+    store.endpoint = cfg.raw["models"]["generator"]["vllm"]["base_url"]
+
+    before = len(store.log.entries())
+    try:
+        results = run_redraft_stage(topics, approvals, cfg, segmenter_from_config(cfg),
+                                    VLLMOpenAIBackend(), store, allow_live=True)
+    except PipelineAbort as exc:
+        print(f"\nthe stage stopped: {exc}", file=sys.stderr)
+        return 1
+    made = len(store.log.entries()) - before
+    accepted = sum(1 for r in results if r.outcome == ACCEPTED)
+    print(f"\n{accepted}/{len(results)} redrafts are machine-valid and changed")
+    print(f"calls made   {made} (ceiling {len(targets)})")
+    print("\nEvery redraft is unapproved until you read its new text: run "
+          "'pilot.py scenario-review', record decisions, then the groups stage.")
+    return 0 if accepted == len(results) else 1
+
+
 def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
     """A deterministic, read-only view of the recorded scenarios, for reading.
 
@@ -378,16 +447,36 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
     from reasonstyle.corpus.validate import validate_scenario_text
     segmenter = segmenter_from_config(cfg)
     bank_hash = content_hash(bank.model_dump(mode="json"))
-    scenarios = recorded_scenarios(store)
+    scenarios = current_scenarios(store, load_approvals(args.approvals_file))
     out = Path(args.review_out)
     out.mkdir(parents=True, exist_ok=True)
+
+    from reasonstyle.generation.approvals import approval_status
+    approvals = load_approvals(args.approvals_file)
+    states = {}
+    for scenario_id, record in scenarios.items():
+        if not record.get("scenario_text"):
+            continue
+        states[scenario_id] = approval_status(
+            scenario_id, record["scenario_text"], record["call_id"], approvals,
+            config_content_hash=cfg.content_hash, topic_bank_content_hash=bank_hash,
+            machine_errors=len(record.get("error_codes") or []))[0]
+    counts: dict[str, int] = {}
+    for state in states.values():
+        counts[state] = counts.get(state, 0) + 1
 
     lines = ["# Pilot scenarios, for review", "",
              f"config `{cfg.config_version}` `{cfg.content_hash[:12]}` · topic bank "
              f"`{bank_hash[:12]}`", "",
              "Read each scenario against its brief, then record a decision in the approvals "
              "file. Approving binds the exact text below: any edit makes the approval stale.",
-             ""]
+             "",
+             "| state | scenarios |", "|---|---|"]
+    lines += [f"| {state} | {count} |" for state, count in sorted(counts.items())]
+    lines += ["",
+              "A scenario that already carries an approval needs nothing further. One shown "
+              "as **redrafted** carries new text that has not been reviewed: its seven "
+              "judgements below are unanswered.", ""]
     template: dict[str, Any] = {}
     for topic in sorted(topics, key=lambda t: t.decision_id):
         for variant_id in args.variants:
@@ -401,8 +490,18 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
             machine = [f"{f.severity}: {f.code}" for f in findings
                        if f.severity in ("error", "warning")]
             variant = topic.variants[f"v{variant_id}"]
+            state = states.get(scenario_id, "not_generated")
+            approval = approvals.get(scenario_id)
+            superseded = record.get("supersedes_call_id")
+            heading = {"approved": "approved, no action needed",
+                       "pending": "awaiting your decision",
+                       "redraft": "you asked for a redraft",
+                       "stale": "the approval no longer matches this text",
+                       }.get(state, state)
+            if superseded:
+                heading = "REDRAFTED — new text, seven judgements unanswered"
             lines += [
-                f"## {scenario_id}", "",
+                f"## {scenario_id} — {heading}", "",
                 f"- decision `{topic.decision_id}` · domain `{topic.domain}` · variant "
                 f"{variant_id}",
                 f"- call `{record.get('call_id', '(not generated)')}`",
@@ -410,6 +509,23 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
                 f"- config `{cfg.content_hash}`",
                 f"- topic bank `{bank_hash}`",
                 f"- machine findings: {', '.join(machine) if machine else 'none'}", "",
+                f"- gate state: **{state}**", ""]
+            if superseded:
+                lines += [
+                    f"- this text SUPERSEDES call `{superseded}`, which you rejected",
+                    f"- your reason then: {approval.reason if approval else '(not recorded)'}",
+                    f"- judgements that failed then: "
+                    f"{', '.join(sorted(n for n, v in (approval.judgements if approval else {}).items() if v is False)) or 'none recorded'}",
+                    ""]
+            elif state == "redraft" and approval is not None:
+                lines += [f"- your reason: {approval.reason}",
+                          f"- judgements that failed: "
+                          f"{', '.join(sorted(n for n, v in approval.judgements.items() if v is False)) or 'none recorded'}",
+                          "- **this is the original text; its redraft has not been "
+                          "generated yet**", ""]
+            elif state == "approved" and approval is not None:
+                lines += [f"- approved by {approval.decided_by} on {approval.decided_at}", ""]
+            lines += [
                 "### The brief this scenario was drafted from", "",
                 f"**Decision.** {topic.decision_framing}", "",
                 f"**Option opt_1.** {topic.options['opt_1']}",
@@ -424,10 +540,15 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
                     lines.append(f"- `{option}` {fact}")
             lines += ["",
                       "### The generated scenario", "",
-                      "```", text or "(no scenario recorded)", "```", "",
-                      "Judgements to record:", ""]
-            lines += [f"- [ ] {name}" for name in REQUIRED_JUDGEMENTS]
-            lines.append("")
+                      "```", text or "(no scenario recorded)", "```", ""]
+            if state == "approved" and not superseded:
+                lines += ["Already approved; no judgement is outstanding.", ""]
+            else:
+                lines += ["Judgements to record:", ""]
+                lines += [f"- [ ] {name}" for name in REQUIRED_JUDGEMENTS]
+                lines.append("")
+            if state == "approved" and not superseded:
+                continue                 # an approved scenario needs no new template entry
             template[scenario_id] = {
                 "scenario_text_sha256": sha256_of(text) if text else None,
                 "call_id": record.get("call_id"),
@@ -449,10 +570,13 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
         written.append(path)
     for path in written:
         print(f"wrote {path}")
-    print(f"{sum(1 for s in scenarios.values() if s.get('scenario_text'))} of "
-          f"{len(template)} expected scenarios have recorded text.")
-    print("Every template decision is 'pending' and every judgement null: approving is "
-          "yours, and the file is where you do it.")
+    recorded = sum(1 for s in scenarios.values() if s.get("scenario_text"))
+    print(f"{recorded} scenario(s) with recorded text; "
+          + ", ".join(f"{count} {state}" for state, count in sorted(counts.items())))
+    if args.write_template:
+        print(f"the template holds the {len(template)} scenario(s) still needing a "
+              f"decision; every one is 'pending' with null judgements. Approving is "
+              f"yours, and the file is where you do it.")
     return 0
 
 
@@ -464,7 +588,8 @@ def _assemble(args, cfg, bank, allocation, topics, store: CallStore) -> int:
             topics=topics, allocation_groups=allocation.groups,
             approvals=load_approvals(args.approvals_file),
             corrections=load_corrections(args.corrections_file),
-            scenarios=recorded_scenarios(store), groups=recorded_groups(store),
+            scenarios=current_scenarios(store, load_approvals(args.approvals_file)),
+            groups=recorded_groups(store),
             cfg=cfg, segmenter=segmenter,
             topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
             variants=tuple(args.variants))
@@ -495,7 +620,8 @@ def _counts(args, cfg, bank, topics, store: CallStore) -> int:
     """Read-only counts across both stages."""
     variants = tuple(args.variants)
     expected_scenarios = len(topics) * len(variants)
-    scenarios = recorded_scenarios(store)
+    approvals_now = load_approvals(args.approvals_file)
+    scenarios = current_scenarios(store, approvals_now)
     groups = recorded_groups(store)
     approvals = load_approvals(args.approvals_file)
     bank_hash = content_hash(bank.model_dump(mode="json"))
@@ -556,9 +682,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["plan", "scenarios", "scenario-review", "approvals",
-                                       "groups", "assemble", "status", "log"],
+                                       "redraft-scenarios", "groups", "assemble", "status",
+                                       "log"],
                     help="plan; draft the scenarios; export them for review; report the "
-                         "gate; draft the groups; assemble the corpus; or report counts")
+                         "gate; redraft the scenarios the curator rejected; draft the "
+                         "groups; assemble the corpus; or report counts")
     ap.add_argument("--approvals-file", default="data/pilot/scenario_approvals.yaml")
     ap.add_argument("--config", required=True)
     ap.add_argument("--topics", default="data/topics/pilot_topics.yaml")
@@ -605,6 +733,8 @@ def main(argv: list[str] | None = None) -> int:
         return _scenario_review(args, cfg, bank, topics, store)
     if args.command == "assemble":
         return _assemble(args, cfg, bank, allocation, topics, store)
+    if args.command == "redraft-scenarios":
+        return _redraft(args, cfg, bank, topics, store)
     if args.command in ("scenarios", "groups"):
         return _stage(args, cfg, bank, allocation, topics, store, kind=args.command)
     return _plan(cfg, bank, allocation, topics, out, tuple(args.variants))

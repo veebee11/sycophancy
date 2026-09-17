@@ -88,6 +88,14 @@ from .pipeline import (
     draft_scenario,
     run_pilot,
 )
+from .redraft import (
+    RedraftTarget,
+    current_scenarios,
+    redraft_request,
+    redraft_targets,
+    redraft_template_sha256,
+    run_redraft_stage,
+)
 from .provenance import ProvenanceMismatch, check_request_provenance
 
 __all__ = [
@@ -113,6 +121,12 @@ __all__ = [
     "CallStore",
     "NEEDS_MANUAL_REVIEW",
     "PipelineAbort",
+    "RedraftTarget",
+    "current_scenarios",
+    "redraft_request",
+    "redraft_targets",
+    "redraft_template_sha256",
+    "run_redraft_stage",
     "StageResult",
     "draft_group",
     "draft_scenario",
