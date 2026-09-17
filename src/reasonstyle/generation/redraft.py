@@ -219,12 +219,15 @@ def current_scenarios(store: CallStore,
         fields = json.loads(path.read_text(encoding="utf-8")).get("fields") or {}
         if not fields.get("scenario_text"):
             continue
+        extra = entry.get("extra") or {}
         redrafts[scenario_id] = {
             **original, "scenario_text": fields["scenario_text"],
             "call_id": entry["call_id"], "outcome": entry.get("outcome"),
             "error_codes": list((entry.get("validation") or {}).get("error_codes") or []),
             "supersedes_call_id": superseded,
-            "superseded_text_sha256": (entry.get("extra") or {}).get("original_text_sha256"),
+            "superseded_text_sha256": extra.get("original_text_sha256"),
+            "redraft_failure_reason": extra.get("failure_reason"),
+            "redraft_failed_judgements": list(extra.get("failed_judgements") or []),
         }
     return {**originals, **redrafts}
 

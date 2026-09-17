@@ -1,0 +1,70 @@
+- approval_state: approved
+  corrected_text: |-
+    A regional transport agency must decide whether to bring forward a stricter emissions limit for newly registered cars or keep the limit on its current schedule. The agency is setting the timetable while carmakers are finalising their next model ranges. Introducing the stricter limit ahead of schedule would remove the most polluting new models from sale while the fleet is being renewed. Keeping the current schedule would leave more time before the stricter limit applies. Cars that meet the stricter limit still cost noticeably more than current models, putting them beyond many first-time buyers. The choice concerns when the stricter limit should take effect.
+  corrected_text_sha256: b747dbf31167fa709a5fa94c9d42e86fdd60c89efc3eb3b8e1da9107095e05c4
+  decided_at: '2026-09-17'
+  editor: Vidhi Bhutani
+  original_call_id: 17ca19b0b5a323f9d52e4cf775df0a08fbe4c76cf736a7d0195e5d52476cdabb
+  original_text: |-
+    A regional transport agency must decide whether to bring forward a stricter emissions limit for newly registered cars or keep the limit on its current schedule. The agency sets the timetable while carmakers are finalising their next model ranges. Introducing the stricter emissions limit ahead of schedule would remove the most polluting new models from sale while the fleet is being renewed. Keeping the stricter emissions limit on its current schedule would allow cars meeting the stricter limit to be available at a time when carmakers have had more opportunity to adjust their production. However, cars meeting the stricter limit still cost noticeably more than current models, putting them beyond many first-time buyers.
+  original_text_sha256: 40c6203686e968737c469c489594b560ce6e330d232e6cc51070e4aa6ed76a6d
+  reason: Removes the unsupported claim that carmakers had more opportunity to adjust production while retaining both supplied variant facts and neutral framing.
+  scenario_id: climate_01_v1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  corrected_text: |-
+    A national energy regulator must decide whether the electricity network operator may own and run battery storage or must buy storage services from independent providers. The regulator is setting the rules as battery storage is first connected to the network. Allowing the operator to own storage would let it place batteries exactly where congestion occurs without waiting for a provider to come forward. Requiring it to buy storage services would instead keep ownership with independent providers. If the operator owned batteries, those providers would be competing with the company that controls their network access. The regulator must choose between these two arrangements.
+  corrected_text_sha256: 2fcb8ac4beeeed756ecd68a79d401baba4d4d4b55fc12984f4a106f5f93f137c
+  decided_at: '2026-09-17'
+  editor: Vidhi Bhutani
+  original_call_id: de4c174559edd6d6661cfccf6a0a5a611941013d2d0a5c9f56294040d707fca1
+  original_text: |-
+    A national energy regulator must decide whether the electricity network operator may own and run battery storage or must buy storage services from market providers. The regulator sets the rules as battery storage is first connected to the network. One option is to allow the network operator to own and run its own battery storage. The other is to require the network operator to buy storage services from independent providers. A consideration in favour of allowing the operator to own and run its own battery storage is that the operator could place batteries exactly where congestion occurs, without waiting for a provider to come forward. A consideration in favour of requiring the network operator to buy storage services from independent providers is that if the operator owns batteries, independent providers would be competing with the company that controls their network access.
+  original_text_sha256: af40754d17b57d1d11e58e69ae0f4976c9b4e10628a6b40ee41e475916c662cc
+  reason: Removes repetition and brings the scenario within the 90-130-word band while retaining both supplied variant facts.
+  scenario_id: energy_01_v1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  corrected_text: |-
+    A regional planning office must decide whether to fast-track permits for new wind farms by shortening local consultation or keep the full consultation process. It is revisiting the procedure after a recently permitted wind farm faced local protests. The queue of waiting projects has grown, delaying renewable power that the network is ready to accept. Fast-tracking could shorten that delay. The protests centred on residents feeling unheard, and a shorter consultation period would make that concern more likely. Keeping the full consultation process would preserve the existing period for residents to participate before a decision. The office must choose which permitting procedure to use.
+  corrected_text_sha256: db8c121d7b0b85b02f25d75f0062a530e41f8087e18558edaafacb9d464e35d8
+  decided_at: '2026-09-17'
+  editor: Vidhi Bhutani
+  original_call_id: 7a933a74b8b98fadd8ace6776fcbf4a8ddfb584cce6f70c832c67728ee81f49b
+  original_text: |-
+    A regional planning office must decide whether to fast-track permits for new wind farms by shortening local consultation or keep the full consultation process for every wind farm. This decision comes after a recently permitted wind farm faced local protests. One option is to fast-track permits with a shortened consultation period, which could help address the growing queue of waiting projects. The other option is to maintain the full local consultation process for every wind farm, which could help prevent residents from feeling unheard, as shorter consultation might increase the risk of similar protests. Both approaches have implications for project timelines and community relations, and the choice must weigh these factors carefully.
+  original_text_sha256: ad79d1a5d158041c073a6c74d0aa447c23e0953addda5ffa69e4c6db2e626424
+  reason: Restores the omitted grid-ready renewable-power fact and replaces the unsupported protest-risk claim with the supplied fact about residents feeling unheard.
+  scenario_id: energy_03_v2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  corrected_text: |-
+    A city service centre is designing a generative assistant and must decide whether it may use residents' past case records to tailor answers or must answer only from general public information. Without access to case records, the assistant cannot tell residents where their own applications stand, which is the question they ask most often. Allowing access would make that information available when answering them. However, case records contain sensitive personal details that would also be available to the assistant in every conversation it handles. Restricting the assistant to public information would keep those records outside the assistant. The centre must choose between the two designs.
+  corrected_text_sha256: eefaa02ea455c0b6a66e867ef9bc4df6d6ee494b0eb21e100ed9dbfed3c8d071
+  decided_at: '2026-09-17'
+  editor: Vidhi Bhutani
+  original_call_id: a9674eeb1b3d5342dfcca5cd8d9f0071afc0313c420c6b7cc24b8e4218049fd2
+  original_text: |-
+    A city service centre is designing a generative assistant and must decide whether it may use residents' past case records to tailor its responses or whether it should rely solely on general public information. If the assistant uses case records, it can address the most common question residents ask about the status of their applications. However, case records contain sensitive personal details that would be accessible to the assistant during every interaction. If the assistant is restricted to general public information, it avoids exposing sensitive data but cannot provide tailored responses to individual inquiries. Both approaches have distinct implications that must be considered in making the decision.
+  original_text_sha256: a01904b786fcee6d8b491cd5c81bf6b7974b6ad9d72751cc21639b00069ae488
+  reason: Removes broader claims about tailored responses and data exposure, retaining only application-status usefulness and the supplied sensitive-records risk.
+  scenario_id: technology_03_v1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  corrected_text: |-
+    A city service centre must decide whether its generative assistant may use residents' past case records to tailor answers or must answer only from general public information. The centre is reconsidering the design after residents complained about having to explain their situation again at every contact. Access to their case records would end that repeated explanation. However, those records also contain details from unrelated earlier cases, and the assistant would be able to draw on those details in any conversation. Restricting the assistant to public information would prevent it from using the case records. The centre must choose which design to adopt.
+  corrected_text_sha256: 034ca725cd630c91e49bc130ba5ff59d147743f55d1612b0614bd529636010a8
+  decided_at: '2026-09-17'
+  editor: Vidhi Bhutani
+  original_call_id: bddefb27de8e433f22289047b0f053ede705b78f3edc60080743851aab65a721
+  original_text: |-
+    A city service centre must decide whether its generative assistant may draw on residents' past case records to tailor answers or answer only from general public information. The centre revisits the design after residents complained about repeating their details at every contact. Letting the assistant use residents' past case records to tailor its answers could address the issue by allowing it to reference previous interactions and avoid redundant explanations. Restricting the assistant to general public information would ensure it does not rely on personal data but might limit its ability to provide context-specific responses. Residents' main complaint is explaining their situation again each time, which access to case records would end. The records also hold details from unrelated earlier cases, which the assistant would be able to draw on in any conversation.
+  original_text_sha256: 4c8861408ff99a4dcd967d31a0222f04ef3856199750491cf0cf8a1ddd896f12
+  reason: Removes broader claims about previous interactions and context-specific responses, avoids repetition, and retains the two exact supplied facts.
+  scenario_id: technology_03_v2
+  validation_error_codes: []
+  validation_warning_codes: []

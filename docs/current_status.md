@@ -1,6 +1,6 @@
 # Current status
 
-*Updated 2026-09-16. Kept short; history is in git, rules in `design_notes.md`.*
+*Updated 2026-09-17. Kept short; history is in git, rules in `design_notes.md`.*
 
 ## Done
 
@@ -16,8 +16,9 @@
 - **No hidden sampling defaults.** The launcher passes `--generation-config vllm` and records it; all sampling fields are sent at explicit neutral values.
 - **Scenario drafting (2026-09-16).** The scenario stage **has run live**, inside `pipeline_smoke.py`, and its scenario was accepted. The standalone `smoke_test.py --kind scenario` command is implemented and offline-tested but has not itself been run.
 - **Bounded repair controller (2026-09-16).** One draft plus at most two validator-driven repairs, then `needs_manual_review`; recorded per call, resumable, transport failures retryable. It **ran live twice** through `scripts/pipeline_smoke.py`. The first run's repairs were identical requests; after the correction, the second run sent two distinct, diagnosed repairs and recorded the model's unchanged replies as no progress — **the corrected mechanism was confirmed live**. Both runs ended `needs_manual_review`. No further synthetic repair smoke is planned.
-- **Live calls so far: four smoke runs, ten model calls in total** — two draft-only group smokes (1 call each) and two repair-path smokes (4 calls each). No pilot generation.
-- **`scripts/pilot.py` (2026-09-16).** The two-stage pilot runner: `scenarios` and `groups` as separate commands that cannot be combined, plus `scenario-review`, `approvals`, `assemble`, `status` and `log`. A live stage needs `--send` **and** both authorisation keys, and runs on the complete pilot only — a subset is refused. Built and offline-tested; **no pilot call has been authorised or made**.
+- **Live calls so far: 43 model calls** — ten synthetic-smoke calls, 24 pilot scenario calls on 2026-09-16, and nine bounded scenario-redraft calls on 2026-09-17. No pilot group has been generated.
+- **`scripts/pilot.py`.** The two-stage pilot runner: `scenarios` and `groups` as separate commands that cannot be combined, plus `redraft-scenarios`, `scenario-review`, `approvals`, `assemble`, `status` and `log`. A live stage needs `--send` **and** both authorisation keys, and runs on the complete pilot only — a subset is refused. The scenario and redraft stages have run; the group stage has not.
+- **Scenario gate complete (2026-09-17).** Vidhi approved the review decisions reported here. Fifteen original scenarios remained approved; four Qwen redrafts were approved as returned; five further redrafts were corrected in `data/pilot/scenario_corrections.yaml`. Each correction is a separate record bound to the exact model call and text, with editor, date, reason and both text hashes. The generated results, raw responses and log were not edited. All five corrected texts pass the ordinary scenario validator, and `pilot.py approvals` reports **24/24 approved, zero gate blockers**.
 - **Tests.** The full suite passes on a laptop, with no server.
 
 ## Corpus scope (settled 2026-09-16)
@@ -41,10 +42,10 @@ The order this implies:
 
 - **Reliability sample size (2026-09-15).** The implemented rule stays: `round(N × 0.20)`. Pilot: 38 items covering all 36 item strata, and 19 pairs covering all 18 pair strata. The older 48-item / 24-pair statement is withdrawn.
 
-## Not yet built
+## Not yet completed
 
-- **The scenario `redraft` path.** The gate reports `redraft` and blocks the set on it, but nothing re-drafts a scenario. There is deliberately no automatic redraft budget: it needs an explicit decision.
-- **A live pilot run.** The two-stage path is implemented and offline-tested; no pilot call has been authorised or made.
+- **The pilot group stage.** The 24-scenario gate is satisfied, but none of the 48 groups has been generated. The bounded ceiling is 144 calls: one draft plus at most two repairs per group.
+- **Pilot assembly and counterargument review.** These wait for the group stage. The assembled pilot will contain 24 scenario records, 48 groups and 192 cells, and remains `draft` until item, pair and scenario review is complete.
 - **The remaining decisions to reach 60** (normally 48 more), then validation, human review and the corpus freeze.
 - **The mechanistic subset's selection rule** — 40 of the 60 — documented before mechanistic analysis.
 - Model adapter, answer-token verification, logit scoring and every later analysis and mechanistic stage.
@@ -195,10 +196,11 @@ another prompt revision.
 one call each, and **24/24 passed the machine checks**. The run is read-only
 evidence under `data/pilot/run/pilot_scenarios_2026-09-16/` (gitignored).
 
-**Vidhi reviewed all 24 on 2026-09-17**, recorded in the tracked
-`data/pilot/scenario_approvals.yaml`: **15 approved**, **9 marked `redraft`**.
-Each decision binds the exact text, the call, the configuration hash and the
-topic-bank hash, and every one of the seven judgements is answered.
+**Vidhi's first review of all 24 on 2026-09-17** produced **15 approved** and
+**9 marked `redraft`**. That historical state authorised the bounded redraft
+run; the tracked `data/pilot/scenario_approvals.yaml` now holds the later final
+24/24 decision. Each decision binds the exact text, the call, the configuration
+hash and the topic-bank hash, and every one of the seven judgements is answered.
 
 The nine, with what failed:
 
@@ -214,10 +216,10 @@ The nine, with what failed:
 | `technology_03_v2` | added facts; length without filler (132 words) |
 | `technology_04_v1` | added facts |
 
-**No group generation has occurred**, and the gate keeps it blocked: 15 of 24
-scenarios approved is not a pilot.
+**No group generation occurred during either scenario stage.** The initial
+review blocked the gate at 15 of 24 approved scenarios.
 
-**The redraft stage is implemented as of this pass and has not run live.**
+**The redraft stage ran live on 2026-09-17.**
 `pilot.py redraft-scenarios` drafts exactly the scenarios marked `redraft` —
 the set comes from the approvals file, never from `--only` — one call each, no
 group call, no automatic second attempt, and the same authorisation and
@@ -228,7 +230,18 @@ hash and make all 15 approvals stale. Each redraft is a new call recording
 `supersedes_call_id`, both text hashes, the reviewer's reason, the template and
 prompt hashes, the model revision, the server record, the sampling fields, usage
 and its machine findings. A redraft that comes back unchanged or machine-invalid
-supersedes nothing. All nine stay unapproved until Vidhi reads their new text.
+supersedes nothing.
+
+Vidhi and the research reviewer read all nine returned texts. Four were approved
+as returned: `climate_01_v2`, `climate_04_v1`, `energy_03_v1` and
+`technology_04_v1`. Five still retained an added claim, omitted or altered a
+supplied fact, or retained repetition: `climate_01_v1`, `energy_01_v1`,
+`energy_03_v2`, `technology_03_v1` and `technology_03_v2`. Those five now have
+approved human corrections in `data/pilot/scenario_corrections.yaml`. The
+ledger names the exact Qwen call and original text, stores both hashes, and is
+applied only after the corrected text passes the scenario validator. The current
+approval file binds the final exact text and source call for all 24 scenarios.
+The gate is now clear; this does not generate or approve any counterargument.
 
 ## Offline pipeline (2026-09-16)
 
@@ -260,14 +273,15 @@ than accepted or silently retried. **No further synthetic repair smoke is
 planned.** Whether Qwen3-14B repairs this particular fixture automatically is
 not a prerequisite for anything.
 
-**3. Pilot generation is implemented and unauthorised.**
+**3. Pilot generation is implemented; the scenario half is complete.**
 `scripts/pilot.py` has the live path, in two commands that cannot be combined.
 Each needs `--send`, `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`,
 `REASONSTYLE_ALLOW_PILOT_GENERATION=1` and `HF_HUB_OFFLINE=1`, passes the same
-pre-flight as the smoke tests, and refuses any subset of the pilot. Nothing has
-been run against a server.
+pre-flight as the smoke tests, and refuses any subset of the pilot. The 24-call
+scenario stage and nine-call redraft stage ran on Chomusuke02. The 48-group
+stage has not run.
 
-**4. The two prerequisites are now built, offline-tested, and unused.**
+**4. The gate is now satisfied; the assembler remains unused.**
 `generation/approvals.py` is the curator-approval gate: an approval binds the
 exact scenario text, the accepted call id, the configuration hash and the
 topic-bank hash, and a change to any one of them makes it stale. `run_pilot`
@@ -278,8 +292,9 @@ editor, reason, validator result, approval state — kept beside the generated
 material rather than replacing it. **A human approval never overrides a machine
 error:** corrected text is re-validated by the same code, and an assembled
 record still leaves `validation.status: draft` until the human judgements are
-recorded. **The one remaining live blocker is the pilot execution path itself**,
-which is separately authorised work and is not written.
+recorded. Scenario corrections follow the same provenance rule without altering
+the generated evidence. The next live operation is the separately authorised
+group stage.
 
 ### The workflow these two pieces imply
 
@@ -311,16 +326,15 @@ drafts and at most 144 calls including repairs. `assemble` writes
 `data/pilot/corpus.jsonl` and its manifest atomically, refuses an existing
 corpus without `--overwrite`, and validates the whole corpus before writing.
 
-**Still not implemented:** the scenario `redraft` path. The gate reports
-`redraft` and blocks the set on it, but nothing re-drafts a scenario; there is
-no automatic scenario-redraft budget, and a `redraft` decision needs an explicit
-later choice. **No pilot call has been authorised or made.**
+The redraft path and exact-source-bound scenario correction ledger are now
+implemented and exercised. `pilot.py approvals` reports 24/24 approved and the
+group dry run reports zero scenario blockers.
 
 ## Next steps
 
-1. **Review and commit the gate, the assembler and the two-phase controller**, then bring the server checkout up to date. The prepared environment works: four live smoke runs, ten model calls in total, have completed on it.
-2. **Authorise stage one** when ready: `pilot.py scenarios --send` with both keys, 24 calls, no repair.
-3. **Read the scenarios** (`pilot.py scenario-review`), record approvals, then **authorise stage two** (`pilot.py groups --send`), then `pilot.py assemble`. A `redraft` decision needs a separate choice, since nothing re-drafts automatically.
+1. **Review and commit the final scenario approvals, correction ledger and integration**, then bring the server checkout up to date without altering its run evidence.
+2. **Authorise stage two when ready:** `pilot.py groups --send` with both keys, using the run directory that contains the 24 original calls and nine redrafts. It will draft 48 groups, with a ceiling of 144 calls including repairs.
+3. **Inspect and correct only the groups routed to review**, then run `pilot.py assemble` and export the 192 cells for item, pair and scenario review.
 4. **After the pilot is reviewed**, extend to the full 60 decisions, then validate, human-review and freeze before any evaluated-model run.
 
 ## Open, not resolved

@@ -49,8 +49,11 @@ def _run(script: pathlib.Path, *args: str, env: dict[str, str] | None = None,
          sitecustomize: pathlib.Path):
     environment = {**os.environ, **(env or {}),
                    "PYTHONPATH": f"{sitecustomize}:{os.environ.get('PYTHONPATH', '')}"}
+    isolated = (["--scenario-corrections-file",
+                 str(ROOT / "tests" / "fixtures" / "no_scenario_corrections.yaml")]
+                if script == PILOT else [])
     return subprocess.run([sys.executable, str(script), "--config", "configs/experiment.yaml",
-                           *args],
+                           *isolated, *args],
                           cwd=ROOT, capture_output=True, text=True, env=environment)
 
 

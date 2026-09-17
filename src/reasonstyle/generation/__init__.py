@@ -96,6 +96,13 @@ from .redraft import (
     redraft_template_sha256,
     run_redraft_stage,
 )
+from .scenario_corrections import (
+    ScenarioCorrection,
+    ScenarioCorrectionError,
+    apply_scenario_corrections,
+    load_scenario_corrections,
+    save_scenario_corrections,
+)
 from .provenance import ProvenanceMismatch, check_request_provenance
 
 __all__ = [
@@ -106,14 +113,19 @@ __all__ = [
     "AssemblyRefused",
     "ManualCorrection",
     "ScenarioApproval",
+    "ScenarioCorrection",
+    "ScenarioCorrectionError",
     "approval_status",
+    "apply_scenario_corrections",
     "assemble_scenario",
     "correction_problems",
     "gate_problems",
     "load_approvals",
     "load_corrections",
+    "load_scenario_corrections",
     "save_approvals",
     "save_corrections",
+    "save_scenario_corrections",
     "ACCEPTED",
     "AUTHORIZATION_ENV",
     "AllocationError",

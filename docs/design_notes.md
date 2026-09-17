@@ -723,6 +723,16 @@ following that link from the original — never by taking whichever call is late
 in the log. An unaccepted redraft therefore leaves the original standing, and
 the approvals of scenarios nobody redrafted stay valid.
 
+**A human scenario correction is separate evidence.** If the bounded redraft
+still changes or adds a supplied fact, repeats filler, or otherwise fails human
+review, the generated result is not edited. A correction ledger records the
+exact model call and original text, both text hashes, the corrected text, editor,
+reason, date and approval state. The correction must match the current model
+text and call, must change the text, and is re-run through the ordinary scenario
+validator; an error refuses it. The scenario keeps the model call id as its
+source while the curator approval binds the corrected text hash. This preserves
+which words came from Qwen and which were edited by a person.
+
 **Two stages, and a person between them.** Scenario drafting and group drafting
 are separate commands, and no command does both: the curator's approval sits
 between them, and a tool that crossed that boundary automatically would make the
@@ -741,7 +751,7 @@ built over every decision at once. **Approval adds a requirement and never
 removes one** — a scenario with machine errors is reported as blocked however
 the approvals file reads, and is fixed or redrafted, never approved past.
 
-**Assembly and manual correction.** A record is assembled only from an approved
+**Assembly and counterargument correction.** A record is assembled only from an approved
 scenario and machine-valid groups. A human correction is never an edit to what
 the model returned: it is a separate record naming the original call id and its
 original text, the corrected text, the editor, the reason, the date, its

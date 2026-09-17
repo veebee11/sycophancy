@@ -31,9 +31,10 @@ path — a failing scenario is a curator decision, and there is no automatic
 redraft. The group stage makes at most three calls per group, one draft and two
 repairs. Completed calls are recovered from disk and never sent again.
 
-**No pilot call has been authorised.** The two synthetic repair smokes are
-finished and no further one is planned; nothing in this file has been run
-against a server.
+The 24-call scenario stage and the bounded nine-call redraft stage have run.
+All 24 final scenario texts are approved, including five exact-source-bound
+human corrections that leave model evidence untouched. The group stage has not
+run and remains a separate live authorisation.
 
 The controller itself is ``src/reasonstyle/generation/pipeline.py``; it was
 exercised by ``scripts/pipeline_smoke.py`` on one synthetic group, twice, and
@@ -89,6 +90,11 @@ from reasonstyle.generation.redraft import (
     redraft_targets,
     redraft_template_sha256,
     run_redraft_stage,
+)
+from reasonstyle.generation.scenario_corrections import (
+    ScenarioCorrectionError,
+    apply_scenario_corrections,
+    load_scenario_corrections,
 )
 from reasonstyle.generation.requests import RequestError, group_request, scenario_request
 from reasonstyle.hashing import content_hash, sha256_of
@@ -177,6 +183,14 @@ def _inputs(args):
     return cfg, bank, allocation, topics
 
 
+def _current_scenarios(args, cfg, store: CallStore) -> dict[str, dict[str, Any]]:
+    """Model drafts/redrafts plus separately recorded, validated human edits."""
+    scenarios = current_scenarios(store, load_approvals(args.approvals_file))
+    return apply_scenario_corrections(
+        scenarios, load_scenario_corrections(args.scenario_corrections_file), cfg,
+        segmenter_from_config(cfg))
+
+
 def _plan(cfg, bank, allocation, topics, out: Path, variants) -> int:
     """Write every request that a live run would send, and print the plan."""
     scenarios = groups = 0
@@ -241,7 +255,7 @@ def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
     # "not generated" however many times it was attempted.
     drafted: dict[str, dict[str, Any]] = {}
     attempted: set[str] = set()
-    for scenario_id, record in current_scenarios(store, approvals).items():
+    for scenario_id, record in _current_scenarios(args, cfg, store).items():
         attempted.add(scenario_id)
         if record.get("scenario_text"):
             drafted[scenario_id] = {"text": record["scenario_text"],
@@ -312,8 +326,7 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
                                      topic_bank_content_hash=content_hash(
                                          bank.model_dump(mode="json")),
                                      variants=variants,
-                                     scenarios=current_scenarios(
-                                         store, load_approvals(args.approvals_file)))
+                                     scenarios=_current_scenarios(args, cfg, store))
             print(f"\ngate: {len(gate)} scenario(s) would block group drafting"
                   + (f"; first: {gate[0]}" if gate else ""))
         return 0
@@ -344,7 +357,7 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
                 approvals=load_approvals(args.approvals_file),
                 topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
                 allow_live=True, variants=variants,
-                scenarios=current_scenarios(store, load_approvals(args.approvals_file)))
+                scenarios=_current_scenarios(args, cfg, store))
             ceiling = expected_groups * budget
     except PipelineAbort as exc:
         print(f"\nthe stage stopped: {exc}", file=sys.stderr)
@@ -447,7 +460,7 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
     from reasonstyle.corpus.validate import validate_scenario_text
     segmenter = segmenter_from_config(cfg)
     bank_hash = content_hash(bank.model_dump(mode="json"))
-    scenarios = current_scenarios(store, load_approvals(args.approvals_file))
+    scenarios = _current_scenarios(args, cfg, store)
     out = Path(args.review_out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -473,10 +486,14 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
              "",
              "| state | scenarios |", "|---|---|"]
     lines += [f"| {state} | {count} |" for state, count in sorted(counts.items())]
-    lines += ["",
-              "A scenario that already carries an approval needs nothing further. One shown "
-              "as **redrafted** carries new text that has not been reviewed: its seven "
-              "judgements below are unanswered.", ""]
+    if counts == {"approved": len(states)}:
+        lines += ["", "All current scenario texts are approved; no scenario judgement is "
+                  "outstanding. Generated text and human corrections remain separately "
+                  "identified below.", ""]
+    else:
+        lines += ["", "A scenario that already carries an approval needs nothing further. "
+                  "One shown as **redrafted** carries new text that has not been reviewed: "
+                  "its seven judgements below are unanswered.", ""]
     template: dict[str, Any] = {}
     for topic in sorted(topics, key=lambda t: t.decision_id):
         for variant_id in args.variants:
@@ -493,13 +510,17 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
             state = states.get(scenario_id, "not_generated")
             approval = approvals.get(scenario_id)
             superseded = record.get("supersedes_call_id")
+            correction = record.get("scenario_correction")
             heading = {"approved": "approved, no action needed",
                        "pending": "awaiting your decision",
                        "redraft": "you asked for a redraft",
                        "stale": "the approval no longer matches this text",
                        }.get(state, state)
             if superseded:
-                heading = "REDRAFTED — new text, seven judgements unanswered"
+                heading = ("approved redraft, no action needed" if state == "approved"
+                           else "REDRAFTED — new text, seven judgements unanswered")
+            if correction:
+                heading = "HUMAN-CORRECTED — approved exact text"
             lines += [
                 f"## {scenario_id} — {heading}", "",
                 f"- decision `{topic.decision_id}` · domain `{topic.domain}` · variant "
@@ -513,10 +534,19 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
             if superseded:
                 lines += [
                     f"- this text SUPERSEDES call `{superseded}`, which you rejected",
-                    f"- your reason then: {approval.reason if approval else '(not recorded)'}",
+                    f"- your reason then: "
+                    f"{record.get('redraft_failure_reason') or '(not recorded)'}",
                     f"- judgements that failed then: "
-                    f"{', '.join(sorted(n for n, v in (approval.judgements if approval else {}).items() if v is False)) or 'none recorded'}",
+                    f"{', '.join(record.get('redraft_failed_judgements') or []) or 'none recorded'}",
                     ""]
+            if correction:
+                lines += [
+                    f"- human correction by {correction['editor']} on "
+                    f"{correction['decided_at']}, bound to call "
+                    f"`{correction['original_call_id']}`",
+                    f"- correction reason: {correction['reason']}",
+                    f"- original text sha256 `{correction['original_text_sha256']}`",
+                    f"- corrected text sha256 `{correction['corrected_text_sha256']}`", ""]
             elif state == "redraft" and approval is not None:
                 lines += [f"- your reason: {approval.reason}",
                           f"- judgements that failed: "
@@ -541,13 +571,13 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
             lines += ["",
                       "### The generated scenario", "",
                       "```", text or "(no scenario recorded)", "```", ""]
-            if state == "approved" and not superseded:
+            if state == "approved":
                 lines += ["Already approved; no judgement is outstanding.", ""]
             else:
                 lines += ["Judgements to record:", ""]
                 lines += [f"- [ ] {name}" for name in REQUIRED_JUDGEMENTS]
                 lines.append("")
-            if state == "approved" and not superseded:
+            if state == "approved":
                 continue                 # an approved scenario needs no new template entry
             template[scenario_id] = {
                 "scenario_text_sha256": sha256_of(text) if text else None,
@@ -588,7 +618,7 @@ def _assemble(args, cfg, bank, allocation, topics, store: CallStore) -> int:
             topics=topics, allocation_groups=allocation.groups,
             approvals=load_approvals(args.approvals_file),
             corrections=load_corrections(args.corrections_file),
-            scenarios=current_scenarios(store, load_approvals(args.approvals_file)),
+            scenarios=_current_scenarios(args, cfg, store),
             groups=recorded_groups(store),
             cfg=cfg, segmenter=segmenter,
             topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
@@ -621,7 +651,7 @@ def _counts(args, cfg, bank, topics, store: CallStore) -> int:
     variants = tuple(args.variants)
     expected_scenarios = len(topics) * len(variants)
     approvals_now = load_approvals(args.approvals_file)
-    scenarios = current_scenarios(store, approvals_now)
+    scenarios = _current_scenarios(args, cfg, store)
     groups = recorded_groups(store)
     approvals = load_approvals(args.approvals_file)
     bank_hash = content_hash(bank.model_dump(mode="json"))
@@ -695,6 +725,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--only", nargs="*", help="limit to these decision ids")
     ap.add_argument("--variants", nargs="*", type=int, default=[1, 2])
     ap.add_argument("--corrections-file", default="data/pilot/manual_corrections.yaml")
+    ap.add_argument("--scenario-corrections-file",
+                    default="data/pilot/scenario_corrections.yaml")
     ap.add_argument("--corpus", default="data/pilot/corpus.jsonl")
     ap.add_argument("--review-out", default="review/pilot")
     ap.add_argument("--write-template", action="store_true",
@@ -723,20 +755,24 @@ def main(argv: list[str] | None = None) -> int:
                       topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
                       allocation_content_hash=allocation.content_hash)
 
-    if args.command == "log":
-        return _status(store)
-    if args.command == "status":
-        return _counts(args, cfg, bank, topics, store)
-    if args.command == "approvals":
-        return _approvals(args, cfg, bank, topics, store)
-    if args.command == "scenario-review":
-        return _scenario_review(args, cfg, bank, topics, store)
-    if args.command == "assemble":
-        return _assemble(args, cfg, bank, allocation, topics, store)
-    if args.command == "redraft-scenarios":
-        return _redraft(args, cfg, bank, topics, store)
-    if args.command in ("scenarios", "groups"):
-        return _stage(args, cfg, bank, allocation, topics, store, kind=args.command)
+    try:
+        if args.command == "log":
+            return _status(store)
+        if args.command == "status":
+            return _counts(args, cfg, bank, topics, store)
+        if args.command == "approvals":
+            return _approvals(args, cfg, bank, topics, store)
+        if args.command == "scenario-review":
+            return _scenario_review(args, cfg, bank, topics, store)
+        if args.command == "assemble":
+            return _assemble(args, cfg, bank, allocation, topics, store)
+        if args.command == "redraft-scenarios":
+            return _redraft(args, cfg, bank, topics, store)
+        if args.command in ("scenarios", "groups"):
+            return _stage(args, cfg, bank, allocation, topics, store, kind=args.command)
+    except ScenarioCorrectionError as exc:
+        print(f"refusing: {exc}", file=sys.stderr)
+        return 1
     return _plan(cfg, bank, allocation, topics, out, tuple(args.variants))
 
 

@@ -19,7 +19,12 @@ import pytest
 
 from reasonstyle.corpus import segmenter_from_config
 from reasonstyle.generation import FakeBackend
-from reasonstyle.generation.approvals import REQUIRED_JUDGEMENTS, load_approvals
+from reasonstyle.generation.approvals import (
+    REDRAFT,
+    REQUIRED_JUDGEMENTS,
+    ScenarioApproval,
+    load_approvals,
+)
 from reasonstyle.generation.pipeline import (
     ACCEPTED,
     NEEDS_MANUAL_REVIEW,
@@ -41,6 +46,7 @@ from reasonstyle.hashing import content_hash, sha256_of
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_RUN = ROOT / "data" / "pilot" / "run" / "pilot_scenarios_2026-09-16"
+REDRAFT_RUN = ROOT / "data" / "pilot" / "run" / "pilot_redraft_snapshot_2026-09-17"
 APPROVALS = ROOT / "data" / "pilot" / "scenario_approvals.yaml"
 
 REDRAFTED = ("climate_01_v1", "climate_01_v2", "climate_04_v1", "energy_01_v1",
@@ -59,7 +65,7 @@ def bank_hash(pilot_bank):
 
 
 @pytest.fixture
-def approvals():
+def final_approvals():
     return load_approvals(APPROVALS)
 
 
@@ -71,6 +77,41 @@ def store(tmp_path, cfg, bank_hash):
     run = tmp_path / "run"
     shutil.copytree(LIVE_RUN, run)
     return CallStore(run, cfg, topic_bank_content_hash=bank_hash)
+
+
+@pytest.fixture
+def approvals(final_approvals, store, cfg, bank_hash):
+    """Reconstruct the 15/9 decision state that authorised the redraft run.
+
+    The tracked approvals file is now the final 24/24 gate.  The historical
+    decision, reasons and failed judgements remain in the immutable redraft
+    call metadata; tests use that evidence rather than making the current gate
+    stale again.
+    """
+    log = REDRAFT_RUN / "generation_log.jsonl"
+    if not log.is_file():
+        pytest.skip(f"{REDRAFT_RUN} is not on this machine (gitignored run artefacts)")
+    originals = recorded_scenarios(store)
+    out = dict(final_approvals)
+    entries = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
+    for entry in entries:
+        if entry.get("kind") != "scenario_redraft":
+            continue
+        scenario_id = f"{entry['decision_id']}_v{entry['variant_id']}"
+        extra = entry.get("extra") or {}
+        original = originals[scenario_id]
+        failed = set(extra["failed_judgements"])
+        out[scenario_id] = ScenarioApproval(
+            scenario_id=scenario_id,
+            scenario_text_sha256=sha256_of(original["scenario_text"]),
+            call_id=original["call_id"],
+            config_content_hash=cfg.content_hash,
+            topic_bank_content_hash=bank_hash,
+            decision=REDRAFT,
+            judgements={name: name not in failed for name in REQUIRED_JUDGEMENTS},
+            decided_by="Vidhi Bhutani", decided_at=date(2026, 9, 17),
+            reason=extra["failure_reason"])
+    return out
 
 
 def revised(scenario_id: str) -> str:
@@ -118,19 +159,15 @@ def _run(topics, approvals, cfg, segmenter, store, responder=None):
 # --- the recorded review -----------------------------------------------------
 
 
-def test_the_approvals_file_records_fifteen_and_nine(approvals):
-    assert len(approvals) == 24
-    assert sum(1 for a in approvals.values() if a.decision == "approved") == 15
-    assert sorted(k for k, a in approvals.items() if a.decision == "redraft") == sorted(REDRAFTED)
-    for approval in approvals.values():
+def test_the_approvals_file_records_the_final_twenty_four(final_approvals):
+    assert len(final_approvals) == 24
+    assert all(a.decision == "approved" for a in final_approvals.values())
+    for approval in final_approvals.values():
         assert approval.decided_by == "Vidhi Bhutani"
         assert approval.decided_at == date(2026, 9, 17)
         assert set(approval.judgements) == set(REQUIRED_JUDGEMENTS)
         assert None not in approval.judgements.values(), "no judgement left unanswered"
-        if approval.decision == "approved":
-            assert all(approval.judgements.values()) and approval.reason is None
-        else:
-            assert approval.reason and not all(approval.judgements.values())
+        assert all(approval.judgements.values()) and approval.reason is None
 
 
 def test_the_fifteen_approvals_are_current_against_the_live_run(approvals, cfg, bank_hash,
