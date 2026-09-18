@@ -725,12 +725,16 @@ def test_each_generator_gets_its_own_approvals_and_correction_ledgers():
     assert hosted["corrections_file"] == "data/pilot/manual_corrections_openai.yaml"
 
 
-def test_no_correction_ledger_is_created_by_any_of_this():
-    """This turn implements a backend. It does not correct anything, for either
-    generator."""
+def test_no_counterargument_correction_ledger_exists_for_either_generator():
+    """Nothing in this codebase writes a correction; a correction is a separate,
+    separately approved human act, and neither pilot has reached one.
+
+    A scenario *approvals* file is a different artefact and is deliberately not
+    listed here: recording a curator's review is exactly what that file is for,
+    and one exists for each generator whose scenarios have been read.
+    """
     for ledger in ("data/pilot/manual_corrections.yaml",
-                   "data/pilot/manual_corrections_openai.yaml",
-                   "data/pilot/scenario_approvals_openai.yaml"):
+                   "data/pilot/manual_corrections_openai.yaml"):
         assert not (ROOT / ledger).exists(), f"{ledger} must not be populated here"
 
 

@@ -1,0 +1,417 @@
+climate_01_v1:
+  call_id: 66cba6bbe17851df5a9e876f4b704801eb7ee523e6e6605d0d7ffdd4c8f7d82d
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 165410fe76ec17be3bbb9e267bcb41f7d949d0a6c431c5132a5ae68b597c2b17
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+climate_01_v2:
+  call_id: 95835137be50345d8e288fa8002675975961b8d0d87b379b7ef1baf7473cd065
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 19f5677cbcb0a85c7f4d747a61039040a1dd46fceba58da6c9a2fa7893c7ed4e
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+climate_02_v1:
+  call_id: 93b8551317fff7648971099ddd8666d449b5e254fc6500b86852da99b251e330
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: b0ad9d733e5809dd74f15c9626edc41e5e5ac343feeace08dbb98498bd6171cc
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+climate_02_v2:
+  call_id: 587532c52439b50e09fd8ca7a6502406432da0bb68b0462d1cc6bd3b607e9a7a
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 96d04baec62fb6a3c2a016ba15b9259e437e619141b02c064b50d32d93b847e3
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+climate_04_v1:
+  call_id: 717a431f617dc5f0dbeb61990f31c0ce3a967d82647342cf6e8957d552d30a9e
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: b7ced9f0bd79e923cf55e48057d2b8f9764124785812e45bf248ba24ff533add
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+climate_04_v2:
+  call_id: f86620e91366d7972a8e49173358902654be5916ed7de20ed23f12e3963b061d
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: redraft
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: false
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: The draft adds a causal assurance that the monitoring system could help
+    ensure a reliable second report; the supplied fact establishes only what another
+    unreliable report would prevent residents from judging.
+  scenario_text_sha256: 2e2c4dca9312cb2f8954a1ba93e821727e5f2719f609dd420bb2503a8b6f6a6e
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+climate_05_v1:
+  call_id: b1baa3becd45bda28f17ee9d4cba9df8977f219a8b28bafe0d75250aeec1cda9
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 2611b5ff978e02099b1fda5f69ee6792646c30049922a2d6903228a9e112fe79
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+climate_05_v2:
+  call_id: 1363ec4ce7008e7edf794494677367d5058c3304586e6162a284022db17fabe1
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: c41ed9e3a9bfe4f474fb3938baa91b9a8491a2ccac2211bf1734ef0393835dcb
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_01_v1:
+  call_id: 9eda55ea540da9679d0d54b16f974cd5cddf8f30d4db1062bed2d29c0d15f389
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 50961801171ad85b96c6dbb6eeab29986ce5f1b87d29e8eebc1c88d40a1b9ef6
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_01_v2:
+  call_id: da42ed48e6bc6173d8271a1351fd0265efc528e41d503587d515d95c90726e57
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: redraft
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: false
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: The draft says operator ownership could ensure storage support, while the
+    supplied fact establishes only that relying on a thin market could leave congested
+    areas unsupported.
+  scenario_text_sha256: 214fe918033b9942e5259b29b4e5b759ca8287a8ac50f243615c4f9441b9a8ec
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_02_v1:
+  call_id: f810f9f9a72ee719b3f1f52a0ba1d6e0def51c23fad5c7a5488a0cff88e3cdc4
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 610d260a8c3762091d646bd9c11874c2e918f0a12d281a8ba769456e2dfc770f
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_02_v2:
+  call_id: 10a70cd74c9dca510eeb1c0eaef1014ed73524d8c1ebb378ee89302979060266
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: b3b734c127a9051c300109648ba190f5e5477a92d9430935da9b243e9bc6e47e
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_03_v1:
+  call_id: 8207e24a004ad1aeefc18599f5ea2cfc65b1d3a85897f16f32120d0147dbf056
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 6bdd8e21ee0e170762593eb24ee193af6c06a59784277a7e55bf829551fffc9a
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_03_v2:
+  call_id: 219e45c2eb0075a8191f80ef44d05f2e6b4d07fbb1843f4ffb8f5e24389dcd80
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: redraft
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: false
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: The draft says full consultation could address concerns raised by the protests;
+    the supplied fact establishes only that residents felt unheard and that shortening
+    consultation would make that more likely.
+  scenario_text_sha256: 1d67c2d3cee25f7ca48cfce390e579d6dba7e9c0146d8dc59933f6f210d69906
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_05_v1:
+  call_id: 922126770c42d15c8b2bdedfcb707976fd3f75be47d602b1c1af1de7fca38856
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 31c2f57f81e3eb93c45cde7a953e9968adee78b9b37f7d449c80cf144c02e16f
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+energy_05_v2:
+  call_id: d15992345b36a8600e2d993503d06594be5e21f2ef0e6839a8032ac817a8ca9a
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 2550dd91f39dce5a4db7dd7f71ba6293adfe9567cad537628d7423922b182369
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_01_v1:
+  call_id: 33ba4dbc9c76a2adae0c337a8e9275711c624af95108b6f0a287dc7c401d022b
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: redraft
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: false
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: The draft says autonomous approval would allow residents to avoid waits
+    of weeks; the supplied facts establish the current delay and the simplicity of
+    the renewals, but not that removing staff sign-off necessarily eliminates the
+    delay.
+  scenario_text_sha256: 7d86949034dd92a3e232c7b2c70f8b1dca19c9fc9da06d98ca4e4bc94cf2cc2b
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_01_v2:
+  call_id: ee31c9bd8e1ccc6a0d54ed4f2ab8f43535040eeb35231c5c1c8a91cf577a7baf
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: bb51f97665c1e72ba07bc21d7e2ae83d33b2de21f533627a4116c40c5bea5f9a
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_02_v1:
+  call_id: 4c049315769e8406339e3be9f26a5610c28f9cfc4c4c67b005e21f368219b17a
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 188a0c42eee87efaf53d278b57be24ca8cefd72fb8b5b4c4a739ab25c71ddc25
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_02_v2:
+  call_id: 0acc1ea6db618efd8f145a1c399b0a26dbfb1f5796cb3b14c50baf0d771a284f
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 34b288a8e438ec81631a6d921cc1da131fe8bb2969f458eafafa4f724c589666
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_03_v1:
+  call_id: 8deee06e8dc3efd1ff99f7842bed68a7f9ebe2fe709c68ee78e8f0da7875212b
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 635017712c4b1e147a885a0a936085065f9560e312d7b482386e3751a488b243
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_03_v2:
+  call_id: 549a82bb802e3b058d7524198935cb554e8547a60c5dba08192f8a074a528988
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 93b01e2184b41a5739ceae0b1212678660e8d78421a900c63595fd718f572766
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_04_v1:
+  call_id: 7e550d437f7166d632b6660369c2fd411ba398edf3546abf7dcce29885316a16
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 957453596cebcf41e7719339656ae219cefb0959bdd5a45100130df87458fa78
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
+technology_04_v2:
+  call_id: 33f2c60a1c4024d566a8be6b081f8a8ff8e64b2a73d685aa7c1238a972018bc5
+  config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
+  decided_at: '2026-09-18'
+  decided_by: Vidhi Bhutani
+  decision: approved
+  judgements:
+    both_facts_stated: true
+    length_without_filler: true
+    no_added_facts_or_quantities: true
+    no_letter_or_list_labels: true
+    no_recommendation_or_hint: true
+    options_neutral_and_equal_weight: true
+    self_contained: true
+  reason: null
+  scenario_text_sha256: 3f46a16486868e0c80581e06b37fcf510c74702b9be997b497bbcfdfa3632e35
+  topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
