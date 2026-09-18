@@ -46,7 +46,8 @@ from .approvals import APPROVED as APPROVAL_GRANTED
 from .approvals import approval_status
 from .backends import PROMPT_KEYS, BackendError, BackendUnavailable, LiveCallRefused
 from .backends import request_payload
-from .environment import CachedModel, describe_run, generator_model_id
+from .environment import CachedModel, describe_run, generator_endpoint
+from .environment import generator_model_id
 from .log import GenerationLog, LogEntry, utc_now
 from .requests import DraftRequest, ResponseRejected, group_request, parse_response, repair_request
 from .requests import scenario_request
@@ -326,7 +327,7 @@ class CallStore:
         """
         env = describe_run(
             self.cfg, cached=self.cached,
-            endpoint=self.endpoint or self.cfg.raw["models"]["generator"]["vllm"]["base_url"],
+            endpoint=self.endpoint or generator_endpoint(self.cfg),
             server=self.server, prompt_sha256=request.prompt_sha256,
             response_sha256=response_sha256,
             input_tokens=(usage or {}).get("prompt_tokens"),

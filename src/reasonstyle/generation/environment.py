@@ -28,6 +28,7 @@ from typing import Any
 
 __all__ = [
     "CachedModel",
+    "generator_endpoint",
     "generator_model_id",
     "ModelNotCached",
     "RunEnvironment",
@@ -288,6 +289,20 @@ def generator_model_id(cfg) -> str:
     if not identifier:                                      # pragma: no cover - config-checked
         raise ValueError("the generator configuration names no model")
     return identifier
+
+
+def generator_endpoint(cfg) -> str:
+    """Where this configuration's generator is reached.
+
+    A local generator is a loopback vLLM endpoint; a hosted one is the
+    provider's HTTPS API. Callers that record provenance need the right one
+    without knowing the shape of each profile — reading the vLLM key directly
+    raises a ``KeyError`` on a configuration that has no vLLM block.
+    """
+    gen = cfg.raw["models"]["generator"]
+    if gen["backend"] == "openai_responses":
+        return gen["openai"]["endpoint"]
+    return gen["vllm"]["base_url"]
 
 
 #: What a hosted generator's record says instead of the local note. There is no

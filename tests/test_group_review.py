@@ -976,3 +976,157 @@ def test_an_unusable_attempt_cannot_qualify_by_having_no_findings(tmp_path, cfg,
         attempts=(rejected, final), findings=(error,), measurements={},
         attempt_findings={final.call_id: (error,)}, state=NEEDS_CORRECTION)
     assert review.earlier_attempt_with_fewer_errors is None
+
+
+# --- the reading view describes the run it read, not a remembered one --------
+#
+# The same code produces the Qwen pilot's view and the hosted pilot's. Every
+# count, every command and every claim on the page has to come from the run in
+# front of it: a page that told a reader to regenerate it with the other
+# generator's configuration, or that called 36 machine-valid groups "the two
+# valid groups", would be describing a different corpus than the one it shows.
+
+OPENAI_CONFIG = ROOT / "configs" / "experiment_openai_pilot.yaml"
+
+
+@pytest.fixture(scope="module")
+def openai_cfg():
+    from reasonstyle.config import load_config
+    return load_config(OPENAI_CONFIG)
+
+
+class SelectiveResponder(PilotResponder):
+    """Fails exactly the groups it is given, with text no repair can fix."""
+
+    def __init__(self, failing: set[tuple[str, str]]):
+        super().__init__()
+        self.failing = failing
+        self.seen: dict[tuple[str, str], int] = {}
+
+    def __call__(self, request):
+        reply = super().__call__(request)
+        if request.kind not in ("group", "repair"):
+            return reply
+        key = (f"{request.decision_id}_v{request.variant_id}", request.supported_option)
+        if key not in self.failing:
+            return reply
+        # Different text at every attempt, so no repair is recorded as unchanged.
+        self.seen[key] = self.seen.get(key, 0) + 1
+        return {**reply, "RS": f"One sentence only, attempt {self.seen[key]}, still wrong."}
+
+
+def _export_for(cfg, store, topics, bank_hash, allocation, approvals):
+    return build_group_review(
+        topics=topics, allocation_groups=allocation.groups,
+        scenarios=recorded_scenarios(store), store=store, cfg=cfg, segmenter=None,
+        approvals=approvals, topic_bank_content_hash=bank_hash,
+        allocation_content_hash=allocation.content_hash)
+
+
+@pytest.fixture
+def hosted_export(tmp_path, openai_cfg, segmenter, topics, bank_hash, allocation):
+    """A synthetic run under the hosted configuration: 36 valid, 12 failing."""
+    store = CallStore(tmp_path / "run_openai", openai_cfg, topic_bank_content_hash=bank_hash,
+                      allocation_content_hash=allocation.content_hash)
+    run_scenario_stage(topics, openai_cfg, segmenter, FakeBackend(PilotResponder()), store)
+    approvals = approvals_for(store, openai_cfg, bank_hash)
+    failing = {(g.scenario_id, g.supported_option)
+               for g in sorted(allocation.groups,
+                               key=lambda g: (g.decision_id, g.variant_id,
+                                              g.supported_option))[:12]}
+    run_group_stage(topics, allocation.groups, openai_cfg, segmenter,
+                    FakeBackend(SelectiveResponder(failing)), store,
+                    approvals=approvals, topic_bank_content_hash=bank_hash)
+    return build_group_review(
+        topics=topics, allocation_groups=allocation.groups,
+        scenarios=recorded_scenarios(store), store=store, cfg=openai_cfg,
+        segmenter=segmenter, approvals=approvals, topic_bank_content_hash=bank_hash,
+        allocation_content_hash=allocation.content_hash)
+
+
+def test_a_hosted_review_reports_its_own_counts_not_a_remembered_result(hosted_export):
+    assert len(hosted_export.machine_valid) == 36
+    assert len(hosted_export.needing_correction) == 12
+    assert hosted_export.manifest["machine_valid"] == 36
+    assert hosted_export.manifest["needing_correction"] == 12
+    index = hosted_export.files["index.md"]
+    assert "**48 expected group(s)** · **36 machine-valid** · **12 requiring correction**" \
+        in index
+
+
+def test_a_hosted_review_never_says_two_valid_groups(hosted_export):
+    """The sentence that used to carry the Qwen result into every page."""
+    everything = "\n".join(hosted_export.files.values())
+    assert "the two valid groups" not in everything
+    assert "for every machine-valid group exactly as much as for the rest" in \
+        hosted_export.files["index.md"]
+    for stale in ("2 machine-valid", "46 requiring correction", "Two diagnosed repairs"):
+        assert stale not in everything, stale
+
+
+def test_a_hosted_review_names_its_own_configuration_to_regenerate(hosted_export,
+                                                                   openai_cfg):
+    """The command echoes the configuration that was loaded, exactly as given."""
+    expected = f"--config {openai_cfg.path.as_posix()}"
+    for name, text in hosted_export.files.items():
+        assert expected in text, name
+        assert "experiment_openai_pilot.yaml" in text, name
+        assert "--config configs/experiment.yaml" not in text, name
+        assert "/experiment.yaml" not in text, name
+
+
+def test_the_regeneration_command_names_the_run_that_was_read(hosted_export):
+    run = hosted_export.manifest["run_directory"]
+    for name, text in hosted_export.files.items():
+        assert f"--out {run}" in text, name
+
+
+def test_a_config_with_no_path_gets_a_neutral_instruction(hosted_export, openai_cfg,
+                                                          tmp_path, segmenter, topics,
+                                                          bank_hash, allocation):
+    """A configuration built in memory has no file; the note must not invent one."""
+    import copy
+    from reasonstyle.config import ExperimentConfig, RawConfig
+    raw = copy.deepcopy(openai_cfg.raw)
+    pathless = ExperimentConfig(raw=raw, parsed=RawConfig.model_validate(raw), path=None)
+    store = CallStore(tmp_path / "pathless", pathless, topic_bank_content_hash=bank_hash,
+                      allocation_content_hash=allocation.content_hash)
+    export = build_group_review(
+        topics=topics, allocation_groups=allocation.groups, scenarios={}, store=store,
+        cfg=pathless, segmenter=segmenter, approvals={},
+        topic_bank_content_hash=bank_hash,
+        allocation_content_hash=allocation.content_hash)
+    index = export.files["index.md"]
+    assert "--config None" not in index and "--config configs/" not in index
+    assert "with the configuration and run directory named above" in index
+
+
+def test_two_runs_of_different_shapes_get_different_pages(hosted_export, synthetic, topics,
+                                                          cfg, segmenter, bank_hash,
+                                                          allocation):
+    """The counts are read off the run, so two runs cannot produce one page."""
+    qwen_shaped = _export(synthetic, topics, cfg, segmenter, bank_hash, allocation)
+    assert (len(qwen_shaped.machine_valid), len(qwen_shaped.needing_correction)) == (45, 3)
+    assert (len(hosted_export.machine_valid), len(hosted_export.needing_correction)) == (36, 12)
+    assert qwen_shaped.files["index.md"] != hosted_export.files["index.md"]
+    for export in (qwen_shaped, hosted_export):
+        index = export.files["index.md"]
+        assert f"**{export.manifest['machine_valid']} machine-valid**" in index
+        assert f"**{export.manifest['needing_correction']} requiring correction**" in index
+
+
+def test_the_module_hardcodes_no_count_or_configuration():
+    source = (ROOT / "src" / "reasonstyle" / "generation" / "group_review.py").read_text()
+    body = source.split('"""', 2)[2]          # past the module docstring
+    for constant in ("configs/experiment.yaml", "configs/experiment_openai_pilot.yaml",
+                     "the two valid", "2 of 48", "36 of 48", "46 group"):
+        assert constant not in body, f"{constant!r} is baked into the output"
+
+
+def test_a_run_with_no_unchanged_repair_says_so(hosted_export):
+    """The headline difference between the two pilots, stated from the evidence."""
+    index = hosted_export.files["index.md"]
+    assert "| repair returning unchanged text | 0 of 12 |" in index
+    assert "| identical bodies at every recorded attempt | 0 of 12 |" in index
+    assert "**Every repair returned different text.**" in index
+    assert "repair returning unchanged text at attempt" not in index

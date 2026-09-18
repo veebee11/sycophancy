@@ -1,10 +1,14 @@
 """A read-only reading view of a recorded group run. It inspects; it decides nothing.
 
 The group stage records, for every one of the pilot's 48 four-condition groups,
-one draft and at most two repairs. Two of those groups passed their machine
-checks on the first draft; the rest ended ``needs_manual_review`` and now need a
-person to read them. This module turns that recorded evidence into deterministic
-Markdown so they can be read.
+one draft and at most two repairs. Some pass their machine checks; the rest end
+``needs_manual_review`` and need a person to read them. This module turns that
+recorded evidence into deterministic Markdown so they can be read.
+
+Every count, every command and every claim in the output is derived from the run
+being read. Nothing is written for one particular generator's result: the same
+code produced the Qwen pilot's 2-of-48 reading view and the hosted pilot's
+36-of-48 one, and neither page states the other's numbers.
 
 **What it is not.** It makes no call, sends nothing, repairs nothing, approves
 nothing, corrects nothing and writes nothing into the run directory or the
@@ -89,13 +93,24 @@ _CONDITION_GLOSS = {
     "NP": "no reason · plain",
 }
 
-_READ_ONLY = (
-    "> **Generated file — read only.** Regenerate with\n"
-    "> `uv run python scripts/pilot.py group-review --config configs/experiment.yaml`.\n"
-    "> It reads the recorded run and writes only here: no call, no repair, no approval,\n"
-    "> no correction, no corpus write. Corrections belong in their own approved ledger,\n"
-    "> and nothing written into this Markdown is ever read back."
-)
+#: What the page says about itself. The command names the configuration that was
+#: actually loaded and the run that was actually read, so a reader can reproduce
+#: this export rather than the one some other generator would produce. A config
+#: built in memory has no path; the note then stays generator-neutral instead of
+#: naming a file that does not exist.
+def _read_only_note(cfg: ExperimentConfig, run: Path) -> str:
+    config = cfg.path.as_posix() if getattr(cfg, "path", None) else None
+    command = (f"`uv run python scripts/pilot.py group-review --config {config} "
+               f"--out {run.as_posix()}`" if config else
+               "`scripts/pilot.py group-review`, with the configuration and run directory "
+               "named above")
+    return (
+        "> **Generated file — read only.** Regenerate with\n"
+        f"> {command}.\n"
+        "> It reads the recorded run and writes only here: no call, no repair, no approval,\n"
+        "> no correction, no corpus write. Corrections belong in their own approved ledger,\n"
+        "> and nothing written into this Markdown is ever read back."
+    )
 
 
 # --------------------------------------------------------------------------
@@ -374,7 +389,7 @@ def _provenance_block(cfg: ExperimentConfig, run: Path, bank_hash: str,
         f"`{bank_hash[:12]}` · **Allocation** `{(allocation_hash or '')[:12]}` · "
         f"**Segmenter** {segmenter.info.library} {segmenter.info.version}",
         f"> Recorded run `{run.as_posix()}` — read, never written.",
-        _READ_ONLY,
+        _read_only_note(cfg, run),
         "",
     ]
 
@@ -427,9 +442,11 @@ def _attempt_history(review: GroupReview) -> list[str]:
                      f"| {', '.join(attempt.recorded_error_codes) or 'none'} |")
     lines.append("")
     if review.identical_throughout:
-        lines += ["**Every recorded attempt returned the same four bodies.** Two diagnosed "
-                  "repairs changed nothing, so there is no later draft to prefer: what a "
-                  "reviewer is reading is the model's only answer to this group.", ""]
+        repairs = sum(1 for a in review.attempts if a.kind == "repair")
+        lines += [f"**Every recorded attempt returned the same four bodies.** "
+                  f"{repairs} diagnosed repair(s) changed nothing, so there is no later "
+                  f"draft to prefer: what a reviewer is reading is the model's only answer "
+                  f"to this group.", ""]
     for attempt in review.attempts:
         unchanged = review.unchanged_from_previous(attempt)
         header = (f"**Attempt {attempt.attempt} — {attempt.kind}** · call "
@@ -576,7 +593,7 @@ def index_markdown(reviews: list[GroupReview], cfg: ExperimentConfig, run: Path,
         "",
         "Machine-valid means the validator found no errors on the final recorded attempt. "
         "It is not approval: every human judgement listed under each group is outstanding, "
-        "for the two valid groups exactly as much as for the rest.",
+        "for every machine-valid group exactly as much as for the rest.",
         "",
         "This pass is inspection only. No wording is proposed here, no correction ledger is "
         "written, and no generator, model or validator decision follows from it.",
@@ -592,10 +609,13 @@ def index_markdown(reviews: list[GroupReview], cfg: ExperimentConfig, run: Path,
         lines.append("*None.*")
     lines.append("")
 
-    lines += ["## Groups requiring inspection and an audited correction", "",
-              "Each ended `needs_manual_review` with its budget spent: one draft and two "
-              "repairs. The attempt history on each page shows what each repair returned.",
-              ""]
+    lines += ["## Groups requiring inspection and an audited correction", ""]
+    if failing:
+        spent = sorted({len(r.attempts) for r in failing})
+        budget = (f"{spent[0]} recorded attempt(s) each" if len(spent) == 1
+                  else f"between {spent[0]} and {spent[-1]} recorded attempts each")
+        lines += [f"Each of these ended without passing its machine checks, with {budget}. "
+                  f"The attempt history on each page shows what every attempt returned.", ""]
     if failing:
         lines += ["| Scenario | Option | Domain | Marker family | Attempts | Final errors | Page |",
                   "|---|---|---|---|---|---|---|"]
@@ -630,14 +650,25 @@ def index_markdown(reviews: list[GroupReview], cfg: ExperimentConfig, run: Path,
                 unchanged_by_attempt[attempt.attempt] = (
                     unchanged_by_attempt.get(attempt.attempt, 0) + 1)
     if repairs:
+        identical = sum(1 for r in repairs if r.identical_throughout)
         lines += ["## What the repairs did", "",
+                  f"Counted over the {len(repairs)} group(s) that were repaired and still "
+                  f"require correction.", "",
                   "| Measure | Groups |", "|---|---|"]
-        lines += [f"| repair returning unchanged text at attempt {attempt} "
-                  f"| {count} of {len(repairs)} |"
-                  for attempt, count in sorted(unchanged_by_attempt.items())]
+        if unchanged_by_attempt:
+            lines += [f"| repair returning unchanged text at attempt {attempt} "
+                      f"| {count} of {len(repairs)} |"
+                      for attempt, count in sorted(unchanged_by_attempt.items())]
+        else:
+            lines.append(f"| repair returning unchanged text | 0 of {len(repairs)} |")
         lines.append(f"| identical bodies at every recorded attempt "
-                     f"| {sum(1 for r in repairs if r.identical_throughout)} of {len(repairs)} |")
+                     f"| {identical} of {len(repairs)} |")
         lines.append("")
+        if not unchanged_by_attempt and not identical:
+            lines += ["**Every repair returned different text.** The model acted on the "
+                      "measurements it was given at every attempt; these groups are ones "
+                      "where doing so did not reach the rules, not ones where the repair "
+                      "was ignored.", ""]
 
     flagged = [r for r in reviews if r.earlier_attempt_with_fewer_errors is not None]
     if flagged:

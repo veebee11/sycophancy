@@ -60,6 +60,7 @@ from reasonstyle.corpus import segmenter_from_config
 from reasonstyle.corpus.topics import load_topic_bank
 from reasonstyle.generation import (
     CallStore,
+    generator_endpoint,
     ModelNotCached,
     OPENAI_AUTHORIZATION_ENV,
     OPENAI_BACKEND,
@@ -215,14 +216,6 @@ PROFILE_PATHS = {
         "group_review_out": "review/pilot_groups_openai",
     },
 }
-
-
-def _endpoint(cfg) -> str:
-    """Where this generator is reached. Local loopback, or the hosted API."""
-    gen = cfg.raw["models"]["generator"]
-    if gen["backend"] == OPENAI_BACKEND:
-        return gen["openai"]["endpoint"]
-    return gen["vllm"]["base_url"]
 
 
 def _print_generator(cfg, cached, server: dict) -> None:
@@ -477,7 +470,7 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
         return 1
     _, cached, server = server_problems(args, cfg)
     store.cached, store.server = cached, server
-    store.endpoint = _endpoint(cfg)
+    store.endpoint = generator_endpoint(cfg)
     _print_generator(cfg, cached, server)
 
     backend = _live_backend(cfg)
@@ -570,7 +563,7 @@ def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
             print(f"  - {problem}", file=sys.stderr)
         return 1
     store.cached, store.server = cached, server
-    store.endpoint = _endpoint(cfg)
+    store.endpoint = generator_endpoint(cfg)
 
     before = len(store.log.entries())
     try:
