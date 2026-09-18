@@ -688,9 +688,18 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
             elif state == "redraft" and approval is not None:
                 lines += [f"- your reason: {approval.reason}",
                           f"- judgements that failed: "
-                          f"{', '.join(sorted(n for n, v in approval.judgements.items() if v is False)) or 'none recorded'}",
-                          "- **this is the original text; its redraft has not been "
-                          "generated yet**", ""]
+                          f"{', '.join(sorted(n for n, v in approval.judgements.items() if v is False)) or 'none recorded'}"]
+                if not superseded:
+                    # Only while the redraft is still outstanding. Once one has
+                    # been generated and accepted, the text printed above IS the
+                    # redraft, and saying it had not been generated would point
+                    # the curator's judgement at the wrong words.
+                    lines.append("- **this is the original text; its redraft has not been "
+                                 "generated yet**")
+                else:
+                    lines.append("- **the text above is the redraft; it is awaiting your "
+                                 "decision, and the seven judgements below are for it**")
+                lines.append("")
             elif state == "approved" and approval is not None:
                 lines += [f"- approved by {approval.decided_by} on {approval.decided_at}", ""]
             lines += [

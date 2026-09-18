@@ -84,23 +84,21 @@ climate_04_v1:
   scenario_text_sha256: b7ced9f0bd79e923cf55e48057d2b8f9764124785812e45bf248ba24ff533add
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 climate_04_v2:
-  call_id: f86620e91366d7972a8e49173358902654be5916ed7de20ed23f12e3963b061d
+  call_id: fff5861c9b7783ec04f02759da7820e91683bd62d8974822e03b5f88d72d90cb
   config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
   decided_at: '2026-09-18'
   decided_by: Vidhi Bhutani
-  decision: redraft
+  decision: approved
   judgements:
     both_facts_stated: true
     length_without_filler: true
-    no_added_facts_or_quantities: false
+    no_added_facts_or_quantities: true
     no_letter_or_list_labels: true
     no_recommendation_or_hint: true
     options_neutral_and_equal_weight: true
     self_contained: true
-  reason: The draft adds a causal assurance that the monitoring system could help
-    ensure a reliable second report; the supplied fact establishes only what another
-    unreliable report would prevent residents from judging.
-  scenario_text_sha256: 2e2c4dca9312cb2f8954a1ba93e821727e5f2719f609dd420bb2503a8b6f6a6e
+  reason: null
+  scenario_text_sha256: 4f6c456291dae7505ed3299037b5d23ff8c64cdc1c0966bbcb81f3bc5d1c404c
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 climate_05_v1:
   call_id: b1baa3becd45bda28f17ee9d4cba9df8977f219a8b28bafe0d75250aeec1cda9
@@ -154,23 +152,21 @@ energy_01_v1:
   scenario_text_sha256: 50961801171ad85b96c6dbb6eeab29986ce5f1b87d29e8eebc1c88d40a1b9ef6
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 energy_01_v2:
-  call_id: da42ed48e6bc6173d8271a1351fd0265efc528e41d503587d515d95c90726e57
+  call_id: f3aaa2985245b4546695230077fd7b89ecc6bde4670cd7efbe2e19c7bf25ae5a
   config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
   decided_at: '2026-09-18'
   decided_by: Vidhi Bhutani
-  decision: redraft
+  decision: approved
   judgements:
     both_facts_stated: true
     length_without_filler: true
-    no_added_facts_or_quantities: false
+    no_added_facts_or_quantities: true
     no_letter_or_list_labels: true
     no_recommendation_or_hint: true
     options_neutral_and_equal_weight: true
     self_contained: true
-  reason: The draft says operator ownership could ensure storage support, while the
-    supplied fact establishes only that relying on a thin market could leave congested
-    areas unsupported.
-  scenario_text_sha256: 214fe918033b9942e5259b29b4e5b759ca8287a8ac50f243615c4f9441b9a8ec
+  reason: null
+  scenario_text_sha256: e7b7980cd30cc71ad4a941f867ba662f4af5f377daee9fc9fce559b539e0f408
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 energy_02_v1:
   call_id: f810f9f9a72ee719b3f1f52a0ba1d6e0def51c23fad5c7a5488a0cff88e3cdc4
@@ -224,23 +220,21 @@ energy_03_v1:
   scenario_text_sha256: 6bdd8e21ee0e170762593eb24ee193af6c06a59784277a7e55bf829551fffc9a
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 energy_03_v2:
-  call_id: 219e45c2eb0075a8191f80ef44d05f2e6b4d07fbb1843f4ffb8f5e24389dcd80
+  call_id: 7645ff035dab85763c6d747ebc4d55b8ec82ffac8fba9a292e13a5d029fa2d7b
   config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
   decided_at: '2026-09-18'
   decided_by: Vidhi Bhutani
-  decision: redraft
+  decision: approved
   judgements:
     both_facts_stated: true
     length_without_filler: true
-    no_added_facts_or_quantities: false
+    no_added_facts_or_quantities: true
     no_letter_or_list_labels: true
     no_recommendation_or_hint: true
     options_neutral_and_equal_weight: true
     self_contained: true
-  reason: The draft says full consultation could address concerns raised by the protests;
-    the supplied fact establishes only that residents felt unheard and that shortening
-    consultation would make that more likely.
-  scenario_text_sha256: 1d67c2d3cee25f7ca48cfce390e579d6dba7e9c0146d8dc59933f6f210d69906
+  reason: null
+  scenario_text_sha256: f0e7c79c84dc839fb42372b97c4f4ee9721590704acaef452fd568ac5c86b454
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 energy_05_v1:
   call_id: 922126770c42d15c8b2bdedfcb707976fd3f75be47d602b1c1af1de7fca38856
@@ -277,24 +271,21 @@ energy_05_v2:
   scenario_text_sha256: 2550dd91f39dce5a4db7dd7f71ba6293adfe9567cad537628d7423922b182369
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 technology_01_v1:
-  call_id: 33ba4dbc9c76a2adae0c337a8e9275711c624af95108b6f0a287dc7c401d022b
+  call_id: 9dd95aa160986b490b812ba0be4ff71ad1cbf89298ed1d1b1d0c7588c848bcb2
   config_content_hash: 994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f
   decided_at: '2026-09-18'
   decided_by: Vidhi Bhutani
-  decision: redraft
+  decision: approved
   judgements:
     both_facts_stated: true
     length_without_filler: true
-    no_added_facts_or_quantities: false
+    no_added_facts_or_quantities: true
     no_letter_or_list_labels: true
     no_recommendation_or_hint: true
     options_neutral_and_equal_weight: true
     self_contained: true
-  reason: The draft says autonomous approval would allow residents to avoid waits
-    of weeks; the supplied facts establish the current delay and the simplicity of
-    the renewals, but not that removing staff sign-off necessarily eliminates the
-    delay.
-  scenario_text_sha256: 7d86949034dd92a3e232c7b2c70f8b1dca19c9fc9da06d98ca4e4bc94cf2cc2b
+  reason: null
+  scenario_text_sha256: 834c09802b73303d1c3e09f2ec94a6f71f90c09070877e99b2675a25d6da6e9c
   topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
 technology_01_v2:
   call_id: ee31c9bd8e1ccc6a0d54ed4f2ab8f43535040eeb35231c5c1c8a91cf577a7baf

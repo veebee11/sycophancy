@@ -431,3 +431,119 @@ def test_the_redraft_command_refuses_a_narrowed_selection(tmp_path):
     assert result.returncode == 1
     assert "runs on the complete pilot" in result.stderr
     assert not (tmp_path / "run" / "generation_log.jsonl").exists()
+
+
+# --- the review page must not misdescribe which text it is showing -----------
+#
+# A scenario marked `redraft` keeps that decision until the curator reads the
+# new text, so the gate state stays "redraft" *after* a redraft has been
+# generated as well as before. The page has to tell those two apart: the
+# sentence "its redraft has not been generated yet" is true only in the first
+# case, and in the second it points the curator's seven judgements at the wrong
+# words — the text printed above it IS the redraft.
+
+
+NOT_GENERATED_YET = "this is the original text; its redraft has not been generated yet"
+AWAITING_DECISION = "the text above is the redraft"
+
+
+def _review_page(tmp_path, run, *, approvals, scenario_corrections=None, only, variant):
+    """Run `pilot.py scenario-review` as a subprocess and return its page."""
+    import subprocess
+    import sys
+    out = tmp_path / f"review_{only}_{variant}"
+    empty = tmp_path / "no_scenario_corrections.yaml"
+    empty.write_text("[]\n")
+    result = subprocess.run(
+        [sys.executable, "scripts/pilot.py", "scenario-review",
+         "--config", "configs/experiment.yaml", "--out", str(run),
+         "--approvals-file", str(approvals),
+         "--scenario-corrections-file", str(scenario_corrections or empty),
+         "--review-out", str(out), "--only", only, "--variants", str(variant)],
+        cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    return (out / "scenarios.md").read_text()
+
+
+def _redraft_approvals(path, scenario_id, record, cfg, bank_hash):
+    """The curator's `redraft` decision, bound to the text that was rejected."""
+    import yaml
+    yaml.safe_dump({scenario_id: {
+        "scenario_text_sha256": sha256_of(record["scenario_text"]),
+        "call_id": record["call_id"],
+        "config_content_hash": cfg.content_hash,
+        "topic_bank_content_hash": bank_hash,
+        "decision": REDRAFT,
+        "judgements": {name: (name != "no_added_facts_or_quantities")
+                       for name in REQUIRED_JUDGEMENTS},
+        "reason": "adds a claim the supplied facts do not license",
+        "decided_by": "Vidhi Bhutani", "decided_at": "2026-09-18"}},
+        path.open("w"))
+    return path
+
+
+def test_a_scenario_awaiting_its_redraft_still_says_so(tmp_path, cfg, segmenter, topics,
+                                                       bank_hash, store, approvals):
+    """Case 1: marked redraft, nothing generated yet. The message is correct."""
+    originals = recorded_scenarios(store)
+    scenario_id = "climate_01_v1"
+    path = _redraft_approvals(tmp_path / "approvals.yaml", scenario_id,
+                              originals[scenario_id], cfg, bank_hash)
+    page = _review_page(tmp_path, store.directory, approvals=path,
+                        only="climate_01", variant=1)
+    assert "gate state: **redraft**" in page
+    assert NOT_GENERATED_YET in page
+    assert AWAITING_DECISION not in page
+    assert originals[scenario_id]["scenario_text"] in page
+
+
+def test_a_generated_redraft_is_never_called_ungenerated(tmp_path, cfg, segmenter, topics,
+                                                         bank_hash, store, approvals):
+    """Case 2: the redraft exists and supersedes the rejected call. Saying it had
+    not been generated would point the seven judgements at the wrong words."""
+    _run(topics, approvals, cfg, segmenter, store)          # the redraft stage
+    scenario_id = "climate_01_v1"
+    current = current_scenarios(store, approvals)[scenario_id]
+    assert current.get("supersedes_call_id"), "this test needs a generated redraft"
+    originals = recorded_scenarios(store)
+    assert current["scenario_text"] != originals[scenario_id]["scenario_text"]
+
+    path = _redraft_approvals(tmp_path / "approvals.yaml", scenario_id,
+                              originals[scenario_id], cfg, bank_hash)
+    page = _review_page(tmp_path, store.directory, approvals=path,
+                        only="climate_01", variant=1)
+    assert "gate state: **redraft**" in page
+    assert NOT_GENERATED_YET not in page, "the text shown above it IS the redraft"
+    assert AWAITING_DECISION in page
+    # The page shows the new text, and says what it supersedes.
+    assert current["scenario_text"] in page
+    assert f"SUPERSEDES call `{current['supersedes_call_id']}`" in page
+    assert "Judgements to record" in page
+
+
+def test_an_approved_redraft_reports_nothing_outstanding(tmp_path, cfg, segmenter, topics,
+                                                         bank_hash, store, approvals,
+                                                         final_approvals):
+    """Once the curator approves the new text, the page says so and lists no
+    outstanding judgement for it."""
+    import yaml
+    _run(topics, approvals, cfg, segmenter, store)
+    scenario_id = "climate_01_v1"
+    current = current_scenarios(store, approvals)[scenario_id]
+    path = tmp_path / "approved.yaml"
+    yaml.safe_dump({scenario_id: {
+        "scenario_text_sha256": sha256_of(current["scenario_text"]),
+        "call_id": current["call_id"],
+        "config_content_hash": cfg.content_hash,
+        "topic_bank_content_hash": bank_hash,
+        "decision": "approved",
+        "judgements": {name: True for name in REQUIRED_JUDGEMENTS},
+        "reason": None, "decided_by": "Vidhi Bhutani", "decided_at": "2026-09-18"}},
+        path.open("w"))
+    page = _review_page(tmp_path, store.directory, approvals=path,
+                        only="climate_01", variant=1)
+    assert "approved redraft, no action needed" in page
+    assert "gate state: **approved**" in page
+    assert "Already approved; no judgement is outstanding." in page
+    assert NOT_GENERATED_YET not in page and AWAITING_DECISION not in page
+    assert "Judgements to record" not in page
