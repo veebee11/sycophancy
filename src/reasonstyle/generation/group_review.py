@@ -50,7 +50,7 @@ from ..config import ExperimentConfig
 from ..corpus.findings import Finding
 from ..corpus.schemas import CORE_CONDITIONS, SEMANTIC_OPTIONS, Measurements
 from ..corpus.segmentation import Segmenter
-from ..corpus.validate import HUMAN_REVIEW_CODES, validate_group
+from ..corpus.validate import HUMAN_REVIEW_CODES, endorsement_text, validate_group
 # The validator's own per-cell measurement function. Imported rather than
 # reproduced: a second implementation of the counting could drift from the rules
 # the corpus is actually held to, which is the one thing a review must not do.
@@ -297,6 +297,9 @@ def _review_one(topic, variant_id: int, allocation: GroupAllocation, scenario: d
     opening = cfg.raw["corpus"]["counterargument_opening"]
     realizations = cfg.marker_realizations()
 
+    # The reading view holds a group to exactly the rules the corpus will, so a
+    # page can never show a group as passing a check the corpus would fail it on.
+    endorsement = endorsement_text(topic.options[allocation.supported_option], cfg)
     findings: tuple[Finding, ...] = ()
     measurements: dict[str, Measurements] = {}
     attempt_findings: dict[str, tuple[Finding, ...]] = {}
@@ -306,7 +309,8 @@ def _review_one(topic, variant_id: int, allocation: GroupAllocation, scenario: d
             continue
         block = _block_from(attempt.bodies, allocation)
         attempt_findings[attempt.call_id] = tuple(
-            validate_group(text, opening, block, cfg, segmenter, loc=loc))
+            validate_group(text, opening, block, cfg, segmenter, loc=loc,
+                           endorsement=endorsement))
 
     final = attempts[-1] if attempts else None
     if final is not None and final.bodies is not None and text:
@@ -774,7 +778,9 @@ def build_group_review(*, topics, allocation_groups, scenarios: dict[str, dict[s
                        store: CallStore, cfg: ExperimentConfig, segmenter: Segmenter,
                        approvals: dict, topic_bank_content_hash: str,
                        allocation_content_hash: str | None = None,
-                       variants: tuple[int, ...] = (1, 2)) -> GroupReviewExport:
+                       variants: tuple[int, ...] = (1, 2),
+                       approval_config_content_hash: str | None = None,
+                       scenario_source: dict[str, Any] | None = None) -> GroupReviewExport:
     """Build every review file in memory. Deterministic for a given recorded run.
 
     Reads the log, the result files, the approvals and the correction ledger.
@@ -785,6 +791,11 @@ def build_group_review(*, topics, allocation_groups, scenarios: dict[str, dict[s
     from what the log happens to contain — a report built from the recorded
     calls alone would show a run that generated nothing as complete.
     """
+    # An approval binds the configuration it was granted under. When the
+    # scenarios were read from another design, that is the SOURCE's hash, and
+    # judging them against this design's would report 24 stale approvals for a
+    # gate that is in fact satisfied.
+    gate_hash = approval_config_content_hash or cfg.content_hash
     attempts = group_attempts(store)
     by_decision = {topic.decision_id: topic for topic in topics}
     expected = [g for g in allocation_groups
@@ -800,7 +811,7 @@ def build_group_review(*, topics, allocation_groups, scenarios: dict[str, dict[s
         if scenario.get("scenario_text"):
             state = approval_status(
                 scenario_id, scenario["scenario_text"], scenario["call_id"], approvals,
-                config_content_hash=cfg.content_hash,
+                config_content_hash=gate_hash,
                 topic_bank_content_hash=topic_bank_content_hash,
                 machine_errors=len(scenario.get("error_codes") or []))[0]
         reviews.append(_review_one(
@@ -830,6 +841,8 @@ def build_group_review(*, topics, allocation_groups, scenarios: dict[str, dict[s
         "read_only": True,
         "config_version": cfg.config_version,
         "config_content_hash": cfg.content_hash,
+        "approval_config_content_hash": gate_hash,
+        "scenario_source": scenario_source,
         "topic_bank_content_hash": topic_bank_content_hash,
         "allocation_content_hash": allocation_content_hash,
         "run_directory": run.as_posix(),

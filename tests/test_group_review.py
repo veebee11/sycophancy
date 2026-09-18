@@ -440,7 +440,8 @@ def test_the_validator_is_used_rather_than_a_second_implementation():
     check the corpus would fail it on."""
     source = (ROOT / "src" / "reasonstyle" / "generation"
               / "group_review.py").read_text()
-    assert "from ..corpus.validate import HUMAN_REVIEW_CODES, validate_group" in source
+    assert "from ..corpus.validate import HUMAN_REVIEW_CODES, endorsement_text, "\
+        "validate_group" in source
     assert "from ..corpus.validate import _measure" in source
     assert "from .pipeline import ACCEPTED, CallStore, _block_from" in source
     for invented in ("def _validate", "ratio_fail", "body_sentences", "compiled_forbidden"):

@@ -40,7 +40,8 @@ from ..config import ExperimentConfig
 from ..corpus.findings import Finding
 from ..corpus.schemas import CORE_CONDITIONS, Cell, DirectionBlock
 from ..corpus.segmentation import Segmenter
-from ..corpus.validate import validate_group, validate_scenario_text
+from ..corpus.validate import endorsement_text, validate_group
+from ..corpus.validate import validate_scenario_text
 from .allocation import GroupAllocation
 from .approvals import APPROVED as APPROVAL_GRANTED
 from .approvals import approval_status
@@ -211,6 +212,11 @@ class CallStore:
     endpoint: str | None = None
     topic_bank_content_hash: str | None = None
     allocation_content_hash: str | None = None
+    #: Where this run's scenarios came from, when they were read from another
+    #: design rather than drafted here. Recorded on every call, beside this
+    #: design's own configuration hash, so a group is always traceable to both
+    #: the scenario it was built on and the group design it was built under.
+    scenario_source: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         self.directory = Path(self.directory)
@@ -334,7 +340,7 @@ class CallStore:
             output_tokens=(usage or {}).get("completion_tokens"))
         payload = {k: v for k, v in request_payload(request, self.cfg).items()
                    if k not in PROMPT_KEYS}
-        return {
+        block = {
             "request_fields": {**payload, "attempt": request.attempt, "kind": request.kind},
             "config_content_hash": self.cfg.content_hash,
             "topic_bank_content_hash": str(self.topic_bank_content_hash),
@@ -344,6 +350,7 @@ class CallStore:
             "gpu": (self.server or {}).get("gpu_name"),
             "runtime": env.as_dict(),
         }
+        return block
 
     def _append_log(self, request: DraftRequest, result: dict[str, Any], *,
                     recovered: bool = False) -> None:
@@ -371,7 +378,8 @@ class CallStore:
                         "no_progress": bool(result.get("no_progress")),
                         "recovered_after_interruption": recovered},
             extra={**dict(result.get("extra") or {}),
-                   **({"provider": meta["provider"]} if meta.get("provider") else {})},
+                   **({"provider": meta["provider"]} if meta.get("provider") else {}),
+                   **self._scenario_extra()},
             outcome=result["outcome"]))
 
     def record(self, request: DraftRequest, *, status: str, outcome: str,
@@ -396,6 +404,17 @@ class CallStore:
         # never appended to twice for one call_id.
         return result
 
+    def _scenario_extra(self) -> dict[str, Any]:
+        """The scenario-source block, folded into a log line's ``extra``.
+
+        Kept out of :meth:`_provenance` because that builds ``LogEntry`` fields
+        and this is not one; kept on every line because a group's two
+        provenance layers — the scenario it was built on, and the group design
+        it was built under — are equally part of what produced the text.
+        """
+        return {} if not self.scenario_source else {
+            "scenario_source": self.scenario_source}
+
     def record_transport_failure(self, request: DraftRequest, error: str) -> None:
         """Audit a transport failure WITHOUT completing the attempt.
 
@@ -417,6 +436,7 @@ class CallStore:
             status="error", error=error, generated_at=utc_now(),
             validation={"error_codes": [], "warning_codes": [], "machine_valid": False,
                         "consumed_budget": False},
+            extra=self._scenario_extra(),
             outcome=TRANSPORT_ERROR))
 
 
@@ -613,6 +633,11 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
     loc = {"decision_id": topic.decision_id,
            "scenario_id": f"{topic.decision_id}_v{variant_id}"}
     opening = cfg.raw["corpus"]["counterargument_opening"]
+    # Derived from the same option text the prompt embeds, so the clause the
+    # model is told to write and the clause the validator looks for are one
+    # string. In a pairwise design a missing one is a hard error, by the
+    # validator's own rule, not something this controller may skip past.
+    endorsement = endorsement_text(topic.options[option], cfg)
 
     attempts: list[Attempt] = []
     bodies: dict[str, str] | None = None
@@ -665,7 +690,7 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
         else:
             block = _block_from(fields, allocation)
             findings = tuple(validate_group(scenario_text, opening, block, cfg, segmenter,
-                                            loc=loc))
+                                            loc=loc, endorsement=endorsement))
             errors, warnings = _codes(findings, "error"), _codes(findings, "warning")
             # A repair that returns exactly what it was given changed nothing.
             # It is recorded as such and the next one is told so explicitly.
@@ -792,7 +817,8 @@ def run_group_stage(topics, allocation_groups, cfg: ExperimentConfig, segmenter:
                     backend, store: CallStore, *, approvals: dict | None,
                     topic_bank_content_hash: str | None, allow_live: bool = False,
                     variants: tuple[int, ...] = (1, 2),
-                    scenarios: dict[str, dict[str, Any]] | None = None) -> list[StageResult]:
+                    scenarios: dict[str, dict[str, Any]] | None = None,
+                    gate_verified_elsewhere: bool = False) -> list[StageResult]:
     """Stage two, alone: draft or recover the groups of an approved pilot.
 
     It makes **no scenario call**. A scenario that is missing from the record is
@@ -802,9 +828,16 @@ def run_group_stage(topics, allocation_groups, cfg: ExperimentConfig, segmenter:
     The gate is all-or-nothing and is checked before the first group call.
     """
     scenarios = recorded_scenarios(store) if scenarios is None else scenarios
-    problems = gate_problems_for(topics, store, cfg, approvals=approvals,
-                                 topic_bank_content_hash=topic_bank_content_hash,
-                                 variants=variants, scenarios=scenarios)
+    # ``gate_verified_elsewhere`` means the scenarios were read from another
+    # design's approved set and verified against THAT design's configuration
+    # hash, call ids and text hashes. Re-checking them against this design's
+    # hash would fail every one of them, and passing them anyway would be the
+    # gate going missing — so the verification that did happen is named, and
+    # the caller that made it is the one that may set this.
+    problems = [] if gate_verified_elsewhere else gate_problems_for(
+        topics, store, cfg, approvals=approvals,
+        topic_bank_content_hash=topic_bank_content_hash,
+        variants=variants, scenarios=scenarios)
     if problems:
         raise PipelineAbort(
             "the curator gate is not satisfied, so no group was drafted:\n  - "

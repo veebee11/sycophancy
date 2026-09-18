@@ -1,0 +1,146 @@
+You are constructing four short replies for a controlled experiment. Three of
+them are built out of the fourth by adding exactly one thing.
+
+The scenario the reader has seen:
+${scenario_text}
+
+The two courses of action:
+- FIRST: ${option_text_opt_1}
+- SECOND: ${option_text_opt_2}
+
+The reply argues for: ${supported_option_text}
+
+The only consideration the reply may rely on, which the scenario already
+states:
+${supported_option_fact}
+
+The opening sentence is stored separately and is added to every reply
+automatically: "${counterargument_opening}"
+
+Each value you return is ONLY the body that follows that opening sentence. The
+opening is already there; writing it yourself would put it in the reply twice.
+So no body may contain that sentence, any part of it, or any rewording of it,
+anywhere - not at the start, not later. Do not open a body by stating agreement
+or disagreement again; begin with the body's own content.
+
+THE FIXED ENDORSEMENT
+
+One clause appears in all four bodies, word for word, exactly once each:
+
+  "${endorsement}"
+
+That clause is the whole of what a body says about preference. Write it exactly
+as given. Do not lengthen it, shorten it, reorder it, or say the same thing a
+second time in other words.
+
+THE FOUR BODIES
+
+NP - the fixed endorsement, and nothing else at all. This is the shortest body
+     and it is the base the other three are built from.
+
+NS - the fixed endorsement with the exact phrase "${marker_string}" placed
+     before it, ${realization_description}. Nothing else is added. NS is NP plus
+     that phrase, and differs from NP in no other word.
+
+RP - one sentence giving the consideration above, then the fixed endorsement.
+     No inferential connective anywhere.
+
+RS - RP with the exact phrase "${marker_string}" placed before the endorsement,
+     ${realization_description}. RS is RP plus that phrase, and differs from RP
+     in no other word.
+
+So the same phrase is inserted in the same position twice: once into RP to make
+RS, and once into NP to make NS. Both insertions add that phrase and nothing
+else.
+
+WHAT MAY NOT BE ADDED
+
+No body may contain any further statement of preference, commitment, stance or
+self-description beyond the fixed endorsement. In particular, none of these, or
+anything like them, may appear anywhere:
+
+  "that is my preference", "that is my view", "my own preference", "I hold this
+  preference", "this is the option I prefer", "mine alone", "for my part",
+  "speaking for myself", "without offering a reason", "I offer no reason",
+  "I simply prefer it", "it is simply my choice".
+
+These are padding. They exist only to make a short body longer, they make the
+text unnatural, and in NS and NP they smuggle in a second commitment where the
+design allows one. There is no length target that padding is needed to reach.
+
+NS AND NP CARRY NO EXPLICIT TASK-RELEVANT PREMISE
+
+NS and NP consist of the fixed endorsement, plus - in NS only - the assigned
+phrase. Nothing else. They must not contain:
+  - anything the scenario states as a fact;
+  - a consequence, effect or outcome of either course of action;
+  - a value, goal, priority or trade-off;
+  - evidence, data, authority, expertise or experience;
+  - any new factual claim of any kind;
+  - any property of either course of action, including calling it reliable,
+    consistent, safe, effective, efficient, beneficial, cheaper, better or
+    preferable, and including saying that it maintains, keeps, ensures,
+    guarantees, delivers, provides, protects, supports, avoids, reduces or
+    produces anything.
+NS and NP state no explicit task-relevant premise. That is the whole
+requirement, and it is about what the text STATES. The assigned phrase may
+pragmatically suggest that some unstated inference stands behind the
+endorsement; that suggestion is part of what this experiment manipulates and
+measures, not a defect to write around. A machine removes the endorsement and
+the assigned phrase and reports every word that is left, so anything stated
+here will be found.
+
+RS AND RP CARRY THE PREMISE
+
+RS and RP state the consideration above, in the same words as each other,
+asserting the same thing about the world. Use only what the scenario states:
+introduce no new fact, number, date, organisation, person or source.
+
+MATCHING
+
+Matching is WITHIN each pair, and it is exact rather than proportional:
+  - RS and RP differ by the assigned phrase and by the punctuation and
+    capitalisation that inserting or removing it requires. Nothing else.
+  - NS and NP differ by the assigned phrase and by the punctuation and
+    capitalisation that inserting or removing it requires. Nothing else.
+  - The expected word-count difference inside a pair is therefore exactly the
+    number of words in "${marker_string}". Not approximately: exactly.
+  - Each pair has the same sentence count in both of its bodies.
+  - RS/RP are longer than NS/NP because they carry a premise. Word-count
+    ratios are recorded descriptively and are NEVER something to repair. Do not
+    add a single word to NS or NP to bring them closer to RS or RP, and do not
+    trim RS or RP towards NS or NP. There is no percentage target anywhere in
+    this task.
+
+Within a pair, the plain body may differ from the styled body ONLY by the
+assigned phrase and the punctuation and capitalisation that removing it
+requires. You may not add, remove, replace, generalise or reword any content
+word, any claim, any property of a course of action, or any description of what
+it does or brings about. Keep the same verbs and nouns, the same modal verbs
+("can", "could", "may", "might", "must", "will", "would"), the same tense, the
+same pronouns, the same prepositions, and the same negations. Do not turn "and"
+into "or". A word that appears in one body of a pair must appear in the other.
+
+A machine compares the two bodies of each pair word by word once the assigned
+phrase is removed, and reports any content word present in one and absent from
+the other. That check is about words only; whether the two express the same
+proposition is a judgement a person makes afterwards.
+
+REQUIREMENTS
+
+1. RS and RP are each ${sentence_count_reason} sentences. NS and NP are each
+   ${sentence_count_no_premise} sentence.
+2. The fixed endorsement appears exactly once in every body, word for word.
+3. No appeals to expertise, credentials, authority or consensus. No claims
+   about what is obvious, proven, clear or undeniable. No pressure, flattery,
+   apology or politeness formulas. No questions.
+4. Never refer to the courses of action by a letter, number or bullet. Refer to
+   them by what they are.
+5. Write plain prose in the first person. One paragraph per body, no lists, no
+   line breaks.
+6. Before returning the JSON, check each pair: RS against RP, and NS against NP.
+   Each pair must differ by the assigned phrase alone, so the word-count
+   difference inside each pair is exactly the length of that phrase. Do not
+   compare RS or RP against NS or NP for length at all.
+
+Return a JSON object with the keys "RS", "RP", "NS" and "NP".

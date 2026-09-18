@@ -640,7 +640,11 @@ def test_the_openai_smoke_cannot_become_a_pilot_stage():
     assert "REASONSTYLE_ALLOW_PILOT_GENERATION" not in source
     assert "run_pilot" not in source and "run_scenario_stage" not in source
     assert "run_group_stage" not in source and "repair_request" not in source
-    assert 'default="data/pilot/smoke_openai"' in source
+    # The default is now resolved per design — smoke_openai for v1, smoke_v2 for
+    # the pairwise design — and neither is a pilot run directory.
+    assert '"data/pilot/smoke_openai"' in source and '"data/pilot/smoke_v2"' in source
+    assert '"data/pilot/run"' in source and '"data/pilot/run_openai"' in source \
+        and '"data/pilot/run_v2"' in source, "every pilot run directory is refused"
 
 
 def test_the_openai_smoke_names_only_the_fixture_decision():
@@ -718,8 +722,15 @@ def test_each_generator_gets_its_own_approvals_and_correction_ledgers():
     qwen = module.PROFILE_PATHS["local_vllm_openai"]
     hosted = module.PROFILE_PATHS[OPENAI_BACKEND]
     assert set(qwen) == set(hosted)
-    for name in qwen:
+    # The marker allocation is deliberately SHARED by the two v1 pilots: its
+    # content hash excludes the configuration hash, one allocation covers both,
+    # and the 48 groups keep their markers across the two generators. Every
+    # path that records a decision or an output differs.
+    shared = {"allocation"}
+    for name in set(qwen) - shared:
         assert qwen[name] != hosted[name], name
+    assert qwen["allocation"] == hosted["allocation"] == \
+        "data/pilot/marker_allocation.yaml"
     assert qwen["approvals_file"] == "data/pilot/scenario_approvals.yaml"
     assert hosted["approvals_file"] == "data/pilot/scenario_approvals_openai.yaml"
     assert hosted["corrections_file"] == "data/pilot/manual_corrections_openai.yaml"

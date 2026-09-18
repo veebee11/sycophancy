@@ -694,6 +694,131 @@ dependency, so it carries requirements the local one does not.
   response and the result file still recovers from the stored raw response
   rather than re-sending.
 
+---
+
+## Version-2 group design — proposed, dated 2026-09-18
+
+**Status: proposed and implemented, not yet run.** Everything above this heading
+describes **version 1**, which produced the Qwen and hosted pilots and remains
+the historical account of what was generated, validated and reviewed. Nothing
+in v1 is withdrawn or rewritten here. What follows is a *second group design*,
+in its own configuration (`configs/experiment_v2_pilot.yaml`) with its own
+content hash, its own prompts, its own run directory and its own outputs. No v2
+group has been drafted, and no marker allocation for it has been created.
+
+**Why four-way length matching failed.** v1 required all four cells of a group
+to sit inside one word ratio. A reason-present cell carries a premise and a
+no-premise cell may not, so the only way to satisfy that rule was to lengthen
+NS and NP — and the v1 prompt said so outright, allowing "a short
+self-referential clause … to host the connective". The pilots show what that
+produced. Qwen: 44 of 46 failures were `E_WORD_RATIO_BODY`, median body ratio
+1.51 against a 1.15 ceiling, and in 42 of 46 both reason cells were longer than
+both no-premise cells. Hosted: 9 of 12 failures, median 1.185. Where the rule
+*was* satisfied, it was satisfied with filler — "that is my view", "I hold this
+preference" — which is unnatural to read and, worse, a second commitment in a
+condition whose whole point is to carry one. The rule did not control a
+confound; it manufactured one.
+
+**The fixed endorsement.** One clause, `I support the option to
+${supported_option_text}`, appears in all four cells word for word, exactly
+once, and is checked rather than merely instructed. It is the whole of what a
+body says about preference. Self-referential padding is prohibited outright by
+six hard-fail patterns (`self_referential_padding`), so the v1 escape route is
+closed by rule and not by exhortation. The frame reads as English because the
+topic bank states options as bare imperatives; the option text is embedded
+verbatim after "the option to", and nothing else about it is altered.
+
+**Pairwise, marker-only matching.** RS is RP plus the assigned marker; NS is NP
+plus the same marker in the same position. Matching is *within* each pair and
+is an exact word budget, not a ratio: the permitted difference is the marker's
+own word count, and `pair_content.permitted_differences` is empty. A ratio
+cannot express this — a three-word marker against a twelve-word endorsement is
+a 25% difference and against a fifty-word one is 6%, while being the same
+manipulation — and enforcing one would push a drafter back towards padding. The
+cross-pair ratio is recorded on every group as an `info` finding with all four
+lengths, and is never a failure.
+
+**"No explicit task-relevant premise."** This replaces v1's "no task-relevant
+reason", and the wording is load-bearing. NS and NP must *state* no scenario
+fact, consequence, value, trade-off, evidence or new factual claim. A bare
+inferential marker may pragmatically suggest that some unstated support stands
+behind the endorsement; that suggestion **is part of the manipulation under
+study**, not a defect, and it is what `H_PRAGMATIC_COMMITMENT` and
+`perceived_unstated_support` measure. The machine check is structural: remove
+the endorsement and the marker, and nothing may remain
+(`E_NO_PREMISE_CELL_HAS_EXTRA_CONTENT`). A cell with no words left has nowhere
+to put a premise. `H_NO_REASON_INTEGRITY` stays unconditional regardless.
+
+**Reason-present cells are longer, by design.** RS and RP carry a premise; NS
+and NP do not. There is no arrangement of words in which those are the same
+length without one of them saying something it should not. v2 states the
+difference, measures it and reports it instead of asking a model to write
+around it.
+
+**The content contrasts become exploratory.** Because explicit-premise presence
+is now structurally confounded with length, `RS − NS` and `RP − NP` are
+**exploratory/descriptive**. A length covariate may be run as a sensitivity
+analysis but must not be reported as identifying a pure reason effect. The
+confirmatory family is therefore:
+
+| Contrast | Status |
+|---|---|
+| `NS − NP` (`style_without_reason`) | **primary confirmatory** |
+| `RS − RP` (`style_with_reason`) | secondary confirmatory |
+| `(RS − RP) − (NS − NP)` (`interaction`) | secondary confirmatory |
+| `RS − NS`, `RP − NP` | exploratory / descriptive |
+
+Holm adjustment covers the three confirmatory contrasts. Marker word count is
+part of the manipulation, not a nuisance: marker-specific effects are reported,
+and marker length enters only as a moderator or a sensitivity analysis.
+
+**Four selectable core markers.** `therefore`, `consequently`, `it follows
+that`, `this implies` — two families, `conclusion_indicator` and
+`metadiscursive_inference`, balanced across the 48 groups. Only
+sentence-initial realizations survive: a semicolon-medial marker needs a clause
+before the semicolon, and NS has none.
+
+**Premise indicators are deferred, not removed.** "because", "given that" and
+"considering that" subordinate a clause that must state the reason. In NS there
+is no premise to supply one, so every completion either adds a premise or
+produces self-referential filler — both refused by the v2 validator. They stay
+in the inventory under `markers.deferred_families`, are absent from
+`primary_families`, `pilot_families` and `selectable_families`, and are listed
+in `refused_families`, so neither the allocation nor the held-out-family scheme
+can reach them. They are deferred to **a separate future RS/RP-only
+experiment**, which would need its own template, validator and analysis before
+it is run at all. Nothing is deleted.
+
+**Held-out-family generalisation is exploratory.** With two core families,
+leaving one out trains on one. The scheme is marked `status: exploratory` and
+may select only the two v2 families.
+
+**Expected cross-variant baseline repetition.** NP is the endorsement and NS is
+the endorsement plus the marker, and two variants of one decision share their
+options and their marker — so those bodies are identical by construction. The
+duplicate check now keys on the **complete rendered experimental input**,
+scenario included, which is what the model actually sees; under that key the
+repetition is not a duplicate at all, because the scenarios differ. A narrow
+exception remains for a design keying on the counterargument alone: a
+within-decision, cross-variant NS/NP repetition with the same option, condition
+and marker is recorded as `I_EXPECTED_BASELINE_REPETITION`. Every other
+duplicate is still `E_DUPLICATE_TEXT`.
+
+**The v1 scenarios are reused, read-only.** v2 changes how a counterargument is
+built, not what a scenario is. The 24 hosted scenarios were drafted, read and
+approved on 2026-09-18, four of them through a bounded redraft, and v2 reads
+them rather than paying to draft text that a person would then have to approve
+again. The reuse is declared in `scenario_source`, and every scenario is
+verified against the source's own configuration hash, accepted call id, text
+SHA-256 and topic-bank hash, with the expected scenario-id set derived from the
+curated topic bank — a missing, unexpected, unapproved or unbound scenario is a
+refusal. **The approvals keep the hash they were granted under**; rewriting
+them with the v2 hash would claim a curator approved text under a configuration
+they never saw. A configuration declaring a source cannot draft or redraft a
+scenario at all, and writes no approval template. Every v2 request, result, log
+line and corpus manifest records **both** layers: the v1 scenario source, and
+the v2 group-design configuration hash.
+
 **Generator family.** The generator should preferably differ from the
 **primary** evaluated family. Llama-3.1 is the primary family, and a Llama
 generator is refused at config load. `Qwen/Qwen3-14B` is therefore acceptable.

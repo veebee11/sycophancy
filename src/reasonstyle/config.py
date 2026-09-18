@@ -104,11 +104,19 @@ class ContrastRegistry(_Base):
     core: dict[str, ContrastSpec]
     primary: str
     multiplicity: MultiplicitySpec
+    #: Confirmatory status per contrast. Absent in v1, where all four simple
+    #: contrasts were confirmatory. From v2 the content contrasts are
+    #: exploratory: explicit-premise presence is structurally confounded with
+    #: length, and no covariate makes that a pure reason effect.
+    status: dict[str, str] | None = None
 
 
 class ForbiddenPattern(_Base):
     id: str
-    family: Literal["authority", "evidence", "consensus", "pressure", "certainty"]
+    # "self_referential_padding" is the v2 addition: filler whose only function
+    # is to lengthen a body, which the four-way length rule used to reward.
+    family: Literal["authority", "evidence", "consensus", "pressure", "certainty",
+                    "self_referential_padding"]
     severity: Literal["hard_fail", "warning"]
     pattern: str
     positive: list[str]
@@ -150,6 +158,11 @@ class MatchingSpec(_Base):
     sentences: SentenceMatchSpec
     opening: dict[str, Any]
     pair_content: PairContentSpec
+    #: Which matching regime applies. ``four_way`` (the default, and what every
+    #: v1 configuration means by omitting it) holds all four cells to one word
+    #: ratio and one sentence count. ``pairwise`` holds RS to RP and NS to NP,
+    #: and records the cross-pair difference instead of failing it.
+    compare: Literal["four_way", "pairwise"] = "four_way"
 
 
 class TemplateSpec(_Base):
@@ -178,6 +191,10 @@ class PromptSpec(_Base):
     #: Drafting templates for the generator. Separate from ``templates``, which
     #: are evaluation scaffolds for the models under test.
     drafting: dict[str, Any]
+    #: Which declared template fills each role. Absent means the v1 names, so a
+    #: v1 configuration keeps working untouched; a later design names its own
+    #: templates truthfully instead of recording a new prompt under an old name.
+    drafting_roles: dict[str, str] | None = None
 
 
 class RawConfig(_Base):
@@ -206,6 +223,13 @@ class RawConfig(_Base):
     topics: dict[str, Any]
     annotation: dict[str, Any]
     review: dict[str, Any]
+    #: Where this configuration's own artefacts live. Absent in v1, where the
+    #: paths came from the backend; present from v2, where a second *design*
+    #: shares a backend with the first and must not share its outputs.
+    paths: dict[str, str] | None = None
+    #: Where already-approved scenarios are read from, when this design reuses
+    #: another's instead of drafting its own. Read-only by construction.
+    scenario_source: dict[str, Any] | None = None
 
 
 # --- public wrapper ---------------------------------------------------------
@@ -378,10 +402,24 @@ def _check_conditions_and_contrasts(cfg: ExperimentConfig) -> None:
         _check(spec.kind == expected, f"contrast {name} should have kind={expected}")
 
     _check(p.contrasts.primary in ccs, f"primary contrast {p.contrasts.primary!r} is unknown")
-    _check(set(p.contrasts.multiplicity.family) == FROZEN_HOLM_FAMILY,
-           f"the Holm family must be {sorted(FROZEN_HOLM_FAMILY)}")
+    # The multiplicity family is the CONFIRMATORY contrasts. v1 declares no
+    # status and means all four simple contrasts; a design that marks some
+    # exploratory adjusts over the ones that remain confirmatory, because
+    # correcting over a contrast nobody is testing costs power for nothing.
+    status = p.contrasts.status
+    expected_family = (FROZEN_HOLM_FAMILY if not status else
+                       {name for name, value in status.items()
+                        if value.endswith("confirmatory")})
+    _check(set(p.contrasts.multiplicity.family) == expected_family,
+           f"the Holm family must be the confirmatory contrasts "
+           f"{sorted(expected_family)}")
     for name in p.contrasts.multiplicity.family:
-        _check(ccs[name].kind == "simple", f"the Holm family holds simple contrasts; {name} is not")
+        # v1: the family is the four simple contrasts, and an interaction in it
+        # would have been a mistake. A design that declares confirmatory status
+        # may include the interaction deliberately — v2 tests it as secondary
+        # confirmatory — and Holm applies to any declared family of hypotheses.
+        _check(ccs[name].kind == "simple" or status is not None,
+               f"the Holm family holds simple contrasts; {name} is not")
 
 
 def _check_corpus_shape(cfg: ExperimentConfig) -> None:
@@ -642,6 +680,17 @@ def _check_prompts(cfg: ExperimentConfig) -> None:
                    f"model {variant}: a frozen selection must pin repo_id and revision")
 
 
+#: What each drafting role is called when a configuration does not say. These
+#: are the v1 names, so every v1 configuration means exactly what it always did.
+DEFAULT_DRAFTING_ROLES = {"scenario": "scenario_draft_v1", "group": "group_draft_v1",
+                          "repair": "repair_v1"}
+
+
+def drafting_roles(cfg: ExperimentConfig) -> dict[str, str]:
+    """Which declared template fills each drafting role, for this configuration."""
+    return dict(cfg.parsed.prompts.drafting_roles or DEFAULT_DRAFTING_ROLES)
+
+
 def _check_drafting(cfg: ExperimentConfig) -> None:
     """The generator's prompt templates and the generator's own settings.
 
@@ -650,8 +699,14 @@ def _check_drafting(cfg: ExperimentConfig) -> None:
     fail at load, not silently change what the generator was asked.
     """
     drafting = cfg.parsed.prompts.drafting
-    _check(set(drafting) == {"scenario_draft_v1", "group_draft_v1", "repair_v1"},
-           "the drafting templates are the scenario, group and repair prompts")
+    roles = drafting_roles(cfg)
+    _check(set(roles) == {"scenario", "group", "repair"},
+           "the drafting roles are scenario, group and repair")
+    missing = [f"{role}={name}" for role, name in roles.items() if name not in drafting]
+    _check(not missing, f"drafting_roles names templates that are not declared: {missing}")
+    _check(set(drafting) == set(roles.values()),
+           f"every declared template must fill a role; declared {sorted(drafting)}, "
+           f"roles {sorted(roles.values())}")
     for name, spec in drafting.items():
         path = cfg.resolve_path(spec["path"])
         _check(path.is_file(), f"drafting template {name}: {spec['path']} not found")
@@ -671,11 +726,11 @@ def _check_drafting(cfg: ExperimentConfig) -> None:
         _check(set(schema["required"]) == set(schema["properties"]),
                f"drafting template {name}: every property must be required")
 
-    _check(set(drafting["group_draft_v1"]["response_schema"]["properties"])
+    _check(set(drafting[roles["group"]]["response_schema"]["properties"])
            == set(cfg.parsed.conditions.core),
            "the group response schema must have exactly one field per core condition")
-    _check(drafting["repair_v1"]["response_schema"]
-           == drafting["group_draft_v1"]["response_schema"],
+    _check(drafting[roles["repair"]]["response_schema"]
+           == drafting[roles["group"]]["response_schema"],
            "a repair returns the same shape as the draft it repairs")
 
     gen = cfg.raw["models"]["generator"]

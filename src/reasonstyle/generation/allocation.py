@@ -139,20 +139,30 @@ def _curated(bank: TopicBank, cfg: ExperimentConfig) -> list[tuple[str, str]]:
 
 
 def _realizations(cfg: ExperimentConfig, family: str) -> list[str]:
+    """The realizations available to a family: two to alternate, or one shared.
+
+    With two, the scheme gives the two directions of a slot one each, so
+    realization is balanced across directions. With one — which is what a design
+    restricted to sentence-initial markers has, because a semicolon-medial
+    marker needs a clause before the semicolon and a no-premise cell has none —
+    both directions take it, and realization simply stops varying.
+    """
     registry = cfg.raw["markers"]["realization"]["registry"]
     found = sorted(rid for rid, spec in registry.items() if spec["family"] == family)
-    if len(found) != 2:
+    if len(found) not in (1, 2):
         raise AllocationError(
-            f"{family}: the scheme pairs two realizations per family; found {found}")
-    return found
+            f"{family}: the scheme uses one or two realizations per family; found {found}")
+    return found * 2 if len(found) == 1 else found
 
 
 def allocate_markers(bank: TopicBank, cfg: ExperimentConfig) -> MarkerAllocation:
     """Build the pilot allocation. Pure: same inputs, same output."""
     alloc_cfg = cfg.raw["markers"]["allocation"]
     families: list[str] = list(alloc_cfg["pilot_families"])
-    if len(families) != 3:
-        raise AllocationError("the slot scheme pairs families two at a time across three")
+    if len(families) < 2:
+        raise AllocationError(
+            "the slot scheme gives a decision's two variants different families, so it "
+            f"needs at least two; got {families}")
     strings = {f: list(alloc_cfg["pilot_strings"][f]) for f in families}
     realizations = {f: _realizations(cfg, f) for f in families}
 
@@ -165,12 +175,24 @@ def allocate_markers(bank: TopicBank, cfg: ExperimentConfig) -> MarkerAllocation
 
     # -- 1. two different families per decision -----------------------------
     slot_family: dict[tuple[str, int], str] = {}
+    n_families = len(families)
     for d_index, domain in enumerate(domains):
         in_domain = [did for did, dom in curated if dom == domain]
         rng.shuffle(in_domain)
-        rotated = [families[(i + d_index) % 3] for i in range(3)]
-        pairs = [(rotated[0], rotated[1]), (rotated[1], rotated[2]),
-                 (rotated[2], rotated[0]), (rotated[0], rotated[1])]
+        rotated = [families[(i + d_index) % n_families] for i in range(n_families)]
+        # Consecutive cyclic pairs, repeated to cover the decisions in this
+        # domain. With three families this is exactly the sequence the pilot was
+        # built with. With two, the cyclic list would itself alternate the lead
+        # and cancel the alternation applied below, leaving every v1 on one
+        # family and every v2 on the other — family perfectly confounded with
+        # variant. So with two the pair is constant and the swap below does the
+        # alternating, which is what it is there for.
+        if n_families == 2:
+            pairs = [(rotated[0], rotated[1])] * len(in_domain)
+        else:
+            cyclic = [(rotated[i], rotated[(i + 1) % n_families])
+                      for i in range(n_families)]
+            pairs = [cyclic[i % n_families] for i in range(len(in_domain))]
         for position, decision_id in enumerate(in_domain):
             first, second = pairs[position % len(pairs)]
             if (position + d_index) % 2:          # which variant leads alternates
@@ -251,8 +273,20 @@ def allocation_problems(alloc: MarkerAllocation, cfg: ExperimentConfig) -> list[
             problems.append(f"{slot}: both directions share the family")
         if len({g.marker_string for g in pair}) != 1:
             problems.append(f"{slot}: both directions share the marker string")
-        if len({g.marker_realization_id for g in pair}) != 2:
-            problems.append(f"{slot}: the two directions take different realizations")
+        # Two realizations per family means the directions take one each, so
+        # realization is balanced across directions. A family with only one
+        # available — a design restricted to sentence-initial markers, where a
+        # semicolon-medial one cannot realize a no-premise cell — has nothing to
+        # alternate, and the two directions share it. The rule is that the pair
+        # uses every realization the family has, not that it uses two.
+        available = len({rid for rid, spec
+                         in cfg.raw["markers"]["realization"]["registry"].items()
+                         if spec["family"] == pair[0].marker_family})
+        used = len({g.marker_realization_id for g in pair})
+        if used != min(available, 2):
+            problems.append(
+                f"{slot}: the two directions must use all {min(available, 2)} realization(s) "
+                f"available to {pair[0].marker_family}; they use {used}")
 
     by_decision: defaultdict[str, set[str]] = defaultdict(set)
     for slot, pair in by_slot.items():

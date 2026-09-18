@@ -93,3 +93,8 @@ data/pilot/run/
 # completed Qwen run is never appended to or written over.
 data/pilot/run_openai/
 data/pilot/smoke_openai/
+
+# The v2 group design's own run directory. Same rule, same reason: a run
+# directory is one design's evidence, and v2 never writes into v1's.
+data/pilot/run_v2/
+data/pilot/smoke_v2/

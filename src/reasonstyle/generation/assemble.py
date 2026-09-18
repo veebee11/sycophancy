@@ -33,7 +33,7 @@ import yaml
 from ..config import ExperimentConfig
 from ..corpus.schemas import CORE_CONDITIONS, Cell, DirectionBlock, ScenarioRecord
 from ..corpus.segmentation import Segmenter
-from ..corpus.validate import validate_group
+from ..corpus.validate import endorsement_text, validate_group
 from ..hashing import sha256_of
 from .allocation import GroupAllocation
 from .approvals import APPROVED, ScenarioApproval, approval_status
@@ -203,6 +203,7 @@ def assemble_scenario(
     corrections: list[ManualCorrection] | None = None,
     topic_bank_content_hash: str,
     generation: dict[str, Any] | None = None,
+    approval_config_content_hash: str | None = None,
 ) -> tuple[ScenarioRecord, list[ManualCorrection]]:
     """One assembled ``ScenarioRecord``, or a refusal.
 
@@ -218,9 +219,13 @@ def assemble_scenario(
     opening = cfg.raw["corpus"]["counterargument_opening"]
     corrections = list(corrections or [])
 
+    # The approval is judged against the configuration it was GRANTED under.
+    # When the scenarios come from another design that is the source's hash;
+    # the assembled record and the corpus are still stamped with this design's,
+    # below, so both layers survive into the manifest.
     state, reasons = approval_status(
         scenario_id, scenario_text, scenario_call_id, approvals,
-        config_content_hash=cfg.content_hash,
+        config_content_hash=approval_config_content_hash or cfg.content_hash,
         topic_bank_content_hash=topic_bank_content_hash)
     if state != APPROVED:
         raise AssemblyRefused(f"{scenario_id}: scenario is {state}"
@@ -288,7 +293,8 @@ def assemble_scenario(
         # text earns no exemption: if it still fails, assembly still refuses.
         findings = validate_group(scenario_text, opening, block, cfg, segmenter,
                                   loc={"decision_id": topic.decision_id,
-                                       "scenario_id": scenario_id})
+                                       "scenario_id": scenario_id},
+                                  endorsement=endorsement_text(topic.options[option], cfg))
         errors = sorted({f.code for f in findings if f.severity == "error"})
         warnings = sorted({f.code for f in findings if f.severity == "warning"})
         if errors:
@@ -344,6 +350,8 @@ def assembly_manifest(record: ScenarioRecord, *, scenario_call_id: str,
 
 
 def assemble_pilot(*, topics, allocation_groups, approvals: dict[str, ScenarioApproval],
+                   approval_config_content_hash: str | None = None,
+                   scenario_source: dict[str, Any] | None = None,
                    corrections: list[ManualCorrection], scenarios: dict[str, dict[str, Any]],
                    groups: dict[tuple[str, str], dict[str, Any]], cfg: ExperimentConfig,
                    segmenter: Segmenter, topic_bank_content_hash: str,
@@ -408,7 +416,8 @@ def assemble_pilot(*, topics, allocation_groups, approvals: dict[str, ScenarioAp
                 scenario_call_id=scenario["call_id"], groups=bodies,
                 group_call_ids=call_ids, allocations=allocations, approvals=approvals,
                 cfg=cfg, segmenter=segmenter, corrections=mine,
-                topic_bank_content_hash=topic_bank_content_hash)
+                topic_bank_content_hash=topic_bank_content_hash,
+                approval_config_content_hash=approval_config_content_hash)
             records.append(record)
             manifests.append(assembly_manifest(record, scenario_call_id=scenario["call_id"],
                                                group_call_ids=call_ids, corrections=applied))
@@ -425,8 +434,15 @@ def assemble_pilot(*, topics, allocation_groups, approvals: dict[str, ScenarioAp
             f"error is never assembled, and no approval overrides one")
 
     manifest = {
+        # The GROUP DESIGN this corpus was built under.
         "config_version": cfg.config_version,
         "config_content_hash": cfg.content_hash,
+        # The configuration the scenario approvals were granted under, which is
+        # a different one whenever the scenarios were reused. Both layers are
+        # kept: a corpus whose manifest named only one of them could not be
+        # traced back to the text a curator actually read and approved.
+        "approval_config_content_hash": approval_config_content_hash or cfg.content_hash,
+        "scenario_source": scenario_source,
         "topic_bank_content_hash": topic_bank_content_hash,
         "corpus_scope": report.corpus_scope,
         "n_scenarios": len(records),

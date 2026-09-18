@@ -59,6 +59,7 @@ from reasonstyle.config import load_config
 from reasonstyle.corpus import segmenter_from_config
 from reasonstyle.corpus.topics import load_topic_bank
 from reasonstyle.generation import (
+    AllocationError,
     CallStore,
     generator_endpoint,
     ModelNotCached,
@@ -104,6 +105,11 @@ from reasonstyle.generation.redraft import (
     redraft_targets,
     redraft_template_sha256,
     run_redraft_stage,
+)
+from reasonstyle.generation.scenario_source import (
+    ScenarioSourceError,
+    load_scenario_source,
+    scenario_source_spec,
 )
 from reasonstyle.generation.scenario_corrections import (
     ScenarioCorrectionError,
@@ -198,6 +204,7 @@ RUN_DIRECTORIES = {
 #: exports: one generator, one set of records.
 PROFILE_PATHS = {
     "local_vllm_openai": {
+        "allocation": "data/pilot/marker_allocation.yaml",
         "out": "data/pilot/run",
         "approvals_file": "data/pilot/scenario_approvals.yaml",
         "scenario_corrections_file": "data/pilot/scenario_corrections.yaml",
@@ -207,6 +214,7 @@ PROFILE_PATHS = {
         "group_review_out": "review/pilot_groups",
     },
     OPENAI_BACKEND: {
+        "allocation": "data/pilot/marker_allocation.yaml",
         "out": "data/pilot/run_openai",
         "approvals_file": "data/pilot/scenario_approvals_openai.yaml",
         "scenario_corrections_file": "data/pilot/scenario_corrections_openai.yaml",
@@ -240,6 +248,32 @@ def _print_generator(cfg, cached, server: dict) -> None:
           f"{server.get('dtype')}, generation_config {server.get('generation_config')}")
 
 
+#: How a configuration's own ``paths`` block maps onto the command-line names.
+_DECLARED_PATHS = {"run": "out", "approvals": "approvals_file",
+                   "scenario_corrections": "scenario_corrections_file",
+                   "corrections": "corrections_file", "corpus": "corpus",
+                   "review": "review_out", "group_review": "group_review_out",
+                   "allocation": "allocation"}
+
+
+def profile_paths(cfg) -> dict[str, str]:
+    """Every default path for this configuration.
+
+    A configuration that declares ``paths`` owns its outputs outright: that is
+    what lets a second *design* share a backend with the first without sharing
+    a run directory, an approvals file, a correction ledger, a corpus or a
+    review export. One that declares none keeps the per-generator defaults,
+    which is what every configuration before v2 means.
+    """
+    declared = cfg.parsed.paths or {}
+    paths = dict(PROFILE_PATHS[cfg.raw["models"]["generator"]["backend"]])
+    for key, value in declared.items():
+        if key not in _DECLARED_PATHS:
+            raise KeyError(f"paths.{key} is not a path this tool sets")
+        paths[_DECLARED_PATHS[key]] = value
+    return paths
+
+
 def _live_backend(cfg):
     """The one place a live backend is constructed, chosen by the config.
 
@@ -261,12 +295,18 @@ def run_directory_problems(store: CallStore, cfg) -> list[str]:
     any call is made.
     """
     backend = cfg.raw["models"]["generator"]["backend"]
-    expected = RUN_DIRECTORIES.get(backend)
+    expected = profile_paths(cfg)["out"]
     problems = []
-    for other, path in RUN_DIRECTORIES.items():
-        if other != backend and Path(path).resolve() == Path(store.directory).resolve():
-            problems.append(f"{store.directory} is the {other!r} run directory; this "
-                            f"configuration names {backend!r}. Use {expected} instead.")
+    here = Path(store.directory).resolve()
+    # Every run directory any design owns, including the ones a configuration
+    # declares for itself. A design may write only to its own.
+    owned = dict(RUN_DIRECTORIES)
+    owned.update({"v2_pilot": "data/pilot/run_v2"})
+    for other, path in owned.items():
+        if Path(path).resolve() == here and Path(expected).resolve() != here:
+            problems.append(f"{store.directory} belongs to {other!r}; this configuration "
+                            f"writes to {expected}. A run directory is one design's "
+                            f"evidence, and no other design writes into it.")
     seen = set()
     for entry in store.log.entries():
         recorded = ((entry.get("runtime") or {}).get("backend")
@@ -305,7 +345,16 @@ def whole_pilot_problems(args, bank, cfg) -> list[str]:
 
 
 def _inputs(args):
+    """Load the configuration, resolve this design's paths, then everything else.
+
+    The paths come first because the allocation is one of them: a design that
+    declares its own allocation must not have the previous design's loaded out
+    from under it before the declaration is read.
+    """
     cfg = load_config(args.config)
+    for name, default in profile_paths(cfg).items():
+        if getattr(args, name, None) is None:
+            setattr(args, name, default)
     bank = load_topic_bank(args.topics)
     allocation = load_allocation(args.allocation)
     topics = [t for t in bank.topics if t.status == "curated"]
@@ -315,11 +364,59 @@ def _inputs(args):
 
 
 def _current_scenarios(args, cfg, store: CallStore) -> dict[str, dict[str, Any]]:
-    """Model drafts/redrafts plus separately recorded, validated human edits."""
+    """The scenario text that currently stands, from wherever this design gets it.
+
+    A design that declares a ``scenario_source`` reads another's approved
+    scenarios instead of drafting its own: they are verified against the source
+    configuration's hash, the accepted call ids, the text hashes and the topic
+    bank, and the source run directory is only ever opened for reading.
+    Otherwise this is the design's own drafts, redrafts and approved human
+    corrections, exactly as before.
+    """
+    if scenario_source_spec(cfg):
+        return _verified_source(args, cfg).scenarios
     scenarios = current_scenarios(store, load_approvals(args.approvals_file))
     return apply_scenario_corrections(
         scenarios, load_scenario_corrections(args.scenario_corrections_file), cfg,
         segmenter_from_config(cfg))
+
+
+def _scenario_provenance(args, cfg) -> dict[str, Any] | None:
+    """What every v2 call records about where its scenario came from."""
+    if not scenario_source_spec(cfg):
+        return None
+    return _verified_source(args, cfg).provenance
+
+
+#: One verified source per invocation. Verification is a pure read of files that
+#: do not change mid-command, and doing it three times per command was
+#: duplicated work rather than extra assurance.
+_SOURCE_CACHE: dict[tuple[str, str], Any] = {}
+
+
+def _verified_source(args, cfg):
+    """The declared scenario source, verified once and reused."""
+    key = (cfg.content_hash, str(args.topics))
+    if key not in _SOURCE_CACHE:
+        _SOURCE_CACHE[key] = load_scenario_source(cfg, topics_path=args.topics)
+    return _SOURCE_CACHE[key]
+
+
+def _gate(args, cfg, store: CallStore):
+    """The approvals and the configuration hash they were granted under.
+
+    ONE representation, used by generation, ``status``, ``scenario-review``,
+    ``group-review`` and ``assemble`` alike. A design that reuses another's
+    scenarios uses the *source's* approvals and the *source's* configuration
+    hash, because that is what the curator read the text under; a design that
+    drafts its own uses its own file and its own hash. Nothing anywhere
+    fabricates an approval or restamps one with a hash it was not granted under.
+    """
+    source = scenario_source_spec(cfg)
+    if not source:
+        return load_approvals(args.approvals_file), cfg.content_hash, None
+    verified = _verified_source(args, cfg)
+    return verified.approvals, verified.config_content_hash, verified
 
 
 def _plan(cfg, bank, allocation, topics, out: Path, variants) -> int:
@@ -378,7 +475,7 @@ def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
     contacts nothing: approving is the curator's act, made in the file itself.
     """
     from reasonstyle.generation.approvals import approval_status, load_approvals
-    approvals = load_approvals(args.approvals_file)
+    approvals, gate_hash, source = _gate(args, cfg, store)
     bank_hash = content_hash(bank.model_dump(mode="json"))
 
     # A scenario counts as drafted only when a call produced usable text. A
@@ -410,7 +507,7 @@ def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
         elif record["errors"]:
             state, reasons = approval_status(
                 scenario_id, record["text"], record["call_id"], approvals,
-                config_content_hash=cfg.content_hash, topic_bank_content_hash=bank_hash,
+                config_content_hash=gate_hash, topic_bank_content_hash=bank_hash,
                 machine_errors=record["errors"])
             detail = "; ".join(r for r in reasons if r)
         elif record.get("outcome") != "accepted":
@@ -419,7 +516,7 @@ def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
         else:
             state, reasons = approval_status(
                 scenario_id, record["text"], record["call_id"], approvals,
-                config_content_hash=cfg.content_hash, topic_bank_content_hash=bank_hash)
+                config_content_hash=gate_hash, topic_bank_content_hash=bank_hash)
             detail = "; ".join(r for r in reasons if r)
         print(f"  {scenario_id:<28} {state}" + (f"  ({detail})" if detail else ""))
         blocking += state != "approved"
@@ -431,8 +528,30 @@ def _approvals(args, cfg, bank, topics, store: CallStore) -> int:
     return 0
 
 
+def reused_scenarios_problem(cfg, what: str) -> str | None:
+    """Why a design that reuses scenarios may not draft them.
+
+    Checked before any authorisation, any credential and any backend: a
+    configuration that declares a ``scenario_source`` has its scenarios
+    already, read-only and approved under another design's hash. Drafting or
+    redrafting here would produce text nobody approved, in a run directory that
+    is supposed to hold groups only — and would spend money to do it.
+    """
+    source = scenario_source_spec(cfg)
+    if not source:
+        return None
+    return (f"{what} is refused: this configuration reuses the approved scenarios of "
+            f"{source['config']} ({source['run']}, read-only) and drafts none of its own. "
+            f"Nothing was sent, no credential was read and no backend was built.")
+
+
 def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) -> int:
     """One live stage: scenarios, or groups. Never both."""
+    if kind == "scenarios":
+        refusal = reused_scenarios_problem(cfg, "the scenario stage")
+        if refusal:
+            print(f"refusing: {refusal}", file=sys.stderr)
+            return 1
     variants = tuple(args.variants)
     expected_scenarios = len(topics) * len(variants)
     budget = cfg.raw["corpus"]["repair"]["max_calls_per_group"]
@@ -451,9 +570,9 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
         print("\nnothing was sent:")
         for problem in problems:
             print(f"  - {problem}")
-        if kind == "groups":
+        if kind == "groups" and not scenario_source_spec(cfg):
             gate = gate_problems_for(topics, store, cfg,
-                                     approvals=load_approvals(args.approvals_file),
+                                     approvals=_gate(args, cfg, store)[0],
                                      topic_bank_content_hash=content_hash(
                                          bank.model_dump(mode="json")),
                                      variants=variants,
@@ -471,7 +590,17 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
     _, cached, server = server_problems(args, cfg)
     store.cached, store.server = cached, server
     store.endpoint = generator_endpoint(cfg)
+    store.scenario_source = _scenario_provenance(args, cfg)
     _print_generator(cfg, cached, server)
+    if store.scenario_source:
+        source = store.scenario_source
+        print(f"scenarios    reused read-only from {source['run']} "
+              f"({source['scenario_count']} approved)")
+        print(f"             verified against {source['config']} "
+              f"{source['config_content_hash'][:12]} ({source['config_version']}): "
+              f"{', '.join(source['verified'])}")
+        print(f"             every call records that source AND this design's config "
+              f"{cfg.content_hash[:12]}")
 
     backend = _live_backend(cfg)
     segmenter = segmenter_from_config(cfg)
@@ -482,12 +611,14 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
                                          allow_live=True, variants=variants)
             ceiling = expected_scenarios
         else:
+            source = scenario_source_spec(cfg)
             results = run_group_stage(
                 topics, allocation.groups, cfg, segmenter, backend, store,
-                approvals=load_approvals(args.approvals_file),
+                approvals=_gate(args, cfg, store)[0],
                 topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
                 allow_live=True, variants=variants,
-                scenarios=_current_scenarios(args, cfg, store))
+                scenarios=_current_scenarios(args, cfg, store),
+                gate_verified_elsewhere=bool(source))
             ceiling = expected_groups * budget
     except PipelineAbort as exc:
         print(f"\nthe stage stopped: {exc}", file=sys.stderr)
@@ -514,6 +645,10 @@ def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
     scenarios need drafting again is the reviewer's finding. One call each, no
     group call, and no automatic second attempt.
     """
+    refusal = reused_scenarios_problem(cfg, "redraft-scenarios")
+    if refusal:
+        print(f"refusing: {refusal}", file=sys.stderr)
+        return 1
     # The set is the curator's finding, so an operator narrowing it would be
     # overruling the review rather than filtering a report.
     if args.only or list(args.variants) != [1, 2]:
@@ -596,14 +731,14 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
     out.mkdir(parents=True, exist_ok=True)
 
     from reasonstyle.generation.approvals import approval_status
-    approvals = load_approvals(args.approvals_file)
+    approvals, gate_hash, source = _gate(args, cfg, store)
     states = {}
     for scenario_id, record in scenarios.items():
         if not record.get("scenario_text"):
             continue
         states[scenario_id] = approval_status(
             scenario_id, record["scenario_text"], record["call_id"], approvals,
-            config_content_hash=cfg.content_hash, topic_bank_content_hash=bank_hash,
+            config_content_hash=gate_hash, topic_bank_content_hash=bank_hash,
             machine_errors=len(record.get("error_codes") or []))[0]
     counts: dict[str, int] = {}
     for state in states.values():
@@ -732,7 +867,11 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
             }
     (out / "scenarios.md").write_text("\n".join(lines), encoding="utf-8")
     written = [out / "scenarios.md"]
-    if args.write_template:
+    if args.write_template and source is not None:
+        print("no approval template was written: these scenarios are already approved "
+              f"under {scenario_source_spec(cfg)['config']}, and a template here would "
+              f"invite a second approval of text that already has one.", file=sys.stderr)
+    elif args.write_template:
         import yaml
         path = out / "scenario_approvals.template.yaml"
         path.write_text(yaml.safe_dump(template, sort_keys=True, allow_unicode=True),
@@ -743,7 +882,7 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
     recorded = sum(1 for s in scenarios.values() if s.get("scenario_text"))
     print(f"{recorded} scenario(s) with recorded text; "
           + ", ".join(f"{count} {state}" for state, count in sorted(counts.items())))
-    if args.write_template:
+    if args.write_template and source is None:
         print(f"the template holds the {len(template)} scenario(s) still needing a "
               f"decision; every one is 'pending' with null judgements. Approving is "
               f"yours, and the file is where you do it.")
@@ -762,14 +901,17 @@ def _group_review(args, cfg, bank, allocation, topics, store: CallStore) -> int:
     that decision for them.
     """
     bank_hash = content_hash(bank.model_dump(mode="json"))
+    approvals, gate_hash, _ = _gate(args, cfg, store)
     export = build_group_review(
         topics=topics, allocation_groups=allocation.groups,
         scenarios=_current_scenarios(args, cfg, store), store=store, cfg=cfg,
         segmenter=segmenter_from_config(cfg),
-        approvals=load_approvals(args.approvals_file),
+        approvals=approvals,
         topic_bank_content_hash=bank_hash,
         allocation_content_hash=allocation.content_hash,
-        variants=tuple(args.variants))
+        variants=tuple(args.variants),
+        approval_config_content_hash=gate_hash,
+        scenario_source=_scenario_provenance(args, cfg))
     out = Path(args.group_review_out)
     export.write(out)
 
@@ -810,10 +952,13 @@ def _group_review(args, cfg, bank, allocation, topics, store: CallStore) -> int:
 def _assemble(args, cfg, bank, allocation, topics, store: CallStore) -> int:
     """Build the corpus from what is recorded, or build nothing."""
     segmenter = segmenter_from_config(cfg)
+    approvals, gate_hash, _ = _gate(args, cfg, store)
     try:
         records, manifest = assemble_pilot(
             topics=topics, allocation_groups=allocation.groups,
-            approvals=load_approvals(args.approvals_file),
+            approvals=approvals,
+            approval_config_content_hash=gate_hash,
+            scenario_source=_scenario_provenance(args, cfg),
             corrections=load_corrections(args.corrections_file),
             scenarios=_current_scenarios(args, cfg, store),
             groups=recorded_groups(store),
@@ -847,10 +992,10 @@ def _counts(args, cfg, bank, topics, store: CallStore) -> int:
     """Read-only counts across both stages."""
     variants = tuple(args.variants)
     expected_scenarios = len(topics) * len(variants)
-    approvals_now = load_approvals(args.approvals_file)
+    approvals, gate_hash, source = _gate(args, cfg, store)
     scenarios = _current_scenarios(args, cfg, store)
     groups = recorded_groups(store)
-    approvals = load_approvals(args.approvals_file)
+    approvals, gate_hash, source = _gate(args, cfg, store)
     bank_hash = content_hash(bank.model_dump(mode="json"))
     corrections = load_corrections(args.corrections_file)
 
@@ -866,7 +1011,7 @@ def _counts(args, cfg, bank, topics, store: CallStore) -> int:
                 continue
             state, _ = approval_status(
                 scenario_id, record["scenario_text"], record["call_id"], approvals,
-                config_content_hash=cfg.content_hash, topic_bank_content_hash=bank_hash,
+                config_content_hash=gate_hash, topic_bank_content_hash=bank_hash,
                 machine_errors=len(record.get("error_codes") or []))
             approved += state == "approved"
 
@@ -918,7 +1063,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--approvals-file", default=None)
     ap.add_argument("--config", required=True)
     ap.add_argument("--topics", default="data/topics/pilot_topics.yaml")
-    ap.add_argument("--allocation", default="data/pilot/marker_allocation.yaml")
+    ap.add_argument("--allocation", default=None)
     ap.add_argument("--out", default=None,
                     help="the run directory; defaults to this generator's own "
                          "(data/pilot/run for the local model, data/pilot/run_openai for "
@@ -943,13 +1088,11 @@ def main(argv: list[str] | None = None) -> int:
                     help="make the calls of a stage; also needs both authorisation keys")
     args = ap.parse_args(argv)
 
-    cfg, bank, allocation, topics = _inputs(args)
-    # Anything not given explicitly comes from the generator this configuration
-    # names, so the two pilots cannot share a run directory, an approvals file,
-    # a correction ledger, a corpus or a review export by accident.
-    for name, default in PROFILE_PATHS[cfg.raw["models"]["generator"]["backend"]].items():
-        if getattr(args, name) is None:
-            setattr(args, name, default)
+    try:
+        cfg, bank, allocation, topics = _inputs(args)
+    except (AllocationError, FileNotFoundError) as exc:
+        print(f"refusing: {exc}", file=sys.stderr)
+        return 1
     if args.command in WHOLE_PILOT_COMMANDS:
         problems = whole_pilot_problems(args, bank, cfg)
         if problems:
@@ -982,7 +1125,7 @@ def main(argv: list[str] | None = None) -> int:
             return _redraft(args, cfg, bank, topics, store)
         if args.command in ("scenarios", "groups"):
             return _stage(args, cfg, bank, allocation, topics, store, kind=args.command)
-    except ScenarioCorrectionError as exc:
+    except (ScenarioCorrectionError, ScenarioSourceError) as exc:
         print(f"refusing: {exc}", file=sys.stderr)
         return 1
     return _plan(cfg, bank, allocation, topics, out, tuple(args.variants))

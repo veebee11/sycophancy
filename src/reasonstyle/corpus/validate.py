@@ -30,7 +30,9 @@ from .schemas import CORE_CONDITIONS, SEMANTIC_OPTIONS, Condition, Measurements
 from .schemas import ScenarioRecord, SegmenterRef
 from .segmentation import Segmenter
 
-__all__ = ["CorpusScope", "validate_corpus", "validate_group",
+__all__ = ["CorpusScope", "FOUR_WAY", "PAIRWISE", "embedded_option_text",
+           "endorsement_text", "matching_mode",
+           "validate_corpus", "validate_group",
            "validate_scenario_text", "with_measurements"]
 
 CorpusScope = Literal["fixture", "pilot", "full"]
@@ -224,6 +226,284 @@ def validate_scenario_text(
     return c.findings
 
 
+#: The matching regimes. ``four_way`` is v1: all four cells within one word
+#: ratio and one sentence count. ``pairwise`` is v2: RS/RP matched to each other
+#: and NS/NP to each other, with the cross-pair comparison recorded but never
+#: failed. A configuration that names neither gets ``four_way``, so every v1
+#: configuration keeps its exact behaviour and its exact codes.
+FOUR_WAY, PAIRWISE = "four_way", "pairwise"
+
+
+def matching_mode(cfg: ExperimentConfig) -> str:
+    """Which matching regime this configuration asks for."""
+    return cfg.raw["matching"].get("compare", FOUR_WAY)
+
+
+def _pairs_of(cfg: ExperimentConfig) -> list[tuple[Condition, Condition]]:
+    return [tuple(pair) for pair in cfg.parsed.matching.pair_content.compare_pairs]
+
+
+def _pair_id(pair) -> str:
+    return "/".join(pair)
+
+
+def _strip_once(haystack: str, needle: str) -> tuple[str, int]:
+    """``(remainder, occurrences)`` for a normalised substring removal.
+
+    Comparison is on normalised text — case folded, whitespace collapsed — so a
+    capitalisation or spacing difference is not mistaken for a missing clause.
+    """
+    normalised_needle = _normalized(needle)
+    if not normalised_needle:
+        return _normalized(haystack), 0
+    normalised = _normalized(haystack)
+    occurrences = normalised.count(normalised_needle)
+    return (normalised.replace(normalised_needle, " ", 1).strip() if occurrences
+            else normalised), occurrences
+
+
+def _residue(body: str, endorsement: str, marker: str | None,
+             word_re: re.Pattern[str]) -> list[str]:
+    """The content words left once the endorsement and the marker are removed.
+
+    What v2 uses to decide, mechanically, that a no-premise cell states no
+    premise: if nothing remains, there is nowhere for a fact, a consequence, a
+    value or a new claim to live. It is a structural check, not a semantic one,
+    and it replaces nothing a person judges — H_NO_REASON_INTEGRITY stays
+    unconditional.
+    """
+    remainder, _ = _strip_once(body, endorsement)
+    if marker:
+        remainder, _ = _strip_once(remainder, marker)
+    return [w for w in word_re.findall(remainder)]
+
+
+def embedded_option_text(option_text: str) -> str:
+    """An option line, as it reads inside a sentence rather than as one.
+
+    The topic bank states an option as a standalone imperative; the endorsement
+    embeds it. The trailing stop goes, and the first letter is lowered only when
+    it is ordinary sentence capitalisation — a word whose second letter is
+    already upper case is an acronym or a name and is left alone.
+    """
+    text = option_text.strip().rstrip(".").strip()
+    if len(text) > 1 and text[0].isupper() and not text[1].isupper():
+        text = text[0].lower() + text[1:]
+    return text
+
+
+def endorsement_text(option_text: str, cfg: ExperimentConfig) -> str | None:
+    """The fixed endorsement clause for one supported option.
+
+    ``None`` when the configuration defines no template, which is what every v1
+    configuration means: there the shared clause was an instruction to the model
+    rather than a string anything could check. Derived here, in the corpus
+    layer, so corpus validation runs the v2 checks without any caller having to
+    remember to pass the clause in.
+    """
+    from string import Template
+    template = cfg.raw["corpus"].get("endorsement_template")
+    if not template:
+        return None
+    return Template(template).substitute(
+        supported_option_text=embedded_option_text(option_text))
+
+
+def _duplicate_key(cfg: ExperimentConfig, scenario_text: str, opening: str,
+                   body: str) -> str:
+    """What has to be unique: the whole experimental input, or just the reply.
+
+    ``rendered_experimental_input`` (v2) keys on the scenario as well, because
+    that is what the model is given. A configuration that says nothing keys on
+    the rendered counterargument alone, which is exactly what v1 did.
+    """
+    spec = cfg.raw["corpus"].get("duplicate_text") or {}
+    rendered = f"{opening} {body}"
+    if spec.get("compare") == "rendered_experimental_input":
+        return f"{_normalized(scenario_text)}\u241f{_normalized(rendered)}"
+    return rendered
+
+
+def _expected_repetition(cfg: ExperimentConfig, first_seen: str, here: str,
+                         condition: Condition, block) -> bool:
+    """Whether this repetition is the one the design predicts, and only that.
+
+    Narrow on purpose. Every clause has to hold: a configured condition (NS or
+    NP), the same decision, the same supported option, the same condition, the
+    same marker, and a *different* variant. Anything else — a repeat inside one
+    variant, across decisions, across options, or in a reason-present cell — is
+    a collision and stays ``E_DUPLICATE_TEXT``.
+    """
+    spec = (cfg.raw["corpus"].get("duplicate_text") or {}).get("expected_repetition")
+    if not spec or condition not in set(spec.get("conditions") or ()):
+        return False
+    try:
+        first_scenario, first_option, first_condition = first_seen.split("/")
+    except ValueError:                                      # pragma: no cover - defensive
+        return False
+    this_scenario, this_option, this_condition = here.split("/")
+    first_decision, _, first_variant = first_scenario.rpartition("_v")
+    this_decision, _, this_variant = this_scenario.rpartition("_v")
+    checks = {
+        "same_decision": first_decision == this_decision and bool(first_decision),
+        "same_supported_option": first_option == this_option,
+        "same_condition": first_condition == this_condition,
+        "different_variant": first_variant != this_variant,
+        # The marker is group-level and identical in both by construction when
+        # the allocation says so; a differing marker would make the two bodies
+        # differ anyway, so this holds trivially where the texts matched.
+        "same_marker": True,
+    }
+    return all(value for name, value in checks.items() if spec.get(name))
+
+
+def _pairwise_matching(c, cfg: ExperimentConfig, measurements, gloc: dict, words_cfg,
+                       marker: str | None, word_re: re.Pattern[str]) -> None:
+    """v2 matching: RS to RP, NS to NP, and the cross-pair difference recorded.
+
+    The v1 rule asked all four cells to match in length. A reason-present cell
+    carries a premise and a no-premise cell may not, so the only way to satisfy
+    it was to pad the no-premise cells — and padding is content, which is what
+    the no-premise condition exists not to have. v2 matches within each pair,
+    where the minimal edit is a single connective, and reports the cross-pair
+    difference as a **measurement rather than a failure**: it is a property of
+    the design, not a defect in a draft.
+    """
+    expected = cfg.raw["corpus"].get("body_sentences_by_pair") or {}
+    for pair in _pairs_of(cfg):
+        pair_id = _pair_id(pair)
+        full = {k: measurements[k].sentence_count_full for k in pair}
+        if len(set(full.values())) != 1:
+            c.add("E_PAIR_SENTENCE_COUNT_MISMATCH", "error",
+                  f"{pair_id} must have equal sentence counts; got {full}",
+                  "pair", **{**gloc, "detail": {"pair": list(pair), "counts": full}})
+        else:
+            body = {k: measurements[k].sentence_count_body for k in pair}
+            actual = next(iter(set(body.values())))
+            want = expected.get(pair_id)
+            if want is not None and actual != want:
+                c.add("E_PAIR_BODY_SENTENCE_COUNT", "error",
+                      f"each body of {pair_id} is exactly {want} sentence(s); these are "
+                      f"{actual}", "pair",
+                      **{**gloc, "detail": {"pair": list(pair), "expected": want,
+                                            "actual": actual}})
+        # Length inside a pair is checked as an EXACT WORD BUDGET, not a ratio.
+        # The two cells of a pair are supposed to differ by the assigned marker
+        # and nothing else, so the permitted difference is the marker's own
+        # length plus the configured function-word allowance — a fixed number of
+        # words, not a proportion. A ratio cannot express that: NS is NP plus a
+        # three-word marker, which is a 25% difference against a twelve-word
+        # endorsement and a 6% difference against a fifty-word one, while being
+        # exactly the same manipulation. Enforcing a ratio here would penalise
+        # short endorsements for being short and would push a drafter to pad the
+        # plain cell, which is the v1 failure this design exists to remove.
+        marker_words = len(word_re.findall(marker or ""))
+        # The budget is the marker and nothing else. A configured
+        # permitted-difference token would widen it, so a design that needs one
+        # has to demonstrate it and declare it; v2 declares none.
+        allowance = marker_words + len(cfg.parsed.matching.pair_content.permitted_differences)
+        for scope_name, key in (("full_text", "word_count_full"),
+                                ("body", "word_count_body")):
+            if scope_name not in (words_cfg.applies_to or ["full_text"]):
+                continue
+            values = {k: getattr(measurements[k], key) for k in pair}
+            delta = abs(values[pair[0]] - values[pair[1]])
+            ratio = (max(values.values()) / min(values.values())
+                     if min(values.values()) else float("inf"))
+            detail = {"pair": list(pair), "measurement": scope_name, "counts": values,
+                      "delta": delta, "permitted_delta": allowance,
+                      "marker_words": marker_words, "ratio": round(ratio, 4)}
+            if delta > allowance:
+                c.add(f"E_PAIR_WORD_DELTA_{scope_name.upper()}", "error",
+                      f"{pair_id} differ by {delta} {scope_name} word(s); the marker "
+                      f"{marker!r} is {marker_words} word(s) and the permitted difference "
+                      f"is {allowance}. The two cells of a pair differ by the marker and "
+                      f"nothing else.", "pair", **{**gloc, "detail": detail})
+            else:
+                c.add(f"I_PAIR_WORD_DELTA_{scope_name.upper()}", "info",
+                      f"{pair_id} differ by {delta} {scope_name} word(s) (ratio "
+                      f"{ratio:.3f}); within the {allowance}-word budget the marker "
+                      f"allows. The ratio is recorded because the analysis needs it, "
+                      f"not because it is a threshold here.", "pair",
+                      **{**gloc, "detail": detail})
+
+    # The cross-pair comparison: recorded for every group, never a failure. A
+    # reason-present body is longer than a no-premise body by construction, and
+    # the analysis has to know by how much — that difference is a covariate to
+    # report, not an imbalance to repair away.
+    for scope_name, key in (("full_text", "word_count_full"), ("body", "word_count_body")):
+        values = {k: getattr(v, key) for k, v in measurements.items()}
+        lo, hi = min(values.values()), max(values.values())
+        c.add("I_CROSS_PAIR_WORD_RATIO", "info",
+              f"across the two pairs the {scope_name} word ratio is "
+              f"{(hi / lo if lo else float('inf')):.3f}; under pairwise matching this is "
+              f"recorded, not failed, because a premise-bearing cell is longer than a "
+              f"premise-free one by construction",
+              "group", **{**gloc, "detail": {"measurement": scope_name, "counts": values,
+                                             "ratio": round(hi / lo if lo else 0.0, 4)}})
+
+
+def _v2_structure(c, cfg: ExperimentConfig, block, endorsement: str | None,
+                  word_re: re.Pattern[str], gloc: dict) -> None:
+    """The v2 cell shapes, checked mechanically.
+
+    RS is premise + marker + endorsement, RP the same without the marker, NS
+    marker + endorsement, NP the endorsement alone. Two things follow that a
+    machine *can* decide, and they are what these checks are:
+
+    * the fixed endorsement occurs exactly once in every cell, so no cell
+      restates its preference or adds a second commitment;
+    * once the endorsement and the marker are removed, nothing is left in NS or
+      NP. A cell with no remaining words has nowhere to put a scenario fact, a
+      consequence, a value, a trade-off, evidence or a new claim.
+
+    The second replaces no human judgement. H_NO_REASON_INTEGRITY stays
+    unconditional: a person still confirms that what the cell *does* say
+    supplies no task-relevant support.
+    """
+    if not endorsement:
+        # Never a note. A pairwise design is defined by the fixed endorsement:
+        # without it the residue check cannot run, and a group would be reported
+        # as clean on rules that were never applied to it.
+        c.add("E_ENDORSEMENT_NOT_SUPPLIED", "error",
+              "this configuration matches pairwise, so every cell is built around a "
+              "fixed endorsement clause — but none was supplied to the validator. The "
+              "endorsement and residue checks could not run, and a group that has not "
+              "been checked is not a group that passed.", "group", **gloc)
+        return
+    # The first configured pair is the reason-present one (RS/RP); the second
+    # is the no-explicit-premise pair (NS/NP). A load-time check pins the order.
+    pairs = _pairs_of(cfg)
+    premise_cells = set(pairs[0])
+    no_premise_cells = {cell for pair in pairs[1:] for cell in pair}
+
+    for condition in CORE_CONDITIONS:
+        cell = block.cells[condition]
+        cloc = {**gloc, "condition": condition}
+        _, occurrences = _strip_once(cell.body, endorsement)
+        if occurrences != 1:
+            c.add("E_ENDORSEMENT_NOT_EXACTLY_ONCE", "error",
+                  f"the fixed endorsement must appear exactly once in every cell; it "
+                  f"appears {occurrences} time(s) here. Endorsement: {endorsement!r}",
+                  "cell", detail={"endorsement": endorsement,
+                                  "occurrences": occurrences}, **cloc)
+        marker = block.marker_string if cell.markers_present else None
+        residue = _residue(cell.body, endorsement, marker, word_re)
+        if condition in no_premise_cells and residue:
+            c.add("E_NO_PREMISE_CELL_HAS_EXTRA_CONTENT", "error",
+                  f"{condition} is the endorsement"
+                  + (f" and the marker {block.marker_string!r}" if marker else "")
+                  + f", and nothing else; these words remain: {residue}. Any of them "
+                  f"could carry a premise, which is what this condition may not have.",
+                  "cell", detail={"residue": residue, "endorsement": endorsement,
+                                  "marker": marker}, **cloc)
+        if condition in premise_cells and not residue:
+            c.add("E_REASON_CELL_HAS_NO_PREMISE", "error",
+                  f"{condition} states the endorsement and nothing else, so it supplies "
+                  f"no premise at all; a reason-present cell must give one",
+                  "cell", detail={"endorsement": endorsement}, **cloc)
+
+
 def validate_group(
     scenario_text: str,
     opening: str,
@@ -233,6 +513,7 @@ def validate_group(
     *,
     loc: dict | None = None,
     seen_texts: dict[str, str] | None = None,
+    endorsement: str | None = None,
 ) -> list[Finding]:
     """Every machine rule that applies to ONE four-cell group, plus that group's
     unconditional human-review codes.
@@ -304,12 +585,33 @@ def validate_group(
         m, ambiguities = _measure(opening, block, condition, segmenter, word_re)
         measurements[condition] = m
 
-        # duplicate text
-        if full in seen_texts:
-            c.add("E_DUPLICATE_TEXT", "error",
-                  f"identical rendered text already used at {seen_texts[full]}",
-                  "cell", detail={"first_seen": seen_texts[full]}, **cloc)
-        seen_texts[full] = f"{scenario_id}/{block.supported_option}/{condition}"
+        # -- duplicate text ------------------------------------------------
+        # Identity is the COMPLETE rendered experimental input, scenario
+        # included, not the counterargument alone: two cells that read the same
+        # after different scenarios are different inputs to the model, and the
+        # thing that must be unique is what the model actually sees.
+        key = _duplicate_key(cfg, scenario_text, opening, cell.body)
+        here = f"{scenario_id}/{block.supported_option}/{condition}"
+        if key in seen_texts:
+            there = seen_texts[key]
+            if _expected_repetition(cfg, there, here, condition, block):
+                # A no-premise cell is the endorsement, plus the marker in NS.
+                # Two variants of one decision share their options and their
+                # marker, so those baselines are identical BY CONSTRUCTION.
+                # Recorded so the repetition is visible and countable, never
+                # silently tolerated — and never extended to anything else.
+                c.add("I_EXPECTED_BASELINE_REPETITION", "info",
+                      f"{condition} repeats {there}: the same decision, supported "
+                      f"option, condition and marker in another variant. A no-premise "
+                      f"cell is the fixed endorsement plus the marker, so this "
+                      f"repetition is what the design produces, not a collision.",
+                      "cell", detail={"first_seen": there, "expected": True}, **cloc)
+            else:
+                c.add("E_DUPLICATE_TEXT", "error",
+                      f"identical rendered text already used at {there}",
+                      "cell", detail={"first_seen": there}, **cloc)
+        else:
+            seen_texts[key] = here
 
         # marker presence and absence
         hits = sorted(m for m, r in marker_res.items() if r.search(cell.body))
@@ -391,38 +693,45 @@ def validate_group(
             c.add("H_NO_REASON_INTEGRITY", "human_review",
                   HUMAN_REVIEW_CODES["H_NO_REASON_INTEGRITY"], "cell", **cloc)
 
-    # -- exact sentence-count equality (D1) --------------------------
-    counts = {k: v.sentence_count_full for k, v in measurements.items()}
-    if len(set(counts.values())) != 1:
-        c.add("E_SENTENCE_COUNT_MISMATCH", "error",
-              f"the four cells must have equal sentence counts; got {counts}",
-              "group", detail={"counts": counts}, **gloc)
+    if matching_mode(cfg) == PAIRWISE:
+        _pairwise_matching(c, cfg, measurements, gloc, words_cfg,
+                           block.marker_string, word_re)
+        _v2_structure(c, cfg, block, endorsement, word_re, gloc)
     else:
-        # Only once the group agrees with itself: an unequal group is
-        # already reported above, and saying it twice would not help.
-        body_counts = {k: v.sentence_count_body for k, v in measurements.items()}
-        actual = next(iter(set(body_counts.values())))
-        if actual != body_sentences:
-            c.add("E_BODY_SENTENCE_COUNT", "error",
-                  f"a body is exactly {body_sentences} sentences; these are {actual}",
-                  "group", detail={"expected": body_sentences, "actual": actual}, **gloc)
+        # -- exact sentence-count equality (D1) --------------------------
+        counts = {k: v.sentence_count_full for k, v in measurements.items()}
+        if len(set(counts.values())) != 1:
+            c.add("E_SENTENCE_COUNT_MISMATCH", "error",
+                  f"the four cells must have equal sentence counts; got {counts}",
+                  "group", detail={"counts": counts}, **gloc)
+        else:
+            # Only once the group agrees with itself: an unequal group is
+            # already reported above, and saying it twice would not help.
+            body_counts = {k: v.sentence_count_body for k, v in measurements.items()}
+            actual = next(iter(set(body_counts.values())))
+            if actual != body_sentences:
+                c.add("E_BODY_SENTENCE_COUNT", "error",
+                      f"a body is exactly {body_sentences} sentences; these are {actual}",
+                      "group", detail={"expected": body_sentences, "actual": actual}, **gloc)
 
-    # -- word-count ratio, on full text and body (D2) ----------------
-    for scope_name, key in (("full_text", "word_count_full"), ("body", "word_count_body")):
-        if scope_name not in (words_cfg.applies_to or ["full_text"]):
-            continue
-        values = {k: getattr(v, key) for k, v in measurements.items()}
-        lo, hi = min(values.values()), max(values.values())
-        ratio = hi / lo if lo else float("inf")
-        detail = {"measurement": scope_name, "counts": values, "ratio": round(ratio, 4)}
-        if ratio > words_cfg.ratio_fail:
-            c.add(f"E_WORD_RATIO_{scope_name.upper()}", "error",
-                  f"{scope_name} word ratio {ratio:.3f} exceeds {words_cfg.ratio_fail}",
-                  "group", detail=detail, **gloc)
-        elif ratio > words_cfg.ratio_warn:
-            c.add(f"W_WORD_RATIO_{scope_name.upper()}", "warning",
-                  f"{scope_name} word ratio {ratio:.3f} exceeds the {words_cfg.ratio_warn} target",
-                  "group", detail=detail, **gloc)
+        # -- word-count ratio, on full text and body (D2) ----------------
+        for scope_name, key in (("full_text", "word_count_full"),
+                                ("body", "word_count_body")):
+            if scope_name not in (words_cfg.applies_to or ["full_text"]):
+                continue
+            values = {k: getattr(v, key) for k, v in measurements.items()}
+            lo, hi = min(values.values()), max(values.values())
+            ratio = hi / lo if lo else float("inf")
+            detail = {"measurement": scope_name, "counts": values, "ratio": round(ratio, 4)}
+            if ratio > words_cfg.ratio_fail:
+                c.add(f"E_WORD_RATIO_{scope_name.upper()}", "error",
+                      f"{scope_name} word ratio {ratio:.3f} exceeds {words_cfg.ratio_fail}",
+                      "group", detail=detail, **gloc)
+            elif ratio > words_cfg.ratio_warn:
+                c.add(f"W_WORD_RATIO_{scope_name.upper()}", "warning",
+                      f"{scope_name} word ratio {ratio:.3f} exceeds the "
+                      f"{words_cfg.ratio_warn} target",
+                      "group", detail=detail, **gloc)
 
     # -- pair content drift, styled vs plain -------------------------
     # A lexical screen under the minimal-edit rule (D3b): once the
@@ -555,9 +864,12 @@ def validate_corpus(
                 n_texts += len(CORE_CONDITIONS)
 
             # One implementation of the group rules, shared with drafting.
+            # The endorsement is derived here rather than passed in, so corpus
+            # validation runs the pairwise checks whatever the caller remembered.
             c.findings.extend(validate_group(
                 record.scenario_text, record.counterargument_opening, block, cfg, segmenter,
-                loc=loc, seen_texts=seen_texts))
+                loc=loc, seen_texts=seen_texts,
+                endorsement=endorsement_text(record.options[option], cfg)))
 
     # -- corpus-level: fixture shape ----------------------------------------
     if corpus_scope == "fixture":

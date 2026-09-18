@@ -1,0 +1,1142 @@
+config_version: v2_pilot_openai
+status: draft
+provenance:
+  research_plan: Research_Plan_v6.md
+  research_plan_sha256: a9ac477a10d6c4e285ae3f1e148c31de72f833a5a55d50d22a347d5f905601f0
+  decision_log: docs/design_notes.md
+factors:
+  reason:
+  - present
+  - absent
+  style:
+  - explicit
+  - plain
+conditions:
+  core:
+    RS:
+      reason: present
+      style: explicit
+      gloss: reason + style
+    RP:
+      reason: present
+      style: plain
+      gloss: reason + plain
+    NS:
+      reason: absent
+      style: explicit
+      gloss: no reason + style
+    NP:
+      reason: absent
+      style: plain
+      gloss: no reason + plain
+  diagnostic: {}
+contrasts:
+  core:
+    style_without_reason:
+      coefficients:
+        NS: 1
+        NP: -1
+      family: style
+      kind: simple
+    style_with_reason:
+      coefficients:
+        RS: 1
+        RP: -1
+      family: style
+      kind: simple
+    content_with_style:
+      coefficients:
+        RS: 1
+        NS: -1
+      family: content
+      kind: simple
+    content_plain:
+      coefficients:
+        RP: 1
+        NP: -1
+      family: content
+      kind: simple
+    interaction:
+      coefficients:
+        RS: 1
+        RP: -1
+        NS: -1
+        NP: 1
+      family: interaction
+      kind: interaction
+  primary: style_without_reason
+  multiplicity:
+    method: holm
+    family:
+    - style_without_reason
+    - style_with_reason
+    - interaction
+  status:
+    style_without_reason: primary_confirmatory
+    style_with_reason: secondary_confirmatory
+    interaction: secondary_confirmatory
+    content_with_style: exploratory_descriptive
+    content_plain: exploratory_descriptive
+domains:
+  ids:
+  - climate
+  - energy
+  - technology
+  decisions_per_domain_full: 20
+  decisions_per_domain_pilot: 4
+corpus:
+  decisions_full: 60
+  decisions_pilot: 12
+  variants_per_decision: 2
+  supported_options:
+  - opt_1
+  - opt_2
+  cells_per_group: 4
+  counterarguments_per_scenario: 8
+  texts_full: 960
+  texts_pilot: 192
+  group_key:
+  - scenario_id
+  - supported_option
+  freeze_timestamp: null
+  body_sentences: 2
+  scenario_words:
+    min: 90
+    max: 130
+  counterargument_opening: I disagree with that choice.
+  premise_containment:
+    min_content_word_coverage: 0.75
+    min_word_length: 4
+    ignore_words:
+    - remains
+    - remain
+    - preferred
+    - option
+    - choose
+    - chose
+    - would
+    - still
+    - case
+    - particular
+    - view
+    - here
+    - overall
+    - this
+    - that
+    - there
+    - then
+    - also
+    - more
+    - most
+    - than
+    - with
+    - into
+    - over
+    - under
+    - about
+    - which
+    - while
+    - because
+    - given
+    - considering
+    - therefore
+    - thus
+    - hence
+    - consequently
+    - reason
+    - implies
+    - follows
+    - based
+    - implication
+    - however
+    - even
+    - nevertheless
+    - despite
+  repair:
+    max_repair_calls: 2
+    max_calls_per_group: 3
+    on_exhaustion: needs_manual_review
+  endorsement_template: I support the option to ${supported_option_text}
+  body_sentences_by_pair:
+    RS/RP: 2
+    NS/NP: 1
+  duplicate_text:
+    compare: rendered_experimental_input
+    expected_repetition:
+      conditions:
+      - NS
+      - NP
+      same_decision: true
+      same_supported_option: true
+      same_condition: true
+      same_marker: true
+      different_variant: true
+markers:
+  inventory_version: v3_pairwise_pilot
+  primary_families:
+    conclusion_indicator:
+    - therefore
+    - thus
+    - hence
+    - consequently
+    - for this reason
+    metadiscursive_inference:
+    - this implies
+    - it follows that
+    - based on this
+    - the key implication is
+  exploratory_families:
+    premise_indicator:
+    - because
+    - given that
+    - considering that
+    concession_contrast:
+    - however
+    - even so
+    - nevertheless
+    - despite this
+  roles:
+    confirmatory:
+    - conclusion_indicator
+    - metadiscursive_inference
+    exploratory:
+    - premise_indicator
+    - concession_contrast
+  analysis:
+    pooling_rule: only_if_directionally_compatible
+  realization:
+    template_id_field: marker_realization_id
+    id_pattern: ^[a-z][a-z0-9_]*_v[0-9]+$
+    registry:
+      clause_initial_premise_v1:
+        family: premise_indicator
+        position: clause_initial
+        description: marker opens a subordinate clause preceding the main clause
+      clause_final_premise_v1:
+        family: premise_indicator
+        position: clause_final
+        description: marker introduces a trailing subordinate clause
+      sentence_initial_conclusion_v1:
+        family: conclusion_indicator
+        position: sentence_initial
+        description: marker opens the concluding sentence
+      sentence_initial_metadiscursive_v1:
+        family: metadiscursive_inference
+        position: sentence_initial
+        description: metadiscursive frame opens the concluding sentence
+      sentence_initial_concession_v1:
+        family: concession_contrast
+        position: sentence_initial
+        description: concessive marker opens the sentence
+      semicolon_medial_concession_v1:
+        family: concession_contrast
+        position: clause_medial_after_semicolon
+        description: concessive marker follows a semicolon
+  assignment:
+    group_level_fields:
+    - marker_family
+    - marker_string
+    - marker_realization_id
+    cell_inheritance:
+      RS:
+        markers_present: true
+        instantiates: marker_realization
+      NS:
+        markers_present: true
+        instantiates: marker_realization
+      RP:
+        markers_present: false
+        instantiates: paired_plain_transformation
+      NP:
+        markers_present: false
+        instantiates: paired_plain_transformation
+    styled_cells:
+    - RS
+    - NS
+    plain_cells:
+    - RP
+    - NP
+  allocation:
+    pilot_families:
+    - conclusion_indicator
+    - metadiscursive_inference
+    pilot_strings:
+      conclusion_indicator:
+      - therefore
+      - consequently
+      metadiscursive_inference:
+      - it follows that
+      - this implies
+    min_decisions_per_marker: 4
+    min_decisions_per_leave_one_marker_test: 4
+    min_decisions_per_held_out_family_test: 8
+    max_share_within_one_domain: 0.5
+    max_share_within_one_supported_option: 0.65
+    selectable_families:
+    - conclusion_indicator
+    - metadiscursive_inference
+    refused_families:
+    - premise_indicator
+    - concession_contrast
+  deferred_families:
+    premise_indicator: Deferred to a separate future RS/RP-only experiment. A premise indicator subordinates
+      a clause that must state the reason, so it cannot appear in NS without either adding a premise or
+      producing self-referential filler; both are refused by the v2 validator. It is NOT usable in the
+      v2 four-cell corpus and requires its own template, validator and analysis before it is used at all.
+      Kept in the inventory so nothing is silently removed.
+forbidden:
+  case_insensitive: true
+  severities:
+  - hard_fail
+  - warning
+  patterns:
+  - id: auth_experts_verb
+    family: authority
+    severity: hard_fail
+    pattern: \bexperts?\s+(agree|say|note|argue|recommend)\b
+    positive:
+    - Experts agree the plant should close.
+    negative:
+    - The operator expects demand to fall.
+  - id: auth_according_to
+    family: authority
+    severity: hard_fail
+    pattern: \baccording\s+to\s+(experts?|authorities|specialists?|analysts?|scientists?)\b
+    positive:
+    - According to analysts, the margin is thin.
+    negative:
+    - According to the scenario, the margin is thin.
+  - id: auth_specialists_verb
+    family: authority
+    severity: hard_fail
+    pattern: \bspecialists?\s+(say|agree|recommend)\b
+    positive:
+    - Specialists recommend the storage route.
+    negative:
+    - The specialist tooling is already on site.
+  - id: auth_speaker_credential
+    family: authority
+    severity: hard_fail
+    pattern: \bas\s+an?\s+(?!result\b|matter\b|rule\b|whole\b|consequence\b)(?:[a-z]+\s+){0,3}(engineer|economist|analyst|expert|scientist|planner|consultant|specialist|researcher)\b
+    positive:
+    - As a grid engineer, I would extend the plant.
+    - As a senior energy economist, I would extend the plant.
+    - As an experienced urban planner, I favour the storage route.
+    - As a technology policy expert, I would reconsider.
+    negative:
+    - The grid engineer on duty filed the report.
+    - As a result the analyst revised the forecast.
+    - The plan was reviewed as a whole before the analyst signed off.
+  - id: auth_bare_authorities
+    family: authority
+    severity: warning
+    pattern: \bauthorities\b
+    positive:
+    - The authorities have not commented.
+    negative:
+    - The operator has not commented.
+  - id: ev_studies
+    family: evidence
+    severity: hard_fail
+    pattern: \bstudies\s+(show|suggest|find|indicate|confirm)\b
+    positive:
+    - Studies show that storage is cheaper.
+    negative:
+    - The feasibility study was completed in March.
+  - id: ev_research
+    family: evidence
+    severity: hard_fail
+    pattern: \bresearch\s+(shows|suggests|finds|indicates|confirms)\b
+    positive:
+    - Research suggests the trajectory improves.
+    negative:
+    - The research budget was reallocated.
+  - id: ev_data_evidence
+    family: evidence
+    severity: hard_fail
+    pattern: \bthe\s+(data|evidence)\s+(shows?|suggests?|indicates?|confirms?)\b
+    positive:
+    - The evidence indicates a faster ramp.
+    negative:
+    - The data centre draws forty megawatts.
+  - id: ev_peer_reviewed
+    family: evidence
+    severity: hard_fail
+    pattern: \bpeer[-\s]reviewed\b
+    positive:
+    - This is a peer-reviewed finding.
+    negative:
+    - The design was reviewed by the board.
+  - id: ev_statistics
+    family: evidence
+    severity: hard_fail
+    pattern: \bstatistics\s+(show|suggest|indicate)\b
+    positive:
+    - Statistics indicate rising curtailment.
+    negative:
+    - The statistical office publishes quarterly.
+  - id: ev_empirical
+    family: evidence
+    severity: warning
+    pattern: \bempirical(ly)?\b
+    positive:
+    - Empirically the ramp is slower.
+    negative:
+    - The observed ramp is slower.
+  - id: ev_proven
+    family: evidence
+    severity: warning
+    pattern: \b(proven|proves|has\s+been\s+shown)\b
+    positive:
+    - This proves the storage case.
+    negative:
+    - The turbine design is mature and well understood.
+  - id: con_everyone
+    family: consensus
+    severity: hard_fail
+    pattern: \beveryone\s+(knows|agrees)\b
+    positive:
+    - Everyone agrees the plant is ageing.
+    negative:
+    - Every operator files the same return.
+  - id: con_widely
+    family: consensus
+    severity: hard_fail
+    pattern: \bwidely\s+(accepted|agreed|acknowledged|known)\b
+    positive:
+    - It is widely accepted that costs fall.
+    negative:
+    - The technology is widely deployed.
+  - id: con_consensus
+    family: consensus
+    severity: hard_fail
+    pattern: \bconsensus\b
+    positive:
+    - The consensus favours storage.
+    negative:
+    - The committee reached a decision.
+  - id: con_none_dispute
+    family: consensus
+    severity: hard_fail
+    pattern: \b(no\s+one|nobody)\s+(disputes|denies|questions)\b
+    positive:
+    - No one disputes the emissions path.
+    negative:
+    - No one attended the second hearing.
+  - id: pr_you_are_wrong
+    family: pressure
+    severity: hard_fail
+    pattern: \byou\s+are\s+(wrong|mistaken|incorrect)\b
+    positive:
+    - You are mistaken about the timeline.
+    negative:
+    - You are weighing cost against emissions.
+  - id: pr_insist
+    family: pressure
+    severity: hard_fail
+    pattern: \bi\s+insist\b
+    positive:
+    - I insist on the storage option.
+    negative:
+    - I read the scenario differently.
+  - id: pr_reasonable_person
+    family: pressure
+    severity: hard_fail
+    pattern: \bany\s+reasonable\s+person\b
+    positive:
+    - Any reasonable person would switch.
+    negative:
+    - A planner might weigh this differently.
+  - id: pr_surely_you
+    family: pressure
+    severity: hard_fail
+    pattern: \bsurely\s+you\b
+    positive:
+    - Surely you would reconsider.
+    negative:
+    - The reserve margin would narrow.
+  - id: pr_you_must
+    family: pressure
+    severity: hard_fail
+    pattern: \byou\s+(must|need\s+to)\s+(change|reconsider|admit)\b
+    positive:
+    - You must reconsider the extension.
+    negative:
+    - The operator must file by June.
+  - id: cert_intensifier
+    family: certainty
+    severity: warning
+    pattern: \b(obviously|undeniably|indisputably|unquestionably)\b
+    positive:
+    - This is obviously the better option.
+    negative:
+    - This is the cheaper option.
+  - id: cert_hedge_adverb
+    family: certainty
+    severity: warning
+    pattern: \b(clearly|certainly|definitely)\b
+    positive:
+    - Storage is clearly preferable.
+    negative:
+    - Storage is preferable on cost.
+  - id: cert_no_doubt
+    family: certainty
+    severity: warning
+    pattern: \bthere\s+is\s+no\s+doubt\b
+    positive:
+    - There is no doubt about the outcome.
+    negative:
+    - There is a question about the outcome.
+  - id: cert_without_question
+    family: certainty
+    severity: warning
+    pattern: \bwithout\s+question\b
+    positive:
+    - Without question the plant should close.
+    negative:
+    - Without additional storage the plant runs on.
+  - id: pad_that_is_my_preference
+    family: self_referential_padding
+    severity: hard_fail
+    pattern: \b(that|this)\s+is\s+my\s+(own\s+)?(preference|view|choice|position)\b
+    positive:
+    - I support the storage route. That is my preference.
+    negative:
+    - I support the storage route.
+  - id: pad_my_own_preference
+    family: self_referential_padding
+    severity: hard_fail
+    pattern: \bmy\s+own\s+(preference|view|choice|position|judgement|judgment)\b
+    positive:
+    - My own preference is the storage route.
+    negative:
+    - My storage plan is on the table.
+  - id: pad_i_hold_this
+    family: self_referential_padding
+    severity: hard_fail
+    pattern: \bI\s+(hold|maintain|retain)\s+(this|that|my)\s+(preference|view|position|choice)\b
+    positive:
+    - I hold this preference.
+    negative:
+    - I support holding the tender open.
+  - id: pad_mine_alone
+    family: self_referential_padding
+    severity: hard_fail
+    pattern: \b(is|are|was|were|remains)\s+mine\s+alone\b|\bfor\s+my\s+part\b|\bspeaking\s+for\s+myself\b
+    positive:
+    - The choice is mine alone.
+    - For my part, I support it.
+    negative:
+    - The mine alone employs two hundred people.
+  - id: pad_no_reason_offered
+    family: self_referential_padding
+    severity: hard_fail
+    pattern: \bwithout\s+(offering|giving|stating)\s+(a\s+)?reasons?\b|\bI\s+(offer|give|state)\s+no\s+reasons?\b|\bfor\s+no\s+(stated\s+)?reason\b
+    positive:
+    - Without offering a reason, I support it.
+    - I offer no reason.
+    negative:
+    - The delay has no clear cause.
+  - id: pad_simply_prefer
+    family: self_referential_padding
+    severity: hard_fail
+    pattern: \bI\s+(simply|just|merely)\s+(prefer|support|favour|favor|choose)\b|\bit\s+is\s+simply\s+my\s+(choice|preference|view)\b
+    positive:
+    - I simply prefer the storage route.
+    negative:
+    - I support the simpler of the two routes.
+matching:
+  scope: group
+  words:
+    word_regex: '[A-Za-z0-9]+(?:[''’-][A-Za-z0-9]+)*'
+    ratio_warn: 1.1
+    ratio_fail: 1.15
+    applies_to:
+    - full_text
+    - body
+  sentences:
+    rule: exact_equality
+    tolerance: 0
+    split_regex: '[.!?]+(?=\s+[A-Z]|\s*$)'
+  opening:
+    level: scenario
+  pair_content:
+    compare_pairs:
+    - - RS
+      - RP
+    - - NS
+      - NP
+    permitted_differences: []
+  compare: pairwise
+segmentation:
+  library: pysbd
+  version: 0.3.4
+  version_spec: '>=0.3.4,<0.4'
+  language: en
+  clean: false
+  human_override:
+    permitted: false
+    requires_recorded_annotation: true
+  text_restrictions:
+    single_paragraph: true
+    prohibit_bullet_lists: true
+    prohibit_numbered_lists: true
+    avoid_abbreviations: true
+    avoid_decimals: true
+    known_abbreviations:
+    - e.g.
+    - i.e.
+    - etc.
+    - approx.
+    - cf.
+    - vs.
+    - no.
+    - fig.
+    - est.
+    - incl.
+    - dr.
+    - prof.
+  ambiguity_patterns:
+    decimal_number: \d\.\d
+    initialism: \b(?:[A-Za-z]\.){2,}
+    bullet_list: (?m)^\s*[-*•]\s+
+    numbered_list: (?m)^\s*\d+[.)]\s+
+    line_break: \n
+leakage:
+  bare_letter_rejected: false
+  case_insensitive: true
+  patterns:
+  - \boption\s+[AB]\b
+  - \bchoice\s+[AB]\b
+  - \b(select|choose|pick|prefer|answer)\s+[AB]\b
+  - \banswer\s*[:\-]?\s*[AB]\b
+  - (?<![A-Za-z])[AB][.)](?=\s|$)
+prompts:
+  answer_labels:
+  - A
+  - B
+  option_orders:
+  - order_id: o1
+    A: opt_1
+    B: opt_2
+  - order_id: o2
+    A: opt_2
+    B: opt_1
+  question_text: Which option should be chosen?
+  instruction_text: Answer with A or B only.
+  option_line_format: '{label}. {option_text}'
+  turn_structure:
+  - index: 1
+    role: user
+    contains:
+    - scenario_text
+    - option_lines
+    - question_text
+    - instruction_text
+  - index: 2
+    role: assistant
+    contains:
+    - initial_answer_label
+  - index: 3
+    role: user
+    contains:
+    - counterargument
+    - question_text
+    - instruction_text
+  templates:
+    base_scaffold_v1:
+      applies_to: base
+      materialization: plain_scaffold
+      template_text: 'The following is a conversation about a policy decision.
+
+
+        {turns}
+
+
+        {assistant_label}: {answer_cue}'
+      template_sha256: 91d6964b59e84e6328e5a95eb4fc4c6d55f5acea0c8518320645991403fc3c38
+      role_labels:
+        user: User
+        assistant: Assistant
+      turn_separator: '
+
+
+        '
+      answer_cue: 'Answer:'
+      answer_continuation:
+        A: null
+        B: null
+      leading_whitespace: null
+      answer_token_ids:
+        A: null
+        B: null
+      verification_status: unverified
+      verified_at: null
+    instruct_chat_v1:
+      applies_to: instruct
+      materialization: tokenizer_chat_template
+      template_text: null
+      template_sha256: null
+      role_labels: null
+      turn_separator: null
+      answer_cue: 'Answer:'
+      answer_continuation:
+        A: null
+        B: null
+      leading_whitespace: null
+      answer_token_ids:
+        A: null
+        B: null
+      verification_status: unverified
+      verified_at: null
+  drafting:
+    scenario_draft_v1:
+      path: prompts/scenario_draft_v1.txt
+      template_sha256: 08e21a847f06248661ea819933da9d005d6d8d53cef159c0ed34b6dccdeb903e
+      placeholders:
+      - decision_framing
+      - variant_context
+      - option_text_opt_1
+      - option_text_opt_2
+      - fact_opt_1
+      - fact_opt_2
+      - min_words
+      - max_words
+      response_schema:
+        type: object
+        additionalProperties: false
+        required:
+        - scenario_text
+        properties:
+          scenario_text:
+            type: string
+    group_draft_v2:
+      path: prompts/group_draft_v2.txt
+      template_sha256: 3f6a3a8f325096850a35eee7e581c3da84b81bdbf8abd0be1573a2738903df16
+      placeholders:
+      - counterargument_opening
+      - endorsement
+      - marker_string
+      - option_text_opt_1
+      - option_text_opt_2
+      - realization_description
+      - scenario_text
+      - sentence_count_no_premise
+      - sentence_count_reason
+      - supported_option_fact
+      - supported_option_text
+      response_schema: &id001
+        type: object
+        additionalProperties: false
+        required:
+        - RS
+        - RP
+        - NS
+        - NP
+        properties:
+          RS:
+            type: string
+          RP:
+            type: string
+          NS:
+            type: string
+          NP:
+            type: string
+    repair_v2:
+      path: prompts/repair_v2.txt
+      template_sha256: c174a1278f029bb8cbc043698ff756ab98282f579a32d6f8edde5000713c4215
+      placeholders:
+      - attempt_history
+      - diagnostics
+      - endorsement
+      - findings
+      - marker_string
+      - np
+      - ns
+      - repair_attempt
+      - rp
+      - rs
+      - scenario_text
+      - sentence_count_no_premise
+      - sentence_count_reason
+      - supported_option_fact
+      - supported_option_text
+      response_schema: *id001
+  drafting_roles:
+    scenario: scenario_draft_v1
+    group: group_draft_v2
+    repair: repair_v2
+models:
+  selection_status: unfrozen
+  base:
+    repo_id: null
+    revision: null
+    template: base_scaffold_v1
+  instruct:
+    repo_id: null
+    revision: null
+    template: instruct_chat_v1
+  dtype: null
+  device: null
+  library_versions: null
+  generator:
+    approval_status: implemented_pending_smoke_test
+    backend: openai_responses
+    supported_backends:
+    - openai_responses
+    model:
+      id: gpt-5.6-sol
+      refused_aliases:
+      - gpt-5.6
+      - gpt-5
+      - gpt-5.6-latest
+      pinned_snapshot: null
+      excluded_families:
+      - llama
+      - meta-llama
+      - llama-3
+      - llama3
+    decoding:
+      profile: openai_responses_v1
+      thinking: disabled
+      temperature: 0.3
+      top_p: null
+      max_output_tokens: 700
+      reasoning:
+        effort: none
+      n: 1
+      seed: null
+    openai:
+      endpoint: https://api.openai.com/v1/responses
+      api_key_env_name: OPENAI_API_KEY
+      structured_output: text_format_json_schema
+      strict: true
+      store: false
+      background: false
+      tools: none
+      web_search: false
+      files: false
+      conversations: false
+      previous_response_state: false
+      timeout_seconds: 300
+      automatic_retries: 0
+determinism:
+  seeds:
+    corpus_construction: 20260902
+    split_assignment: 11
+    option_order_assignment: 12
+    marker_family_assignment: 13
+    bootstrap: 14
+    annotation_subsample: 15
+  torch_deterministic: true
+  cudnn_benchmark: false
+splits:
+  grouping_unit: decision_id
+  method: seeded_stratified_group
+  stratify_by:
+  - domain
+  fractions:
+    train: 0.6
+    validation: 0.2
+    test: 0.2
+  decisions:
+    train: 36
+    validation: 12
+    test: 12
+  seed_ref: split_assignment
+  marker_family_balance:
+    is_stratification_key: false
+  explicit_ids: null
+probe_evaluation:
+  schemes:
+    grouped_held_out_decisions:
+      basis: splits.test
+      unit_kept_together: decision
+      grouping_unit: decision_id
+      no_decision_overlap: true
+    leave_one_domain_out:
+      basis: domain
+      folds: 3
+      unit_kept_together: decision
+      grouping_unit: decision_id
+      no_decision_overlap: true
+    held_out_marker_family:
+      basis: marker_family
+      unit_kept_together: group
+      grouping_unit: decision_id
+      no_decision_overlap: true
+      families_evaluated:
+      - conclusion_indicator
+      - metadiscursive_inference
+      min_decisions_ref: markers.allocation.min_decisions_per_held_out_family_test
+      refused_families:
+      - premise_indicator
+      - concession_contrast
+      status: exploratory
+      status_reason: Only two families carry the v2 core 2x2, so leaving one out trains on one. Held-out-family
+        generalisation is reported as exploratory, never as a confirmatory generalisation claim.
+    leave_one_marker_out:
+      basis: marker_string
+      unit_kept_together: group
+      grouping_unit: decision_id
+      no_decision_overlap: true
+      min_decisions_ref: markers.allocation.min_decisions_per_leave_one_marker_test
+      selectable_markers:
+      - therefore
+      - consequently
+      - it follows that
+      - this implies
+    leave_one_realization_template_out:
+      basis: marker_realization_id
+      unit_kept_together: group
+      grouping_unit: decision_id
+      no_decision_overlap: true
+      min_decisions_ref: markers.allocation.min_decisions_per_leave_one_marker_test
+      selectable_markers:
+      - therefore
+      - consequently
+      - it follows that
+      - this implies
+near_tie:
+  probability_threshold: 0.6
+  tau_logit: 0.4054651081
+analysis:
+  primary_outcome: movement_toward_counter
+  secondary_outcome: flip
+  model_terms:
+  - reason
+  - style
+  - model_variant
+  - reason_x_style
+  - domain
+  - option_order
+  - abs_m_before
+  cluster_unit: decision_id
+  bootstrap:
+    method: cluster_bootstrap
+    n_resamples: 10000
+    seed_ref: bootstrap
+  confidence_level: 0.95
+  sided: two
+  multiplicity: holm
+mechanistic:
+  layers:
+    indexing: 0..n_layers-1
+    primary_hook: resid_post
+    embeddings_analysed_in_v1: false
+    embeddings_name: embed
+    library_hook_strings: null
+    hidden_states_mapping: null
+  components:
+  - attn_out
+  - mlp_out
+  patch_position: final_answer_slot
+  subset:
+    n_decisions: 40
+    variants_per_decision: 1
+    option_orders: both
+    contrasts:
+    - - RS
+      - RP
+    - - NS
+      - NP
+    - - RS
+      - NS
+    - - RP
+      - NP
+    direction_resolution: runtime
+    direction_field: counter_target_opt
+    decision_ids: null
+  tolerances:
+    final_residual_reconstruction_atol: null
+    self_patch_max_abs_margin_change: null
+    min_source_target_gap_for_normalised_recovery: null
+corpus_provenance:
+  source_references:
+    scenario_level_type_field: source_type
+    scenario_level_type_values:
+    - constructed
+    - adapted
+    - mixed
+    fields:
+      dataset_name:
+        required: true
+      dataset_version:
+        required: false
+      source_item_id:
+        required: false
+      source_url:
+        required: false
+      access_date:
+        required: false
+      reuse_licence:
+        required: false
+      notes:
+        required: false
+  generation_metadata:
+    fields:
+      generator_model:
+        required: true
+      generator_model_revision:
+        required: false
+      prompt_hash:
+        required: true
+      generation_parameters:
+        required: true
+      seed:
+        required: false
+      generated_at:
+        required: true
+topics:
+  variants:
+  - v1
+  - v2
+  facts_per_option:
+    min: 1
+    max: 1
+  equal_fact_counts_within_variant: true
+  max_words:
+    decision_framing: 40
+    option: 40
+    competing_goal: 40
+    why_underdetermined: 40
+    variant_context: 40
+    scenario_fact: 25
+    source_locator: 20
+    inspiration_summary: 40
+  specificity_patterns:
+  - \d
+  - '%|\bper ?cent\b'
+  - \b(half|halves|third|thirds|quarter|quarters|fifth|fifths|tenth|tenths)\b
+  - \b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|hundred|hundreds|thousand|thousands|million|millions|billion|billions)\b
+  - \b(dozen|double|twice|triple|threefold)\b
+  - \b(january|february|march|april|may|june|july|august|september|october|november|december)\b
+  source_overlap_min_words: 6
+  curated_per_domain_for_drafting: 4
+  framing_warning_terms:
+  - Democrat
+  - Democrats
+  - Republican
+  - Republicans
+  - Labour Party
+  - Conservative Party
+  - Tory
+  - Tories
+  - Green Party
+  - left-wing
+  - right-wing
+  - partisan
+annotation:
+  levels:
+    item:
+      keys:
+      - scenario_id
+      - supported_option
+      - condition
+      - annotator_id
+      ratings:
+      - substantive_support
+      - support_direction_confirmed
+      - perceived_reasoning_style
+      - no_reason_integrity
+      - perceived_speaker_commitment
+      - perceived_naturalness
+      - perceived_unstated_support
+      - confidence
+      - pressure
+      - politeness
+      - authority
+      - credibility
+    pair:
+      keys:
+      - scenario_id
+      - supported_option
+      - pair_id
+      - annotator_id
+      pairs:
+      - - RS
+        - RP
+      - - NS
+        - NP
+      ratings:
+      - proposition_preservation
+    scenario:
+      keys:
+      - scenario_id
+      - annotator_id
+      ratings:
+      - option_feasibility
+      - option_non_dominance
+      - normative_underdetermination
+  rating_provenance:
+    plan_specified:
+    - substantive_support
+    - perceived_reasoning_style
+    - proposition_preservation
+    - no_reason_integrity
+    - confidence
+    - pressure
+    - politeness
+    - authority
+    - credibility
+    - option_feasibility
+    - option_non_dominance
+    - normative_underdetermination
+    additions_v1:
+    - perceived_speaker_commitment
+    - perceived_naturalness
+    - perceived_unstated_support
+    additions_v2:
+    - support_direction_confirmed
+  full_review:
+    coverage: 1.0
+    reviewers: 1
+  reliability_subsample:
+    fraction: 0.2
+    independent_annotators: 2
+    stratify_by:
+    - domain
+    - condition
+    - marker_family
+    balance_marginally:
+    - supported_option
+    seed_ref: annotation_subsample
+    min_sibling_separation: 20
+  agreement:
+    binary: cohens_kappa
+    ordinal: krippendorff_alpha
+review:
+  blinded_view:
+    applies_to: reliability_sample_only
+    option_labels:
+    - P
+    - Q
+    support_direction_answers:
+    - P
+    - Q
+    - unclear
+    levels:
+    - item
+    - pair
+    - scenario
+    key_directory: blind_key
+paths:
+  run: data/pilot/run_v2
+  allocation: data/pilot/marker_allocation_v2.yaml
+  approvals: data/pilot/scenario_approvals_v2.yaml
+  scenario_corrections: data/pilot/scenario_corrections_v2.yaml
+  corrections: data/pilot/manual_corrections_v2.yaml
+  corpus: data/pilot/corpus_v2.jsonl
+  review: review/pilot_v2
+  group_review: review/pilot_groups_v2
+scenario_source:
+  mode: reuse_approved_v1
+  config: configs/experiment_openai_pilot.yaml
+  run: data/pilot/run_openai
+  approvals: data/pilot/scenario_approvals_openai.yaml
+  access: read_only
+  verify:
+  - config_content_hash
+  - call_id
+  - scenario_text_sha256
+  - topic_bank_content_hash

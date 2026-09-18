@@ -1,0 +1,71 @@
+A previous attempt at the four bodies did not satisfy the machine checks. Fix
+them. The design is unchanged and is repeated below; only the bodies change.
+
+The scenario the reader has seen:
+${scenario_text}
+
+The reply argues for: ${supported_option_text}
+
+The only consideration the reply may rely on, which the scenario already
+states:
+${supported_option_fact}
+
+The fixed endorsement, which appears in all four bodies, word for word, exactly
+once each:
+
+  "${endorsement}"
+
+The four bodies, as they should be built:
+  NP - the fixed endorsement and nothing else.
+  NS - NP with the exact phrase "${marker_string}" before the endorsement.
+  RP - one sentence giving the consideration, then the fixed endorsement.
+  RS - RP with the exact phrase "${marker_string}" before the endorsement.
+
+The bodies you returned:
+  RS: ${rs}
+  RP: ${rp}
+  NS: ${ns}
+  NP: ${np}
+
+What the validator found:
+${findings}
+
+The measurements behind those findings:
+${diagnostics}
+
+What earlier attempts did:
+${attempt_history}
+
+This is repair attempt ${repair_attempt}.
+
+How to fix them:
+  - Matching is WITHIN each pair only, and exact rather than proportional. RS
+    and RP differ by the assigned phrase and the punctuation and capitalisation
+    it requires, and nothing else; so do NS and NP. The expected word-count
+    difference inside a pair is exactly the number of words in
+    "${marker_string}".
+  - RS and RP are longer than NS and NP because they carry a premise. That
+    ratio is recorded descriptively and is NEVER something to repair. Do not
+    add a word to NS or NP to close it, and do not trim RS or RP. There is no
+    percentage target in this task.
+  - Never add a second statement of preference, stance or self-description to
+    make a body longer. Phrases such as "that is my preference", "my own
+    preference", "I hold this preference", "mine alone" and "without offering a
+    reason" are prohibited outright, in every body.
+  - NS and NP state no explicit task-relevant premise: they contain the
+    endorsement and, in NS, the assigned phrase, and nothing else. If the
+    validator reports words left over in NS or NP, delete them; do not rewrite
+    them into something shorter.
+  - If a pair has drifted, restore it so the two bodies differ by the assigned
+    phrase alone, with no other word changed.
+  - RS and RP are each ${sentence_count_reason} sentences. NS and NP are each
+    ${sentence_count_no_premise} sentence.
+  - Use only what the scenario states. Introduce no new fact, number, date,
+    organisation, person or source.
+  - Write plain prose in the first person. One paragraph per body, no lists, no
+    line breaks.
+
+Make a materially different correction from the last attempt. Returning the
+same four bodies again makes no progress and the budget is finite.
+
+Return a JSON object with the keys "RS", "RP", "NS" and "NP".

@@ -42,7 +42,13 @@ from reasonstyle.config import load_config
 from reasonstyle.corpus import load_corpus, segmenter_from_config, validate_corpus
 from reasonstyle.corpus.schemas import Cell, DirectionBlock
 from reasonstyle.corpus.topics import load_topic_bank
-from reasonstyle.corpus.validate import validate_scenario_text
+from reasonstyle.corpus.validate import (
+    PAIRWISE,
+    endorsement_text,
+    matching_mode,
+    validate_group,
+    validate_scenario_text,
+)
 from reasonstyle.generation import (
     OPENAI_AUTHORIZATION_ENV,
     OPENAI_BACKEND,
@@ -60,7 +66,11 @@ from reasonstyle.generation import (
     scenario_request,
     write_request,
 )
-from reasonstyle.generation.allocation import GroupAllocation
+from reasonstyle.generation.allocation import (
+    AllocationError,
+    GroupAllocation,
+    load_allocation,
+)
 from reasonstyle.generation.log import LogEntry, utc_now
 
 #: The synthetic decision. A pilot brief is never used here: a transport check
@@ -68,13 +78,81 @@ from reasonstyle.generation.log import LogEntry, utc_now
 FIXTURE_DECISION = "energy_fixture_001"
 
 
-def _allocation_from_fixture(record, option: str) -> GroupAllocation:
+class SmokeRefused(RuntimeError):
+    """The call may not be built. Raised before any credential or connection."""
+
+
+def selectable_markers(cfg) -> dict[str, str]:
+    """``marker -> family`` for the markers this design may smoke-test.
+
+    Both sources have to agree. The configuration says which families are
+    selectable and which strings each contributes; the allocation says which
+    markers the corpus is actually built from. A marker in one and not the
+    other is not something to smoke-test, and the intersection is what this
+    returns. An absent allocation file leaves the configuration's answer
+    standing, so a dry run still works before one is built.
+    """
+    alloc_cfg = cfg.raw["markers"]["allocation"]
+    families = alloc_cfg.get("selectable_families") or alloc_cfg["pilot_families"]
+    configured = {marker: family for family in families
+                  for marker in alloc_cfg["pilot_strings"][family]}
+    path = (cfg.parsed.paths or {}).get("allocation")
+    if not path or not Path(path).is_file():
+        return configured
+    try:
+        allocated = {g.marker_string for g in load_allocation(path).groups}
+    except AllocationError:                                 # pragma: no cover - defensive
+        return configured
+    return {marker: family for marker, family in configured.items() if marker in allocated}
+
+
+def _allocation_from_fixture(record, option: str, cfg,
+                             marker: str | None = None) -> GroupAllocation:
+    """The marker this smoke call uses, for whichever design is configured.
+
+    v1 inherits the fixture corpus's own allocation, unchanged. v2 cannot: the
+    fixture's ``opt_1`` carries ``because``, a premise indicator, which v2
+    defers precisely because it cannot realize a no-premise cell — a smoke call
+    on it would be testing a marker the design refuses. So v2 takes a marker its
+    own configuration and allocation both make selectable, with that family's
+    permitted sentence-initial realization: ``--marker`` when one is named, and
+    otherwise the first, which keeps the default exactly what it was.
+    """
     block = record.counterarguments[option]
+    if matching_mode(cfg) != PAIRWISE:
+        if marker is not None:
+            raise SmokeRefused(
+                f"--marker {marker!r} applies only to a pairwise design. This "
+                f"configuration takes its marker from the fixture corpus "
+                f"({block.marker_string!r}), and changing it would make the smoke call "
+                f"test something the fixture is not.")
+        return GroupAllocation(
+            decision_id=record.decision_id, domain=record.domain,
+            variant_id=record.variant_id, scenario_id=record.scenario_id,
+            supported_option=option, marker_family=block.marker_family,
+            marker_string=block.marker_string,
+            marker_realization_id=block.marker_realization_id)
+
+    available = selectable_markers(cfg)
+    if marker is None:
+        marker = next(iter(available))
+    elif marker not in available:
+        raise SmokeRefused(
+            f"{marker!r} is not selectable under this configuration and its allocation. "
+            f"Selectable: {sorted(available)}. Nothing was sent, no credential was read "
+            f"and no connection was made.")
+    family = available[marker]
+    registry = cfg.raw["markers"]["realization"]["registry"]
+    realizations = sorted(rid for rid, spec in registry.items()
+                          if spec["family"] == family)
+    if len(realizations) != 1:                              # pragma: no cover - config-checked
+        raise SmokeRefused(f"{family}: expected one permitted realization, got "
+                           f"{realizations}")
     return GroupAllocation(
-        decision_id=record.decision_id, domain=record.domain, variant_id=record.variant_id,
-        scenario_id=record.scenario_id, supported_option=option,
-        marker_family=block.marker_family, marker_string=block.marker_string,
-        marker_realization_id=block.marker_realization_id)
+        decision_id=record.decision_id, domain=record.domain,
+        variant_id=record.variant_id, scenario_id=record.scenario_id,
+        supported_option=option, marker_family=family, marker_string=marker,
+        marker_realization_id=realizations[0])
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -85,8 +163,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--topics", default="data/fixtures/topics.yaml")
     ap.add_argument("--kind", default="group", choices=["group", "scenario"])
     ap.add_argument("--option", default="opt_1", choices=["opt_1", "opt_2"])
-    ap.add_argument("--out", default="data/pilot/smoke_openai",
-                    help="a disposable smoke directory; never a pilot run directory")
+    ap.add_argument("--marker",
+                    help="the marker to smoke-test, for a pairwise design. Must be "
+                         "selectable under both the configuration and its allocation. "
+                         "Omitted, the first selectable marker is used, which is what "
+                         "the default has always been")
+    ap.add_argument("--out", default=None,
+                    help="a disposable smoke directory; never a pilot run directory. "
+                         "Defaults to data/pilot/smoke_openai for the v1 design and "
+                         "data/pilot/smoke_v2 for the pairwise v2 design")
     ap.add_argument("--send", action="store_true",
                     help=f"make the one paid call; also needs {OPENAI_AUTHORIZATION_ENV}=1")
     args = ap.parse_args(argv)
@@ -98,8 +183,10 @@ def main(argv: list[str] | None = None) -> int:
               f"Use configs/experiment_openai_pilot.yaml.", file=sys.stderr)
         return 1
 
-    out = Path(args.out)
-    for reserved in ("data/pilot/run", "data/pilot/run_openai"):
+    out = Path(args.out if args.out is not None else
+               ("data/pilot/smoke_v2" if matching_mode(cfg) == PAIRWISE
+                else "data/pilot/smoke_openai"))
+    for reserved in ("data/pilot/run", "data/pilot/run_openai", "data/pilot/run_v2"):
         if out.resolve() == Path(reserved).resolve():
             print(f"refusing: {reserved} is a pilot run directory. A smoke call is a "
                   f"transport check, not corpus evidence, and never goes there.",
@@ -117,7 +204,11 @@ def main(argv: list[str] | None = None) -> int:
     if topic is None:
         print(f"{args.topics} has no brief for {FIXTURE_DECISION}", file=sys.stderr)
         return 1
-    allocation = _allocation_from_fixture(record, args.option)
+    try:
+        allocation = _allocation_from_fixture(record, args.option, cfg, args.marker)
+    except SmokeRefused as exc:
+        print(f"refusing: {exc}", file=sys.stderr)
+        return 1
 
     if args.kind == "scenario":
         request = scenario_request(topic, 1, cfg)
@@ -136,6 +227,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"model        {model}   (exact id; aliases {gen['model']['refused_aliases']} "
           f"are refused)")
     print(f"ceiling      1 call. No repair, no retry, no continuation into the pilot.")
+    endorsement = endorsement_text(record.options[args.option], cfg)
+    if matching_mode(cfg) == PAIRWISE:
+        print(f"design       pairwise (v2) · template {request.template_name}")
+        print(f"endorsement  {endorsement!r}")
+        print(f"             checked in every cell, not only asked for in the prompt")
     print("\npayload (the complete request body; the Authorization header is built at "
           "call time and is not part of it):")
     print(json.dumps({k: ("<the rendered prompt>" if k == "input" else v)
@@ -147,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
 
     path = write_request(request, out / "requests")
     print(f"request      {path}")
+    print(f"             (the complete rendered prompt is in that file, under \"prompt\")")
 
     blocking = openai_authorization_problems(args.send)
     if blocking:
@@ -223,12 +320,23 @@ def main(argv: list[str] | None = None) -> int:
                                marker_family=allocation.marker_family
                                if c in ("RS", "NS") else None)
                        for c in ("RS", "RP", "NS", "NP")})
-            updated = record.model_copy(update={
-                "counterarguments": {**record.counterarguments,
-                                     allocation.supported_option: block}})
-            report = validate_corpus([updated], cfg, segmenter, corpus_scope="fixture")
-            findings = [f for f in report.findings
-                        if f.supported_option == allocation.supported_option]
+            if matching_mode(cfg) == PAIRWISE:
+                # Only the synthetic group this call produced. The rest of the
+                # fixture corpus was written to the v1 rules and would report
+                # v2 failures that say nothing about this call.
+                findings = validate_group(
+                    record.scenario_text, cfg.raw["corpus"]["counterargument_opening"],
+                    block, cfg, segmenter,
+                    loc={"decision_id": record.decision_id,
+                         "scenario_id": record.scenario_id},
+                    endorsement=endorsement)
+            else:
+                updated = record.model_copy(update={
+                    "counterarguments": {**record.counterarguments,
+                                         allocation.supported_option: block}})
+                report = validate_corpus([updated], cfg, segmenter, corpus_scope="fixture")
+                findings = [f for f in report.findings
+                            if f.supported_option == allocation.supported_option]
         codes = sorted({f.code for f in findings if f.severity == "error"})
         warnings = sorted({f.code for f in findings if f.severity == "warning"})
         human = sorted({f.code for f in findings if f.severity == "human_review"})

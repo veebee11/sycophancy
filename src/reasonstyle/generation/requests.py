@@ -18,7 +18,8 @@ from pathlib import Path
 from string import Template
 from typing import Any
 
-from ..config import ExperimentConfig
+from ..config import ExperimentConfig, drafting_roles
+from ..corpus.validate import embedded_option_text, endorsement_text
 from ..corpus.schemas import SemanticOption
 from ..corpus.topics import TopicBrief
 from ..hashing import content_hash, sha256_of
@@ -28,6 +29,8 @@ __all__ = [
     "DraftRequest",
     "RequestError",
     "ResponseRejected",
+    "embedded_option_text",
+    "endorsement_for",
     "group_request",
     "parse_response",
     "read_response",
@@ -110,8 +113,21 @@ def _template(cfg: ExperimentConfig, name: str) -> tuple[str, dict[str, Any]]:
     return text, spec
 
 
-def _render(cfg: ExperimentConfig, name: str, values: dict[str, Any]) -> tuple[str, dict, str]:
+def _render(cfg: ExperimentConfig, name: str, values: dict[str, Any],
+            *, offered: set[str] | None = None) -> tuple[str, dict, str]:
+    """Render one template from the values it declares.
+
+    ``offered`` names values the caller can supply but which a given template
+    version may not want. A v1 group template asks for one ``sentence_count``;
+    the v2 template asks for two, one per pair, and for the fixed endorsement.
+    Filtering to the declared placeholders lets one request builder serve both
+    without either template gaining a field it does not use — and a value that
+    is *required* and absent is still an error, exactly as before.
+    """
     text, spec = _template(cfg, name)
+    if offered:
+        values = {k: v for k, v in values.items()
+                  if k in spec["placeholders"] or k not in offered}
     missing = set(spec["placeholders"]) - set(values)
     if missing:
         raise RequestError(f"template {name}: no value for {sorted(missing)}")
@@ -146,12 +162,44 @@ def _single_fact(topic: TopicBrief, variant_id: int, option: SemanticOption) -> 
 # --------------------------------------------------------------------------
 
 
+#: Values a template may or may not declare, depending on its version. They are
+#: offered to every render and kept only where the template asks for them.
+_VERSIONED_VALUES = {"sentence_count", "sentence_count_reason",
+                     "sentence_count_no_premise", "endorsement",
+                     "counterargument_opening"}
+
+
+def endorsement_for(topic: TopicBrief, option: SemanticOption,
+                    cfg: ExperimentConfig) -> str | None:
+    """The one fixed endorsement clause all four cells of a group share.
+
+    One derivation, in the corpus layer, so the clause a prompt is given and the
+    clause a validator looks for can never come apart.
+    """
+    return endorsement_text(topic.options[option], cfg)
+
+
+def _pairwise_values(topic: TopicBrief, option: SemanticOption,
+                     cfg: ExperimentConfig) -> dict[str, Any]:
+    """The values only a pairwise-matching template asks for."""
+    by_pair = cfg.raw["corpus"].get("body_sentences_by_pair") or {}
+    values: dict[str, Any] = {}
+    endorsement = endorsement_for(topic, option, cfg)
+    if endorsement:
+        values["endorsement"] = endorsement
+    if by_pair:
+        values["sentence_count_reason"] = by_pair.get("RS/RP")
+        values["sentence_count_no_premise"] = by_pair.get("NS/NP")
+    return values
+
+
 def scenario_request(topic: TopicBrief, variant_id: int, cfg: ExperimentConfig) -> DraftRequest:
     """One scenario. Everything the generator sees comes from the curated brief."""
     if topic.status != "curated":
         raise RequestError(f"{topic.decision_id} is {topic.status}, not curated")
     words = cfg.raw["corpus"]["scenario_words"]
-    prompt, schema, digest = _render(cfg, "scenario_draft_v1", {
+    role = drafting_roles(cfg)["scenario"]
+    prompt, schema, digest = _render(cfg, role, {
         "decision_framing": topic.decision_framing,
         "variant_context": _variant(topic, variant_id).context,
         "option_text_opt_1": topic.options["opt_1"],
@@ -162,7 +210,7 @@ def scenario_request(topic: TopicBrief, variant_id: int, cfg: ExperimentConfig) 
         "max_words": words["max"],
     })
     return DraftRequest(
-        kind="scenario", template_name="scenario_draft_v1", template_sha256=digest,
+        kind="scenario", template_name=role, template_sha256=digest,
         prompt=prompt, response_schema=schema,
         decision_id=topic.decision_id, variant_id=variant_id,
         context={"domain": topic.domain},
@@ -185,7 +233,8 @@ def group_request(topic: TopicBrief, variant_id: int, scenario_text: str,
     if allocation.decision_id != topic.decision_id or allocation.variant_id != variant_id:
         raise RequestError("the allocation does not belong to this scenario")
     registry = cfg.raw["markers"]["realization"]["registry"]
-    prompt, schema, digest = _render(cfg, "group_draft_v1", {
+    role = drafting_roles(cfg)["group"]
+    prompt, schema, digest = _render(cfg, role, {
         "scenario_text": scenario_text,
         "option_text_opt_1": topic.options["opt_1"],
         "option_text_opt_2": topic.options["opt_2"],
@@ -195,16 +244,18 @@ def group_request(topic: TopicBrief, variant_id: int, scenario_text: str,
         "marker_string": allocation.marker_string,
         "realization_description": registry[allocation.marker_realization_id]["description"],
         "sentence_count": cfg.raw["corpus"]["body_sentences"],
-    })
+        **_pairwise_values(topic, option, cfg),
+    }, offered=_VERSIONED_VALUES)
     return DraftRequest(
-        kind="group", template_name="group_draft_v1", template_sha256=digest,
+        kind="group", template_name=role, template_sha256=digest,
         prompt=prompt, response_schema=schema,
         decision_id=topic.decision_id, variant_id=variant_id, supported_option=option,
         attempt=attempt,
         context={"domain": topic.domain,
                  "marker_family": allocation.marker_family,
                  "marker_string": allocation.marker_string,
-                 "marker_realization_id": allocation.marker_realization_id},
+                 "marker_realization_id": allocation.marker_realization_id,
+                 "endorsement": endorsement_for(topic, option, cfg)},
     )
 
 
@@ -240,7 +291,8 @@ def repair_request(topic: TopicBrief, variant_id: int, scenario_text: str,
     if not findings:
         raise RequestError("a repair needs the findings it is repairing")
     option = allocation.supported_option
-    prompt, schema, digest = _render(cfg, "repair_v1", {
+    role = drafting_roles(cfg)["repair"]
+    prompt, schema, digest = _render(cfg, role, {
         "scenario_text": scenario_text,
         "supported_option_text": topic.options[option],
         "supported_option_fact": _single_fact(topic, variant_id, option),
@@ -251,9 +303,10 @@ def repair_request(topic: TopicBrief, variant_id: int, scenario_text: str,
         "repair_attempt": attempt,
         "attempt_history": history or "This is the first repair of this group.",
         "diagnostics": diagnostics or "  (no measurements were recorded)",
-    })
+        **_pairwise_values(topic, option, cfg),
+    }, offered=_VERSIONED_VALUES)
     return DraftRequest(
-        kind="repair", template_name="repair_v1", template_sha256=digest,
+        kind="repair", template_name=role, template_sha256=digest,
         prompt=prompt, response_schema=schema,
         decision_id=topic.decision_id, variant_id=variant_id, supported_option=option,
         attempt=attempt,
@@ -261,6 +314,12 @@ def repair_request(topic: TopicBrief, variant_id: int, scenario_text: str,
                  "marker_family": allocation.marker_family,
                  "marker_string": allocation.marker_string,
                  "marker_realization_id": allocation.marker_realization_id,
+                 # The exact clause this request asked for, so the request file
+                 # shows what the validator will later look for.
+                 "endorsement": endorsement_for(topic, option, cfg),
+                 # The exact clause this request asked for, so the request file
+                 # shows what the validator will later look for.
+                 "endorsement": endorsement_for(topic, option, cfg),
                  "findings": list(findings),
                  "diagnostics": diagnostics,
                  "history": history},
