@@ -17,6 +17,7 @@ Commands::
     scenario-review    the recorded scenarios, for reading, plus a blank approval template
     approvals          where the curator gate stands, per expected scenario
     groups             stage two: draft or recover the groups (--send to run)
+    group-review       the recorded groups, for reading; writes Markdown only
     assemble           build data/pilot/corpus.jsonl and its manifest from what is recorded
     status             counts: generated, approved, accepted, repaired, blocking
 
@@ -33,8 +34,10 @@ repairs. Completed calls are recovered from disk and never sent again.
 
 The 24-call scenario stage and the bounded nine-call redraft stage have run.
 All 24 final scenario texts are approved, including five exact-source-bound
-human corrections that leave model evidence untouched. The group stage has not
-run and remains a separate live authorisation.
+human corrections that leave model evidence untouched. The 140-call group stage
+ran on 2026-09-17: 2 of the 48 groups are machine-valid and 46 ended
+``needs_manual_review``. ``group-review`` is how those 46 are read; it sends
+nothing, corrects nothing and proposes nothing.
 
 The controller itself is ``src/reasonstyle/generation/pipeline.py``; it was
 exercised by ``scripts/pipeline_smoke.py`` on one synthetic group, twice, and
@@ -58,8 +61,13 @@ from reasonstyle.corpus.topics import load_topic_bank
 from reasonstyle.generation import (
     CallStore,
     ModelNotCached,
+    OPENAI_AUTHORIZATION_ENV,
+    OPENAI_BACKEND,
+    OpenAIResponsesBackend,
     VLLMOpenAIBackend,
     authorization_problems,
+    openai_authorization_problems,
+    openai_preflight_problems,
     load_allocation,
     load_server_runtime,
     offline_problems,
@@ -84,6 +92,11 @@ from reasonstyle.generation.pipeline import (
     recorded_scenarios,
     run_group_stage,
     run_scenario_stage,
+)
+from reasonstyle.generation.group_review import (
+    MACHINE_VALID,
+    NEEDS_CORRECTION,
+    build_group_review,
 )
 from reasonstyle.generation.redraft import (
     current_scenarios,
@@ -111,18 +124,28 @@ from reasonstyle.generation.approvals import REQUIRED_JUDGEMENTS
 def live_problems(send: bool, cfg=None, env=None) -> list[str]:
     """Why a live stage may not send. Empty means every requirement is met.
 
-    Three keys, each a separate decision: ``--send`` names the intent,
-    ``REASONSTYLE_ALLOW_LOCAL_GENERATION=1`` permits a local model run at all,
-    and ``REASONSTYLE_ALLOW_PILOT_GENERATION=1`` permits *pilot* generation
-    specifically — drafting a corpus is not the same act as one smoke call.
-    ``HF_HUB_OFFLINE=1`` keeps a missing model an error rather than a download.
+    Three keys, each a separate decision. ``--send`` names the intent;
+    ``REASONSTYLE_ALLOW_PILOT_GENERATION=1`` permits *pilot* generation
+    specifically, because drafting a corpus is not the same act as one smoke
+    call; and the third depends on which generator the configuration names.
+    A local run needs ``REASONSTYLE_ALLOW_LOCAL_GENERATION=1`` plus
+    ``HF_HUB_OFFLINE=1``, which keeps a missing model an error rather than a
+    download. A hosted run needs ``REASONSTYLE_ALLOW_OPENAI_GENERATION=1``
+    instead: permitting a run on our own GPU and permitting a paid call to a
+    third party are different decisions, and neither key stands in for the
+    other.
     """
     env = os.environ if env is None else env
-    problems = authorization_problems(send, env=env)
-    if cfg is not None:
-        problems += offline_problems(cfg, env=env)
-    elif env.get("HF_HUB_OFFLINE") != "1":
-        problems.append("HF_HUB_OFFLINE=1 is required")
+    if cfg is not None and cfg.raw["models"]["generator"]["backend"] == OPENAI_BACKEND:
+        # A paid external call. The local-generation key does not authorise one,
+        # and offline mode is meaningless: there are no weights to fetch.
+        problems = openai_authorization_problems(send, env=env)
+    else:
+        problems = authorization_problems(send, env=env)
+        if cfg is not None:
+            problems += offline_problems(cfg, env=env)
+        elif env.get("HF_HUB_OFFLINE") != "1":
+            problems.append("HF_HUB_OFFLINE=1 is required")
     if env.get(PILOT_AUTHORIZATION_ENV) != "1":
         problems.append(
             f"{PILOT_AUTHORIZATION_ENV}=1 is not set: pilot generation is a separate "
@@ -135,7 +158,14 @@ def server_problems(args, cfg) -> tuple[list[str], Any, dict]:
 
     ``(problems, cached, server)``. Nothing is sent while this returns
     problems, and no call artefact is created either.
+
+    A hosted generator has no local cache, no weights and no server of ours to
+    check, so its pre-flight is a different one: the credential is confirmed
+    **present** without its value ever being read, the model id is confirmed
+    pinned, and the endpoint is confirmed to be the HTTPS Responses API.
     """
+    if cfg.raw["models"]["generator"]["backend"] == OPENAI_BACKEND:
+        return (openai_preflight_problems(cfg), None, {})
     try:
         cached = resolve_cached_model(cfg.raw["models"]["generator"]["model"]["repo_id"],
                                       hf_home=args.hf_home)
@@ -149,6 +179,114 @@ def server_problems(args, cfg) -> tuple[list[str], Any, dict]:
                                    cached, server.get("revision"))
                 + server_settings_problems(cfg, server))
     return (problems, cached, server)
+
+
+#: Where each generator's run evidence lives. They are separate directories on
+#: purpose: the completed Qwen run is finished historical evidence, and a second
+#: generator's calls must never be appended to it or written over it.
+RUN_DIRECTORIES = {
+    "local_vllm_openai": "data/pilot/run",
+    OPENAI_BACKEND: "data/pilot/run_openai",
+}
+
+#: Every per-generator path, defaulted from the configuration rather than typed
+#: on the command line. An approval binds the configuration hash and the exact
+#: call it was granted against, so a Qwen approval can never apply to a run
+#: drafted by another generator — and a shared file would be an invitation to
+#: try. The same goes for the correction ledgers, the corpus and the review
+#: exports: one generator, one set of records.
+PROFILE_PATHS = {
+    "local_vllm_openai": {
+        "out": "data/pilot/run",
+        "approvals_file": "data/pilot/scenario_approvals.yaml",
+        "scenario_corrections_file": "data/pilot/scenario_corrections.yaml",
+        "corrections_file": "data/pilot/manual_corrections.yaml",
+        "corpus": "data/pilot/corpus.jsonl",
+        "review_out": "review/pilot",
+        "group_review_out": "review/pilot_groups",
+    },
+    OPENAI_BACKEND: {
+        "out": "data/pilot/run_openai",
+        "approvals_file": "data/pilot/scenario_approvals_openai.yaml",
+        "scenario_corrections_file": "data/pilot/scenario_corrections_openai.yaml",
+        "corrections_file": "data/pilot/manual_corrections_openai.yaml",
+        "corpus": "data/pilot/corpus_openai.jsonl",
+        "review_out": "review/pilot_openai",
+        "group_review_out": "review/pilot_groups_openai",
+    },
+}
+
+
+def _endpoint(cfg) -> str:
+    """Where this generator is reached. Local loopback, or the hosted API."""
+    gen = cfg.raw["models"]["generator"]
+    if gen["backend"] == OPENAI_BACKEND:
+        return gen["openai"]["endpoint"]
+    return gen["vllm"]["base_url"]
+
+
+def _print_generator(cfg, cached, server: dict) -> None:
+    """What is about to draft, printed before the first call. No secret."""
+    gen = cfg.raw["models"]["generator"]
+    if gen["backend"] == OPENAI_BACKEND:
+        model = gen["model"]["pinned_snapshot"] or gen["model"]["id"]
+        dec = gen["decoding"]
+        print(f"generator    {gen['backend']} · model {model} (exact id, not an alias)")
+        print(f"endpoint     {gen['openai']['endpoint']}")
+        print(f"decoding     profile {dec['profile']} · temperature {dec['temperature']} · "
+              f"top_p provider default (not sent) · max_output_tokens "
+              f"{dec['max_output_tokens']} · reasoning {dec['reasoning']}")
+        print(f"statelessness store={gen['openai']['store']}, "
+              f"background={gen['openai']['background']}, tools {gen['openai']['tools']}, "
+              f"no conversation or previous-response state")
+        print(f"credential   read from {gen['openai']['api_key_env_name']} at call time; "
+              f"never printed, stored, hashed or recorded")
+        return
+    print(f"revision     {cached.revision}")
+    print(f"server       gpu {server.get('gpu_index')} ({server.get('gpu_name')}), "
+          f"{server.get('dtype')}, generation_config {server.get('generation_config')}")
+
+
+def _live_backend(cfg):
+    """The one place a live backend is constructed, chosen by the config.
+
+    Everything else in this script reads files and prints. Which generator runs
+    is a property of the configuration that was named on the command line, not
+    of a flag someone can flip at the call site.
+    """
+    if cfg.raw["models"]["generator"]["backend"] == OPENAI_BACKEND:
+        return OpenAIResponsesBackend()
+    return VLLMOpenAIBackend()
+
+
+def run_directory_problems(store: CallStore, cfg) -> list[str]:
+    """Why this run directory does not belong to this generator.
+
+    A run directory is one generator's evidence. Mixing two into it would make
+    the corpus that came out of it unattributable, and appending to the
+    completed Qwen run would alter finished evidence. Both are refused before
+    any call is made.
+    """
+    backend = cfg.raw["models"]["generator"]["backend"]
+    expected = RUN_DIRECTORIES.get(backend)
+    problems = []
+    for other, path in RUN_DIRECTORIES.items():
+        if other != backend and Path(path).resolve() == Path(store.directory).resolve():
+            problems.append(f"{store.directory} is the {other!r} run directory; this "
+                            f"configuration names {backend!r}. Use {expected} instead.")
+    seen = set()
+    for entry in store.log.entries():
+        recorded = ((entry.get("runtime") or {}).get("backend")
+                    or (entry.get("request_fields") or {}).get("backend"))
+        if recorded:
+            seen.add(recorded)
+    foreign = sorted(seen - {backend})
+    if foreign:
+        problems.append(
+            f"{store.directory} already holds calls made by {foreign}; this configuration "
+            f"names {backend!r}. A run directory is one generator's evidence, and a second "
+            f"generator never appends to it.")
+    return problems
 
 
 #: Commands that act on the pilot itself. A subset of them is not a pilot: the
@@ -331,19 +469,18 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
                   + (f"; first: {gate[0]}" if gate else ""))
         return 0
 
-    checks, cached, server = server_problems(args, cfg)
+    checks = server_problems(args, cfg)[0] + run_directory_problems(store, cfg)
     if checks:
         print("\nrefusing to run; no call was made:", file=sys.stderr)
         for problem in checks:
             print(f"  - {problem}", file=sys.stderr)
         return 1
+    _, cached, server = server_problems(args, cfg)
     store.cached, store.server = cached, server
-    store.endpoint = cfg.raw["models"]["generator"]["vllm"]["base_url"]
-    print(f"revision     {cached.revision}")
-    print(f"server       gpu {server.get('gpu_index')} ({server.get('gpu_name')}), "
-          f"{server.get('dtype')}, generation_config {server.get('generation_config')}")
+    store.endpoint = _endpoint(cfg)
+    _print_generator(cfg, cached, server)
 
-    backend = VLLMOpenAIBackend()
+    backend = _live_backend(cfg)
     segmenter = segmenter_from_config(cfg)
     before = len(store.log.entries())
     try:
@@ -426,18 +563,19 @@ def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
         return 0
 
     checks, cached, server = server_problems(args, cfg)
+    checks = checks + run_directory_problems(store, cfg)
     if checks:
         print("\nrefusing to run; no call was made:", file=sys.stderr)
         for problem in checks:
             print(f"  - {problem}", file=sys.stderr)
         return 1
     store.cached, store.server = cached, server
-    store.endpoint = cfg.raw["models"]["generator"]["vllm"]["base_url"]
+    store.endpoint = _endpoint(cfg)
 
     before = len(store.log.entries())
     try:
         results = run_redraft_stage(topics, approvals, cfg, segmenter_from_config(cfg),
-                                    VLLMOpenAIBackend(), store, allow_live=True)
+                                    _live_backend(cfg), store, allow_live=True)
     except PipelineAbort as exc:
         print(f"\nthe stage stopped: {exc}", file=sys.stderr)
         return 1
@@ -610,6 +748,63 @@ def _scenario_review(args, cfg, bank, topics, store: CallStore) -> int:
     return 0
 
 
+def _group_review(args, cfg, bank, allocation, topics, store: CallStore) -> int:
+    """A deterministic, read-only reading view of the recorded group run.
+
+    It reads the log, the per-call results, the approvals and the scenario
+    correction ledger, and writes Markdown under ``--group-review-out``. It
+    makes no call, repairs nothing, approves nothing, corrects nothing, writes
+    nothing into the run directory and touches no corpus. It proposes no
+    corrected wording either: what to write instead is the curator's act,
+    recorded in an approved ledger, and a tool drafting it here would be making
+    that decision for them.
+    """
+    bank_hash = content_hash(bank.model_dump(mode="json"))
+    export = build_group_review(
+        topics=topics, allocation_groups=allocation.groups,
+        scenarios=_current_scenarios(args, cfg, store), store=store, cfg=cfg,
+        segmenter=segmenter_from_config(cfg),
+        approvals=load_approvals(args.approvals_file),
+        topic_bank_content_hash=bank_hash,
+        allocation_content_hash=allocation.content_hash,
+        variants=tuple(args.variants))
+    out = Path(args.group_review_out)
+    export.write(out)
+
+    manifest = export.manifest
+    print(f"wrote {len(export.files)} file(s) + MANIFEST.json to {out}/")
+    print(f"config       {cfg.config_version} {cfg.content_hash[:12]}")
+    print(f"run          {store.directory} (read only; nothing was written there)")
+    print(f"groups expected         {manifest['expected_groups']}")
+    print(f"machine-valid           {manifest['machine_valid']}")
+    print(f"requiring correction    {manifest['needing_correction']}")
+    if manifest["not_recorded"]:
+        print(f"no recorded call        {manifest['not_recorded']}")
+    print(f"calls recorded          {manifest['calls_recorded']}")
+    unchanged = sum(1 for g in manifest["groups"] for a in g["attempts"]
+                    if a["unchanged_from_previous"])
+    identical = sum(1 for g in manifest["groups"] if g["identical_bodies_throughout"])
+    print(f"repairs returning unchanged text  {unchanged}")
+    print(f"groups identical at every attempt {identical}")
+    flagged = [g for g in manifest["groups"]
+               if g["earlier_attempt_with_fewer_error_codes"]]
+    print(f"earlier attempt with fewer error codes {len(flagged)} (informational: the final "
+          f"attempt stays canonical, and fewer codes is not better text)")
+    diverged = [g["scenario_id"] for g in manifest["groups"] if not g["recorded_codes_agree"]]
+    if diverged:
+        print(f"NOTE the recomputed findings differ from the recorded codes for "
+              f"{len(diverged)} group(s); the pages say so rather than resolving it",
+              file=sys.stderr)
+    print(f"\nindex        {out / 'index.md'}")
+    print(f"combined     {out / 'all_groups.md'}")
+    print("\nThis pass is INSPECTION ONLY. No correction ledger was written or populated, "
+          "no wording was proposed, and no generator, model or validator decision follows "
+          "from it.")
+    print("Machine-valid is not approval: every human judgement listed under each group is "
+          "outstanding, for the machine-valid groups exactly as much as for the rest.")
+    return 0
+
+
 def _assemble(args, cfg, bank, allocation, topics, store: CallStore) -> int:
     """Build the corpus from what is recorded, or build nothing."""
     segmenter = segmenter_from_config(cfg)
@@ -712,23 +907,30 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["plan", "scenarios", "scenario-review", "approvals",
-                                       "redraft-scenarios", "groups", "assemble", "status",
-                                       "log"],
+                                       "redraft-scenarios", "groups", "group-review",
+                                       "assemble", "status", "log"],
                     help="plan; draft the scenarios; export them for review; report the "
                          "gate; redraft the scenarios the curator rejected; draft the "
-                         "groups; assemble the corpus; or report counts")
-    ap.add_argument("--approvals-file", default="data/pilot/scenario_approvals.yaml")
+                         "groups; export the recorded groups for reading; assemble the "
+                         "corpus; or report counts")
+    ap.add_argument("--approvals-file", default=None)
     ap.add_argument("--config", required=True)
     ap.add_argument("--topics", default="data/topics/pilot_topics.yaml")
     ap.add_argument("--allocation", default="data/pilot/marker_allocation.yaml")
-    ap.add_argument("--out", default="data/pilot/run")
+    ap.add_argument("--out", default=None,
+                    help="the run directory; defaults to this generator's own "
+                         "(data/pilot/run for the local model, data/pilot/run_openai for "
+                         "the hosted one), so the two can never be mixed by accident. The "
+                         "approvals file, correction ledgers, corpus and review exports "
+                         "default per generator in the same way")
     ap.add_argument("--only", nargs="*", help="limit to these decision ids")
     ap.add_argument("--variants", nargs="*", type=int, default=[1, 2])
-    ap.add_argument("--corrections-file", default="data/pilot/manual_corrections.yaml")
-    ap.add_argument("--scenario-corrections-file",
-                    default="data/pilot/scenario_corrections.yaml")
-    ap.add_argument("--corpus", default="data/pilot/corpus.jsonl")
-    ap.add_argument("--review-out", default="review/pilot")
+    ap.add_argument("--corrections-file", default=None)
+    ap.add_argument("--scenario-corrections-file", default=None)
+    ap.add_argument("--corpus", default=None)
+    ap.add_argument("--review-out", default=None)
+    ap.add_argument("--group-review-out", default=None,
+                    help="where group-review writes its Markdown; it writes nowhere else")
     ap.add_argument("--write-template", action="store_true",
                     help="also write a blank approval template (every decision pending)")
     ap.add_argument("--overwrite", action="store_true",
@@ -740,6 +942,12 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     cfg, bank, allocation, topics = _inputs(args)
+    # Anything not given explicitly comes from the generator this configuration
+    # names, so the two pilots cannot share a run directory, an approvals file,
+    # a correction ledger, a corpus or a review export by accident.
+    for name, default in PROFILE_PATHS[cfg.raw["models"]["generator"]["backend"]].items():
+        if getattr(args, name) is None:
+            setattr(args, name, default)
     if args.command in WHOLE_PILOT_COMMANDS:
         problems = whole_pilot_problems(args, bank, cfg)
         if problems:
@@ -764,6 +972,8 @@ def main(argv: list[str] | None = None) -> int:
             return _approvals(args, cfg, bank, topics, store)
         if args.command == "scenario-review":
             return _scenario_review(args, cfg, bank, topics, store)
+        if args.command == "group-review":
+            return _group_review(args, cfg, bank, allocation, topics, store)
         if args.command == "assemble":
             return _assemble(args, cfg, bank, allocation, topics, store)
         if args.command == "redraft-scenarios":

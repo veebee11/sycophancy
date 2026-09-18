@@ -612,6 +612,88 @@ directions separately. The generator model, provider and settings are proposed
 and approved before any drafting. The exact submitted request and the raw
 response are stored. This is a record, not a reproducibility guarantee.
 
+**Amendment (2026-09-18): a second generator is being tried.** The Qwen pilot
+finished and its result is recorded: of 48 four-condition groups, **2 were
+machine-valid** and **46 ended `needs_manual_review`**. The dominant failure is
+cross-condition **length matching** — `E_WORD_RATIO_BODY` in 44 of the 46 and
+`E_WORD_RATIO_FULL_TEXT` in 42, with a median body ratio of 1.51 against the
+1.15 ceiling — and in 42 of the 46 both reason cells were longer than both
+no-reason cells. That is the design's central tension showing up in the text: a
+reason cell carries a premise and a no-reason cell may not, so matching their
+lengths means saying the same amount while supplying nothing, and the model did
+not do it. The bounded repair path worked exactly as designed and changed
+nothing: **no repair produced an accepted group**, repair 1 returned unchanged
+text for 33 of the 46, repair 2 for 41, and 30 groups were byte-identical at all
+three attempts.
+
+So `gpt-5.6-sol` is being tried through OpenAI's Responses API, as a **second
+generator under the same rules**: the same three hashed prompt templates, the
+same four conditions, the same validators, the same 1.10/1.15 word ratios, the
+same one-draft-plus-two-repairs budget, the same curator gate between the
+scenario and group stages, and the same unconditional human-review codes. **No
+threshold is relaxed to let a different model pass**, and a test asserts that
+the two configurations differ in the generator block and nowhere else. Whether
+this changes anything is a question the new pilot answers after machine
+validation *and* human review; until then nothing is claimed about it.
+
+**The hosted generator's own rules.** It is the project's only external, paid
+dependency, so it carries requirements the local one does not.
+
+- **Its own configuration and its own hash.** `configs/experiment_openai_pilot.yaml`
+  has `config_version: openai_pilot_v1` and a content hash of its own. An
+  approval binds the configuration it was granted under, so a Qwen approval can
+  never be carried across; its run directory, approvals file, correction
+  ledgers, corpus and review exports are separate files by default, and the
+  completed Qwen run is never appended to or written over.
+- **A pinned model, never an alias.** `gpt-5.6-sol`, with `gpt-5.6` and the
+  other moving pointers listed as refused: an alias can repoint between the
+  scenario stage and the group stage, which would make one corpus two
+  generators. If the account exposes a more specifically pinned snapshot, the
+  backend records the returned id and reports it for approval; it never follows
+  it silently, and a different model is refused outright.
+- **Its own decoding profile, `openai_responses_v1`.** Temperature 0.3 and a
+  700-token output ceiling are shared with the Qwen profile; nothing else is.
+  `top_p` is left at the provider default and **not sent** — tuning temperature
+  and top_p together is two knobs for one effect — `reasoning.effort` is
+  `none`, and **no seed is sent**, so none is recorded as though it had been.
+  The profile is named separately precisely so the two are never reported as
+  the same settings.
+- **Stateless, toolless, one draft per call.** `store: false`,
+  `background: false`, no tools, no web search, no files, no conversation and no
+  `previous_response_id`. Output is constrained by the template's own closed
+  schema through `text.format` with `strict: true`.
+- **What `store: false` does and does not mean.** It prevents the response from
+  being saved as retrievable Responses API application state: nothing can be
+  fetched back by response id, chained through `previous_response_id`, or read
+  out of the account's stored responses later. It is **not a retention
+  guarantee**. Ordinary provider abuse-monitoring retention may still apply
+  according to this OpenAI account's data-control policy, and **Zero Data
+  Retention is a property of the account, not of this flag; it is not claimed
+  here**. The methodology should state it that way. What is actually sent is our
+  own curated briefs and the frozen prompt templates — no personal data, no
+  third-party dataset text (*Corpus construction*, above) — so this is a
+  disclosure point rather than a blocker; but a hosted generator means drafting
+  material leaves our machines, which the local generator never did.
+- **Three keys for a live pilot stage**: `--send`,
+  `REASONSTYLE_ALLOW_OPENAI_GENERATION=1` and
+  `REASONSTYLE_ALLOW_PILOT_GENERATION=1`. The local-generation key does not
+  authorise a paid external call and this one does not authorise a local run:
+  permitting a run on our own GPU and permitting a paid call to a third party
+  are different decisions. A dry run needs no key and opens no connection.
+- **The credential is read from `OPENAI_API_KEY` at the moment of the call and
+  nowhere else.** It is never written to a request record, a log line, a raw
+  file, an error message, a printed line, a command example or a hash. The
+  recorded payload is the complete request body; the Authorization header is
+  built inside the backend and discarded there. Every error string the backend
+  produces is scrubbed of anything credential-shaped as well.
+- **No hidden retry, at any level.** An invisible retry is a second paid call
+  for the same draft. A response that *arrived* is always a recorded attempt
+  that consumed its budget position — truncated or malformed included, so it is
+  rejected rather than silently re-sent — and only a failure that produced no
+  response at all is raised for a person to decide about. A crash between the
+  response and the result file still recovers from the stored raw response
+  rather than re-sending.
+
 **Generator family.** The generator should preferably differ from the
 **primary** evaluated family. Llama-3.1 is the primary family, and a Llama
 generator is refused at config load. `Qwen/Qwen3-14B` is therefore acceptable.
@@ -647,8 +729,10 @@ rendered prompt and can be read before any model sees it. Responses are
 validated against the template's closed schema and rejected — never coerced,
 trimmed or patched — if they do not fit.
 
-**The generator is a local open-weights model on a lab GPU server**, served by
-vLLM behind an OpenAI-compatible endpoint bound to `127.0.0.1`. No external
+**The first generator is a local open-weights model on a lab GPU server**,
+served by vLLM behind an OpenAI-compatible endpoint bound to `127.0.0.1`. (A
+second, hosted generator was added on 2026-09-18 and has not been run; see the
+amendment above.) No external
 service, no paid call, and no credential anywhere: there is nothing to
 authenticate to. The proposed model is `Qwen/Qwen3-14B` in non-thinking mode
 (temperature 0.3, top_p 0.8, 700 new tokens, seed recorded), and the
@@ -848,3 +932,5 @@ filename checks alone would not catch an edit to a frozen file's contents.
 - Style and content are not perfectly separable in language; the residual confound is stated rather than argued away.
 - The six-word overlap screen detects possible verbatim reuse only; independence is a property of the construction procedure, not of the screen.
 - The corpus generator is a Qwen model. If an optional Qwen model is later evaluated, corpus and evaluated model share a family.
+- A second, hosted generator (`gpt-5.6-sol`) is implemented but unrun. A hosted model is not pinned to weights we hold: the provider's model id, the response id and the saved raw response are the whole record, and nothing about it is reproducible in the sense a local checkpoint is.
+- With a hosted generator, drafting material leaves our machines. `store: false` keeps it out of retrievable Responses API state but is not a retention guarantee: abuse-monitoring retention may still apply under the account's data-control policy, and Zero Data Retention is not claimed.

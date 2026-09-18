@@ -1,19 +1,26 @@
-"""Backends: a fake one for tests, and a local vLLM endpoint.
+"""Backends: a fake one for tests, a local vLLM endpoint, and a hosted provider.
 
-The generator is an open-weights model hosted on a lab GPU server and reached
-over the loopback interface through vLLM's OpenAI-compatible API. There is no
-external service, no paid call and no credential: nothing here reads, stores or
-sends an API key.
+Two real generators, side by side. The **local** one is an open-weights model on
+a lab GPU server reached over the loopback interface through vLLM's
+OpenAI-compatible API: no external service, no paid call and no credential —
+nothing in *this module* reads, stores or sends an API key. The **hosted** one
+is OpenAI's Responses API, and it lives in :mod:`.openai_responses` precisely so
+that every line touching a credential sits in one auditable file.
 
 **Running needs two independent yeses, neither of them in the experiment
 config**: the caller passes ``allow_live=True`` (from an explicit ``--send``),
-and ``REASONSTYLE_ALLOW_LOCAL_GENERATION=1`` is set in the environment. Reading
-or sharing the configuration therefore cannot by itself enable a model run. The
-payload can always be built and inspected without either.
+and the backend's own authorisation variable is set in the environment —
+``REASONSTYLE_ALLOW_LOCAL_GENERATION=1`` for the local model,
+``REASONSTYLE_ALLOW_OPENAI_GENERATION=1`` for the paid external one. Neither key
+authorises the other backend. Reading or sharing the configuration therefore
+cannot by itself enable a model run, and the payload can always be built and
+inspected without either.
 
-Extending this later — an in-process Transformers backend, say — means adding a
-class with the same ``send`` signature. Requests, the response schema, parsing,
-hashing, the repair budget and the log are backend-independent and do not move.
+Adding a backend means a class with the same ``send`` signature and an entry in
+:func:`request_payload`. Requests, the response schema, parsing, hashing, the
+repair budget, the validators and the log are backend-independent and do not
+move: that is what lets a second generator be tried without any corpus rule
+changing to accommodate it.
 """
 
 from __future__ import annotations
@@ -38,6 +45,7 @@ __all__ = [
     "LiveCallRefused",
     "VLLMOpenAIBackend",
     "authorization_problems",
+    "request_payload",
     "vllm_payload",
 ]
 
@@ -65,6 +73,10 @@ class BackendResponse:
     stop_reason: str | None = None
     usage: dict[str, Any] | None = None
     raw: Any = None                  # the server's whole response, verbatim
+    #: Backend-specific, non-secret call metadata — for a hosted provider the
+    #: response id, request id, endpoint, requested and returned model ids and
+    #: the stateless flags. Never a credential: no backend puts one here.
+    provider_meta: dict[str, Any] | None = None
 
 
 def authorization_problems(allow_live: bool, *, env: dict[str, str] | None = None) -> list[str]:
@@ -222,3 +234,23 @@ class VLLMOpenAIBackend:
         return BackendResponse(content=content, model_returned=raw.get("model"),
                                stop_reason=choices[0].get("finish_reason"),
                                usage=raw.get("usage"), raw=raw)
+
+
+def request_payload(request: DraftRequest, cfg: ExperimentConfig) -> dict[str, Any]:
+    """The exact request body for whichever backend the configuration names.
+
+    One place, so the recorded provenance and the bytes actually sent cannot
+    come apart. The body is entirely non-secret for every backend: a credential
+    lives in a header the backend builds and discards, never in a payload.
+    """
+    backend = cfg.raw["models"]["generator"]["backend"]
+    if backend == "openai_responses":
+        from .openai_responses import openai_responses_payload
+        return openai_responses_payload(request, cfg)
+    return vllm_payload(request, cfg)
+
+
+#: The payload keys that carry the prompt itself, per backend. They are stripped
+#: from the recorded request fields because the prompt is stored separately, in
+#: full, beside the raw response and under its own hash.
+PROMPT_KEYS = ("messages", "input")

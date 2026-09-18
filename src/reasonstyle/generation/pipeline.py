@@ -44,8 +44,9 @@ from ..corpus.validate import validate_group, validate_scenario_text
 from .allocation import GroupAllocation
 from .approvals import APPROVED as APPROVAL_GRANTED
 from .approvals import approval_status
-from .backends import BackendError, BackendUnavailable, LiveCallRefused, vllm_payload
-from .environment import CachedModel, describe_run
+from .backends import PROMPT_KEYS, BackendError, BackendUnavailable, LiveCallRefused
+from .backends import request_payload
+from .environment import CachedModel, describe_run, generator_model_id
 from .log import GenerationLog, LogEntry, utc_now
 from .requests import DraftRequest, ResponseRejected, group_request, parse_response, repair_request
 from .requests import scenario_request
@@ -156,9 +157,16 @@ def _meta_from(response: Any) -> dict[str, Any]:
     """What the backend said about the call, kept beside the raw response."""
     if response is None:
         return {}
-    return {"stop_reason": getattr(response, "stop_reason", None),
+    meta = {"stop_reason": getattr(response, "stop_reason", None),
             "model_returned": getattr(response, "model_returned", None),
             "usage": getattr(response, "usage", None)}
+    provider = getattr(response, "provider_meta", None)
+    if provider:
+        # Non-secret call metadata from a hosted provider — response id, request
+        # id, endpoint, the model asked for and the model served, the stateless
+        # flags. No backend ever puts a credential here.
+        meta["provider"] = dict(provider)
+    return meta
 
 
 def _content_from_raw(raw: Any) -> Any:
@@ -207,7 +215,7 @@ class CallStore:
         self.directory = Path(self.directory)
         self.log = GenerationLog(self.directory / "generation_log.jsonl",
                                  raw_dir=self.directory / "raw")
-        self.model = self.model or self.cfg.raw["models"]["generator"]["model"]["repo_id"]
+        self.model = self.model or generator_model_id(self.cfg)
 
     # -- where things live ---------------------------------------------------
     def result_path(self, call_id: str) -> Path:
@@ -323,7 +331,8 @@ class CallStore:
             response_sha256=response_sha256,
             input_tokens=(usage or {}).get("prompt_tokens"),
             output_tokens=(usage or {}).get("completion_tokens"))
-        payload = {k: v for k, v in vllm_payload(request, self.cfg).items() if k != "messages"}
+        payload = {k: v for k, v in request_payload(request, self.cfg).items()
+                   if k not in PROMPT_KEYS}
         return {
             "request_fields": {**payload, "attempt": request.attempt, "kind": request.kind},
             "config_content_hash": self.cfg.content_hash,
@@ -360,7 +369,8 @@ class CallStore:
                         and not result.get("error_codes"),
                         "no_progress": bool(result.get("no_progress")),
                         "recovered_after_interruption": recovered},
-            extra=dict(result.get("extra") or {}),
+            extra={**dict(result.get("extra") or {}),
+                   **({"provider": meta["provider"]} if meta.get("provider") else {})},
             outcome=result["outcome"]))
 
     def record(self, request: DraftRequest, *, status: str, outcome: str,
@@ -429,7 +439,7 @@ def _send_or_resume(store: CallStore, request: DraftRequest, backend, cfg: Exper
 
     # The raw traffic and what the backend reported about it, written BEFORE the
     # result and the log line, so a crash in between leaves enough to recover.
-    payload = {k: v for k, v in vllm_payload(request, cfg).items() if k != "messages"}
+    payload = {k: v for k, v in request_payload(request, cfg).items() if k not in PROMPT_KEYS}
     store.log.store_raw(request.call_id, payload, response.raw, prompt=request.prompt,
                         meta=_meta_from(response))
     if response.stop_reason not in (None, "stop"):

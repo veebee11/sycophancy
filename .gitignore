@@ -87,3 +87,9 @@ nohup.out
 # the approvals, the manual corrections, the corpus and its manifest ARE, and
 # stay tracked.
 data/pilot/run/
+
+# The hosted generator's own run and smoke directories. Separate from the local
+# generator's on purpose: a run directory is one generator's evidence, and the
+# completed Qwen run is never appended to or written over.
+data/pilot/run_openai/
+data/pilot/smoke_openai/

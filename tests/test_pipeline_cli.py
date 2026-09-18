@@ -107,14 +107,30 @@ def test_the_refusal_names_every_missing_key(tmp_path, no_network):
     assert "separate authorisation from a smoke call" in result.stdout
 
 
+BACKEND_CONSTRUCTORS = ("VLLMOpenAIBackend(", "OpenAIResponsesBackend(")
+
+
 def test_only_the_two_stage_commands_can_reach_a_backend(tmp_path, no_network):
-    """Everything else in this script reads files and reports."""
+    """Everything else in this script reads files and reports.
+
+    Both backends are constructed in exactly one place, ``_live_backend``, and
+    that function is called only from the two stage functions and the redraft
+    stage. Which generator runs is then a property of the configuration that
+    was named on the command line, not of anything a caller can flip.
+    """
     source = PILOT.read_text()
-    # The backend is constructed only in the two stage functions and the
-    # redraft stage; every other command reads files and prints.
-    generating = (source[source.index("def _stage("):source.index("def _scenario_review(")])
-    assert source.count("VLLMOpenAIBackend()") == 2
-    assert generating.count("VLLMOpenAIBackend()") == 2
+    start = source.index("def _live_backend(")
+    factory = source[start:source.index("\ndef ", start)]
+    for constructor in BACKEND_CONSTRUCTORS:
+        assert source.count(constructor) == 1, constructor
+        assert constructor in factory, f"{constructor} is built outside _live_backend"
+    # The factory is called only by the code that is allowed to generate: the
+    # group/scenario stage, and the redraft stage, both inside this slice.
+    generating = source[source.index("def _stage("):source.index("def _scenario_review(")]
+    call_sites = [line for line in source.splitlines()
+                  if "_live_backend(cfg)" in line and not line.lstrip().startswith("def ")]
+    assert len(call_sites) == 2, call_sites
+    assert generating.count("_live_backend(cfg)") == 2
     for command in ("plan", "status", "approvals", "scenario-review", "assemble"):
         result = _run(PILOT, command, "--out", str(tmp_path / "run"), "--send",
                       "--approvals-file", str(tmp_path / "approvals.yaml"),

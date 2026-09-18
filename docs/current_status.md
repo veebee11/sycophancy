@@ -1,6 +1,6 @@
 # Current status
 
-*Updated 2026-09-17. Kept short; history is in git, rules in `design_notes.md`.*
+*Updated 2026-09-18. Kept short; history is in git, rules in `design_notes.md`.*
 
 ## Done
 
@@ -16,9 +16,12 @@
 - **No hidden sampling defaults.** The launcher passes `--generation-config vllm` and records it; all sampling fields are sent at explicit neutral values.
 - **Scenario drafting (2026-09-16).** The scenario stage **has run live**, inside `pipeline_smoke.py`, and its scenario was accepted. The standalone `smoke_test.py --kind scenario` command is implemented and offline-tested but has not itself been run.
 - **Bounded repair controller (2026-09-16).** One draft plus at most two validator-driven repairs, then `needs_manual_review`; recorded per call, resumable, transport failures retryable. It **ran live twice** through `scripts/pipeline_smoke.py`. The first run's repairs were identical requests; after the correction, the second run sent two distinct, diagnosed repairs and recorded the model's unchanged replies as no progress — **the corrected mechanism was confirmed live**. Both runs ended `needs_manual_review`. No further synthetic repair smoke is planned.
-- **Live calls so far: 43 model calls** — ten synthetic-smoke calls, 24 pilot scenario calls on 2026-09-16, and nine bounded scenario-redraft calls on 2026-09-17. No pilot group has been generated.
-- **`scripts/pilot.py`.** The two-stage pilot runner: `scenarios` and `groups` as separate commands that cannot be combined, plus `redraft-scenarios`, `scenario-review`, `approvals`, `assemble`, `status` and `log`. A live stage needs `--send` **and** both authorisation keys, and runs on the complete pilot only — a subset is refused. The scenario and redraft stages have run; the group stage has not.
+- **Live calls so far: 183 model calls** — ten synthetic-smoke calls, 24 pilot scenario calls on 2026-09-16, nine bounded scenario-redraft calls on 2026-09-17, and the 140 calls of the pilot group stage on 2026-09-17 (see *Live group stage* below).
+- **`scripts/pilot.py`.** The two-stage pilot runner: `scenarios` and `groups` as separate commands that cannot be combined, plus `redraft-scenarios`, `scenario-review`, `approvals`, `group-review`, `assemble`, `status` and `log`. A live stage needs `--send` **and** both authorisation keys, and runs on the complete pilot only — a subset is refused. The scenario, redraft and group stages have all run.
 - **Scenario gate complete (2026-09-17).** Vidhi approved the review decisions reported here. Fifteen original scenarios remained approved; four Qwen redrafts were approved as returned; five further redrafts were corrected in `data/pilot/scenario_corrections.yaml`. Each correction is a separate record bound to the exact model call and text, with editor, date, reason and both text hashes. The generated results, raw responses and log were not edited. All five corrected texts pass the ordinary scenario validator, and `pilot.py approvals` reports **24/24 approved, zero gate blockers**.
+- **Group stage complete (2026-09-17).** All 48 groups were attempted; 2 are machine-valid and 46 need inspection and correction. Details in *Live group stage* below.
+- **Read-only group review (2026-09-17, offline).** `pilot.py group-review` turns the recorded group run into deterministic Markdown: all 48 groups by decision, variant and supported option, with the current approved scenario, both options, the allocated marker, the final call, the four bodies side by side, the rendered counterargument, body and full-text word and sentence counts, the exact findings with their measurements, the outstanding human judgements, and — for the 46 — a per-attempt history in which an unchanged repair is marked as such. It re-uses `validate_group` and the validator's own measurement function rather than re-implementing a rule, and its output reproduces every code each call recorded at the time. The index also flags, informationally, the three groups whose earlier attempt recorded fewer distinct error codes than their final one — `climate_01_v1 / opt_1`, `climate_04_v2 / opt_2` and `energy_02_v1 / opt_2`. The final recorded attempt stays canonical, the flag selects and approves nothing, and fewer machine-error codes is a statement about form, not about quality. It makes no call, writes nothing into the run directory, and neither generates nor populates `data/pilot/manual_corrections.yaml`.
+- **A second generator, implemented and not yet run (2026-09-18).** `gpt-5.6-sol` through OpenAI's Responses API, as a first-class backend beside the local Qwen/vLLM one. Its own configuration (`configs/experiment_openai_pilot.yaml`, `openai_pilot_v1`, its own content hash), its own gitignored run directory (`data/pilot/run_openai/`), its own approvals file and correction ledgers, and its own one-call smoke script. **Nothing has been sent**: no request has been made, no key has been read, and no dataset has been generated with it. Details below under *Hosted generator*.
 - **Tests.** The full suite passes on a laptop, with no server.
 
 ## Corpus scope (settled 2026-09-16)
@@ -44,8 +47,8 @@ The order this implies:
 
 ## Not yet completed
 
-- **The pilot group stage.** The 24-scenario gate is satisfied, but none of the 48 groups has been generated. The bounded ceiling is 144 calls: one draft plus at most two repairs per group.
-- **Pilot assembly and counterargument review.** These wait for the group stage. The assembled pilot will contain 24 scenario records, 48 groups and 192 cells, and remains `draft` until item, pair and scenario review is complete.
+- **Inspection and audited correction of the 46 failed groups.** This is the next gate. The groups have been generated and read into `review/pilot_groups/`; what is outstanding is a person reading each one and recording an approved correction bound to its exact call and text. Nothing about that has been decided yet.
+- **Pilot assembly and counterargument review.** These wait for the 46 corrections. The assembled pilot will contain 24 scenario records, 48 groups and 192 cells, and remains `draft` until item, pair and scenario review is complete.
 - **The remaining decisions to reach 60** (normally 48 more), then validation, human review and the corpus freeze.
 - **The mechanistic subset's selection rule** — 40 of the 60 — documented before mechanistic analysis.
 - Model adapter, answer-token verification, logit scoring and every later analysis and mechanistic stage.
@@ -243,6 +246,112 @@ applied only after the corrected text passes the scenario validator. The current
 approval file binds the final exact text and source call for all 24 scenarios.
 The gate is now clear; this does not generate or approve any counterargument.
 
+## Live group stage (2026-09-17)
+
+**The 48-group stage ran live on 2026-09-17**, on the run directory holding the
+24 scenario calls and the nine redrafts, against the 24 approved scenario texts
+(five of them human-corrected). Evidence, read-only and gitignored, in
+`data/pilot/run/pilot_groups_snapshot_2026-09-17_complete/`. Its
+`generation_log.jsonl` has **173 lines**: 33 scenario and redraft calls from the
+earlier stages, and **140 group and repair calls** from this one.
+
+- **48 groups attempted; 140 of the 144 permitted calls used** — two groups that
+  passed on their first draft, and 46 that each used one draft and two repairs.
+- **2 groups are machine-valid**: `energy_01_v1 / opt_2` and
+  `energy_03_v1 / opt_2`, both accepted on their initial draft.
+- **46 groups ended `needs_manual_review`.**
+- **No repair produced an accepted group.** Not one of the 92 repair calls turned
+  a failing group into a valid one.
+- **Repair 1 returned the text it was given, unchanged, for 33 of the 46.**
+  **Repair 2 did so for 41 of the 46.** **Thirty groups had identical bodies at
+  all three attempts.**
+
+Final errors among the 46, counted by group:
+
+| Code | Groups |
+|---|---|
+| `E_WORD_RATIO_BODY` | 44 |
+| `E_WORD_RATIO_FULL_TEXT` | 42 |
+| `E_BODY_SENTENCE_COUNT` | 15 |
+| `E_SENTENCE_COUNT_MISMATCH` | 15 |
+| `E_PAIR_CONTENT_DRIFT` | 6 |
+| `E_DUPLICATE_TEXT` | 4 |
+| `E_MARKER_MISSING_IN_STYLED_CELL` | 3 |
+| `E_OPENING_REPEATED_IN_BODY` | 2 |
+| `E_MARKER_IN_PLAIN_CELL` | 1 |
+
+The dominant failure is length matching: the reason-bearing cells are far longer
+than the no-reason cells, so the body ratio, and with it the full-text ratio,
+exceeds the 1.15 ceiling. The sentence-count failures are the same shape as the
+synthetic smokes — dropping the connective splits the plain member of a pair
+into a second sentence. The repair mechanism behaved exactly as the confirmation
+smoke showed it does: distinct, diagnosed requests carrying the measurements,
+and unchanged replies recorded as no progress rather than accepted.
+
+**Read, not yet judged.** `pilot.py group-review` writes a deterministic,
+read-only Markdown view of the whole run — the two machine-valid groups and the
+46 kept clearly apart, each group with its scenario, options, marker, final
+call, four bodies, rendered counterarguments, counts, exact findings with their
+measurements, outstanding human judgements, and a per-attempt history that marks
+an unchanged repair as unchanged. It sends nothing, writes nothing into the run
+directory, and proposes no corrected wording.
+
+**No generator, model, prompt, validator or threshold decision has been made in
+response to this run.** The observation that this model, under this
+configuration, does not repair these groups is recorded; what to change — if
+anything — is a decision for after the 46 have been read, not an inference from
+the counts above. `data/pilot/manual_corrections.yaml` does not exist and has
+not been drafted.
+
+## Hosted generator, implemented and unrun (2026-09-18)
+
+**Why.** The Qwen pilot finished with **2 of 48 groups machine-valid**; the
+dominant failure is cross-condition length matching, and **no repair produced
+an accepted group** (*Live group stage*, above). `gpt-5.6-sol` is being tried as
+a second generator under exactly the same rules. The reasoning is in
+`design_notes.md`, *Corpus construction*, amendment of 2026-09-18.
+
+**What exists.** `openai_responses` is a first-class backend beside
+`local_vllm_openai`. The Responses API, the exact model id `gpt-5.6-sol` (the
+moving alias `gpt-5.6` is refused at config load), `reasoning.effort` `none`,
+temperature 0.3, `top_p` left at the provider default and not sent,
+`max_output_tokens` 700, strict JSON-schema structured output through
+`text.format`, `store: false`, `background: false`, no tools, no files, no
+conversation and no previous-response state. Each request is stateless and
+produces exactly one draft. `store: false` keeps a response out of retrievable
+Responses API state; it is not a retention guarantee, since abuse-monitoring
+retention may still apply under the account's data-control policy, and Zero Data
+Retention is not claimed.
+
+**What has not happened.** **No API request has been made, no key has been read
+and no dataset content has been generated.** Every test runs against fake
+responses with networking disabled; none needs a key or costs anything. The
+smoke call, the scenario stage, the approval gate and the group stage are all
+still ahead, in that order.
+
+**What is preserved.** The Qwen configuration is byte-identical and its content
+hash still `9da99ff12674…`, so all 24 scenario approvals stay valid. The
+completed group run and its snapshot are untouched: the hosted generator writes
+to `data/pilot/run_openai/`, and a stage refuses a run directory belonging to
+another generator or already holding another generator's calls. Approvals,
+correction ledgers, corpus and review exports default to separate per-generator
+files. Nothing was relaxed to accommodate a different model — a test asserts the
+two configurations differ in the generator block and nowhere else, so the
+prompts, conditions, validators, word ratios, repair budget, curator gate and
+human-review codes are the same ones the Qwen pilot was held to.
+
+**Authorisation and the credential.** A live hosted pilot stage needs three
+things: `--send`, `REASONSTYLE_ALLOW_OPENAI_GENERATION=1` and
+`REASONSTYLE_ALLOW_PILOT_GENERATION=1`. The local-generation key does not
+authorise a paid external call. A dry run needs no key and opens no connection.
+The credential is read from `OPENAI_API_KEY` at the moment of the call and
+nowhere else, and never reaches a request record, a log line, an error message,
+a printed line or a hash.
+
+**Ceilings.** One smoke call; 24 scenario calls with no repair path; 48 group
+drafts with at most 144 calls including repairs — 168 calls for a complete
+pilot, plus at most one redraft call per rejected scenario if that path is used.
+
 ## Offline pipeline (2026-09-16)
 
 Four separate states, deliberately kept apart:
@@ -273,15 +382,15 @@ than accepted or silently retried. **No further synthetic repair smoke is
 planned.** Whether Qwen3-14B repairs this particular fixture automatically is
 not a prerequisite for anything.
 
-**3. Pilot generation is implemented; the scenario half is complete.**
+**3. Pilot generation is implemented, and both halves have run.**
 `scripts/pilot.py` has the live path, in two commands that cannot be combined.
 Each needs `--send`, `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`,
 `REASONSTYLE_ALLOW_PILOT_GENERATION=1` and `HF_HUB_OFFLINE=1`, passes the same
 pre-flight as the smoke tests, and refuses any subset of the pilot. The 24-call
-scenario stage and nine-call redraft stage ran on Chomusuke02. The 48-group
-stage has not run.
+scenario stage, the nine-call redraft stage and the 140-call group stage all ran
+on Chomusuke02.
 
-**4. The gate is now satisfied; the assembler remains unused.**
+**4. The gate was satisfied and the groups drafted; the assembler remains unused.**
 `generation/approvals.py` is the curator-approval gate: an approval binds the
 exact scenario text, the accepted call id, the configuration hash and the
 topic-bank hash, and a change to any one of them makes it stale. `run_pilot`
@@ -293,8 +402,9 @@ material rather than replacing it. **A human approval never overrides a machine
 error:** corrected text is re-validated by the same code, and an assembled
 record still leaves `validation.status: draft` until the human judgements are
 recorded. Scenario corrections follow the same provenance rule without altering
-the generated evidence. The next live operation is the separately authorised
-group stage.
+the generated evidence. The group stage has since run, and 46 of its groups
+carry no correction yet, so nothing assembles: the assembler refuses a group
+that is neither machine-valid nor corrected.
 
 ### The workflow these two pieces imply
 
@@ -327,15 +437,33 @@ drafts and at most 144 calls including repairs. `assemble` writes
 corpus without `--overwrite`, and validates the whole corpus before writing.
 
 The redraft path and exact-source-bound scenario correction ledger are now
-implemented and exercised. `pilot.py approvals` reports 24/24 approved and the
-group dry run reports zero scenario blockers.
+implemented and exercised. `pilot.py approvals` reports 24/24 approved and zero
+scenario blockers, which is the gate the group stage then passed.
 
 ## Next steps
 
-1. **Review and commit the final scenario approvals, correction ledger and integration**, then bring the server checkout up to date without altering its run evidence.
-2. **Authorise stage two when ready:** `pilot.py groups --send` with both keys, using the run directory that contains the 24 original calls and nine redrafts. It will draft 48 groups, with a ceiling of 144 calls including repairs.
-3. **Inspect and correct only the groups routed to review**, then run `pilot.py assemble` and export the 192 cells for item, pair and scenario review.
-4. **After the pilot is reviewed**, extend to the full 60 decisions, then validate, human-review and freeze before any evaluated-model run.
+0. **Decide which generator the pilot is drafted with.** The hosted backend is
+   implemented and unrun; the Qwen evidence stands either way. Nothing below
+   changes if you stay with the Qwen material and correct it by hand; if you run
+   the hosted pilot instead, it starts at its own smoke call and its own
+   scenario gate, and produces its own 24 scenarios to approve before any group
+   is drafted.
+1. **If the Qwen material stands: inspection and audited correction of the 46 failed groups.**
+   Read them in `review/pilot_groups/` (`pilot.py group-review`), then record an
+   approved correction per corrected cell in `data/pilot/manual_corrections.yaml`,
+   each bound to the exact call and original text. The validator re-checks every
+   corrected cell at assembly; a human approval never overrides a machine error.
+   The two machine-valid groups need no correction and are not approved either:
+   their human judgements are outstanding like everyone else's.
+2. **No generator, model, prompt, validator or threshold decision has been taken**
+   in response to the group run, and none should be until the 46 have been read.
+   Whether the failures are correctable by hand, whether the drafting prompts
+   need changing, and whether this model can draft this corpus at all are the
+   questions that reading answers — not questions the counts answer by themselves.
+3. **Then assemble:** `pilot.py assemble`, and export the 192 cells for item,
+   pair and scenario review.
+4. **After the pilot is reviewed**, extend to the full 60 decisions, then
+   validate, human-review and freeze before any evaluated-model run.
 
 ## Open, not resolved
 

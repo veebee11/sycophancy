@@ -94,14 +94,77 @@ draft is machine-validated and then reviewed by a person.
 | 2. Check the topic bank (overlap screen, 4 curated per domain) | `prepare_topic_bank.py` | done |
 | 3. Allocate marker family, string and realization to all 48 groups | `allocate_markers.py` | done |
 | 4. Server preflight, launch, one-call smoke test (`--kind group` or `--kind scenario`) | `preflight_model.py`, `server/serve_vllm.sh`, `smoke_test.py` | two draft-only group smokes run live (15 and 16 Sep 2026); the standalone `--kind scenario` command has not been run |
-| 5. Draft the pilot's 24 scenarios (`pilot.py scenarios`), **stop for curator approval**, then draft its 48 groups with bounded repair (`pilot.py groups`) | `pilot.py` | scenario stage ran live on 2026-09-16; all 24 final scenario texts are approved; group stage not yet run |
+| 5. Draft the pilot's 24 scenarios (`pilot.py scenarios`), **stop for curator approval**, then draft its 48 groups with bounded repair (`pilot.py groups`) | `pilot.py` | scenario stage ran live on 2026-09-16 and all 24 final scenario texts are approved; the group stage ran live on 2026-09-17 — 140 calls, 2 groups machine-valid, 46 `needs_manual_review` |
 | 5b. Redraft the scenarios the curator rejected, one call each | `pilot.py redraft-scenarios` | nine calls ran live on 2026-09-17; four redrafts were approved as returned and five were corrected in an audited, revalidated ledger |
 | 5c. File-based request/response path, separate from the live runner | `emit_requests.py`, `import_responses.py` | built; not part of the two-stage live path |
 | 6. Repair failing groups (≤2 repairs) | `pipeline_smoke.py` | built; run live twice on 2026-09-16, both ending `needs_manual_review`. The mechanism is confirmed: distinct, diagnosed repairs, unchanged output routed to review. No further synthetic repair smoke is planned |
-| 6b. Assemble corpus JSONL and its manifest, corpus-wide | `pilot.py assemble` | built, offline-tested; writes atomically, refuses a partial pilot, validates before writing |
+| 6b. Assemble corpus JSONL and its manifest, corpus-wide | `pilot.py assemble` | built, offline-tested; writes atomically, refuses a partial pilot, validates before writing. Waiting on the 46 group corrections |
+| 6c. Read the recorded group run, read-only | `pilot.py group-review` | built and run against the complete 2026-09-17 evidence |
 | 7. Validate and export the pilot for human review | `export_for_review.py` | built |
-| 8. Approve every scenario between the two stages, then assemble what passes | `pilot.py scenario-review`, `pilot.py approvals`, `pilot.py assemble` | scenario gate complete: 24/24 approved; assembly waits for the 48 groups |
+| 8. Approve every scenario between the two stages, then assemble what passes | `pilot.py scenario-review`, `pilot.py approvals`, `pilot.py assemble` | scenario gate complete: 24/24 approved. The next gate is inspecting and correcting the 46 failed groups; assembly waits for that |
 | 9. Extend to the full 60 decisions, then validate, review and freeze | — | not started |
+
+A second generator, `gpt-5.6-sol` through OpenAI's Responses API, is implemented
+and **has not been run**: no request has been made, no key has been read and no
+dataset content has been generated with it. See *A second generator* below.
+
+## A second generator (implemented, not yet run)
+
+The Qwen pilot finished with **2 of 48 groups machine-valid**; the dominant
+failure is cross-condition length matching, and no repair produced an accepted
+group. `gpt-5.6-sol`, through OpenAI's **Responses API**, is implemented as a
+first-class backend so the same pilot can be drafted again under **exactly the
+same rules** — the same hashed prompt templates, four conditions, validators,
+1.10/1.15 word ratios, one-draft-plus-two-repairs budget, curator gate and
+unconditional human-review codes. Nothing was relaxed to accommodate it, and a
+test asserts the two configurations differ in the generator block and nowhere
+else. **Nothing has been sent yet, and no claim is made about whether it helps:
+that is what the new pilot, machine *and* human review, is for.**
+
+| | |
+|---|---|
+| model | `gpt-5.6-sol` — the exact id; the moving alias `gpt-5.6` is refused at config load |
+| API | Responses API, `https://api.openai.com/v1/responses`. Not a browser, not the ChatGPT UI |
+| reasoning | `{"effort": "none"}` |
+| sampling | temperature `0.3`; `top_p` left at the provider default and **not sent** |
+| output | `max_output_tokens: 700`, strict JSON schema through `text.format` |
+| state | `store: false`, `background: false`, no tools, no web search, no files, no conversation, no `previous_response_id` — every request stateless, exactly one draft |
+| retention | `store: false` keeps the response out of retrievable Responses API state (no fetch by response id, no `previous_response_id` chaining). It is **not** a retention guarantee: abuse-monitoring retention may still apply under the account's data-control policy, and **Zero Data Retention is not claimed** |
+| config | `configs/experiment_openai_pilot.yaml` (`openai_pilot_v1`), its own content hash |
+| run directory | `data/pilot/run_openai/` — gitignored, and never the Qwen run or its snapshot |
+
+The decoding settings are recorded as their own profile, `openai_responses_v1`,
+**not** as if they were the Qwen configuration: the two share temperature 0.3
+and a 700-token ceiling and nothing else, and no seed is sent to this API, so
+none is recorded as though it had been. If the account later exposes a more
+specifically pinned snapshot, the backend records the returned model id and
+reports it for approval; it never follows it silently, and a model that is not a
+snapshot of the requested one is refused.
+
+**Authorisation.** A live hosted pilot stage needs three separate yeses —
+`--send`, `REASONSTYLE_ALLOW_OPENAI_GENERATION=1` and
+`REASONSTYLE_ALLOW_PILOT_GENERATION=1`. The local-generation key does not
+authorise a paid external call, and this one does not authorise a local run.
+**A dry run needs no key and opens no connection.**
+
+**The credential** is read from `OPENAI_API_KEY` at the moment of the call and
+nowhere else. It never reaches a request record, a log line, a raw file, an
+error message, a printed line or a hash; the recorded payload is the complete
+request body, and the Authorization header is built inside the backend and
+discarded there. **There is no automatic retry at any level** — an invisible
+retry is a second paid call for the same draft. A response that arrived is
+always a recorded attempt that spent its budget position, truncated or malformed
+included; only a failure that produced no response at all is raised for you to
+decide about.
+
+```bash
+uv run python scripts/openai_smoke_test.py --config configs/experiment_openai_pilot.yaml
+```
+
+That is the dry run: it prints the exact payload and sends nothing. The
+operating sequence — dry run, one smoke call, 24 scenarios, approval, 48
+groups — is in [`docs/current_status.md`](docs/current_status.md) under *Hosted
+generator*, with the call ceiling for each step.
 
 ## Local generator
 
@@ -152,6 +215,51 @@ index, one file per decision with all four conditions side by side, a combined
 searchable file, and blinded packets for the reliability annotators. Add
 `--check` to verify it still matches the corpus. Judgements are recorded under
 `data/`, never in the generated Markdown.
+
+## Reading the recorded group run
+
+```bash
+uv run python scripts/pilot.py group-review --config configs/experiment.yaml \
+    --out data/pilot/run/pilot_groups_snapshot_2026-09-17_complete
+```
+
+`pilot.py group-review` is a **read-only reporting command**. It makes no model
+call, no repair, no approval and no correction, writes nothing into the run
+directory and touches no corpus; it reads the recorded run and writes
+deterministic Markdown to `--group-review-out` (default `review/pilot_groups/`).
+It is unaffected by `--send` or by any generation environment key.
+
+It shows all 48 expected groups, taken from the frozen marker allocation rather
+than from whatever the log happens to contain, organised by decision, variant
+and supported option, with the **2 machine-valid groups and the 46 requiring
+correction kept clearly apart**. For each group: the scenario that currently
+stands — model draft, accepted redraft, approved human correction — both
+semantic options, the allocated marker family, string and realization, the final
+call id, attempt number and outcome, the RS/RP/NS/NP bodies side by side, the
+complete rendered counterargument including the shared opening, body and
+full-text word and sentence counts, the exact errors and warnings with the
+measurements behind them, and the outstanding human judgements. A failed group
+also carries a compact attempt history — each attempt's call id, prompt hash,
+whether it made progress, its four bodies and its findings — in which a repair
+that returned unchanged text is labelled as such.
+
+The index also carries one **informational** section: groups for which some
+earlier attempt recorded strictly fewer distinct machine-error codes than the
+final one, with both attempts' numbers, call ids and codes. It is a pointer and
+nothing more — the final recorded attempt remains canonical, the flag selects and
+approves nothing, and fewer machine-error codes does not mean better text, since
+the codes measure form and every substantive judgement is still outstanding.
+
+Output is an `index.md`, one page per scenario under `scenarios/`, a combined
+searchable `all_groups.md`, and a `MANIFEST.json` that hashes every file. No
+generated file carries a timestamp, so regenerating it produces identical bytes.
+The findings and counts are recomputed with `validate_group` and the validator's
+own measurement function, never with a second implementation.
+
+**Inspection only.** It proposes no corrected wording and neither generates nor
+populates `data/pilot/manual_corrections.yaml`: a correction is a separate,
+separately approved record bound to the exact call and text it replaces, and
+corrected text is re-validated by the same validator at assembly.
 
 ## What is and is not established
 

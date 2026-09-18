@@ -28,6 +28,7 @@ from typing import Any
 
 __all__ = [
     "CachedModel",
+    "generator_model_id",
     "ModelNotCached",
     "RunEnvironment",
     "cache_root",
@@ -259,10 +260,13 @@ class RunEnvironment:
     response_sha256: str | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
+    #: Null for a local model. For a hosted generator: who served it, over which
+    #: API, and the stateless flags the request carried. Never a credential.
+    provider: dict[str, Any] | None = None
 
     #: Stated wherever the record is shown. A seed is part of the record, not a
     #: reproducibility guarantee for a local model.
-    reproducibility_note = (
+    reproducibility_note: str = (
         "The seed is recorded but does not guarantee bit-for-bit reproduction "
         "across GPUs, drivers or library versions. The saved raw response, this "
         "environment record and the hashes are the authoritative record.")
@@ -271,16 +275,44 @@ class RunEnvironment:
         return {**asdict(self), "reproducibility_note": self.reproducibility_note}
 
 
+def generator_model_id(cfg) -> str:
+    """The model this configuration drafts with, whichever generator it names.
+
+    A local generator names a Hugging Face repository; a hosted one names a
+    provider model id. Both are "which model produced this", which is what the
+    log line records, so one accessor serves both rather than every caller
+    knowing the shape of each profile.
+    """
+    model = cfg.raw["models"]["generator"]["model"]
+    identifier = model.get("repo_id") or model.get("id")
+    if not identifier:                                      # pragma: no cover - config-checked
+        raise ValueError("the generator configuration names no model")
+    return identifier
+
+
+#: What a hosted generator's record says instead of the local note. There is no
+#: seed to record and no snapshot on our disk: the response id, the raw response
+#: and the hashes are the whole account of what produced a draft.
+HOSTED_REPRODUCIBILITY_NOTE = (
+    "No seed is sent to this API and no weights are held locally, so nothing here "
+    "claims reproducibility. The saved raw response, the provider's response id, "
+    "the requested and returned model ids and the prompt/response hashes are the "
+    "authoritative record of what was produced.")
+
+
 def describe_run(cfg, *, cached: CachedModel | None, endpoint: str | None,
                  server: dict[str, Any] | None = None, **measured: Any) -> RunEnvironment:
-    """Build the environment record from the configuration, the cache and the
-    server's own runtime record.
+    """Build the environment record for whichever generator the config names.
 
-    The GPU and dtype come from ``server`` — the machine that loaded the
-    weights — because the client may be a laptop on another host, and a GPU name
-    read from the client's shell would be a fiction.
+    For the local model the GPU and dtype come from ``server`` — the machine
+    that loaded the weights — because the client may be a laptop on another
+    host, and a GPU name read from the client's shell would be a fiction. For a
+    hosted model there is no machine of ours to describe, and the record says so
+    rather than leaving fields that look like they were not filled in.
     """
     gen = cfg.raw["models"]["generator"]
+    if gen["backend"] == "openai_responses":
+        return _describe_hosted_run(cfg, gen, endpoint=endpoint, **measured)
     server = server or {}
     return RunEnvironment(
         repo_id=gen["model"]["repo_id"],
@@ -296,5 +328,51 @@ def describe_run(cfg, *, cached: CachedModel | None, endpoint: str | None,
         libraries=library_versions(),
         client_host=platform.node(),
         offline_env={k: os.environ.get(k) for k in OFFLINE_ENV},
+        **measured,
+    )
+
+
+def _describe_hosted_run(cfg, gen: dict[str, Any], *, endpoint: str | None,
+                         **measured: Any) -> RunEnvironment:
+    """The environment record for a hosted generator.
+
+    Nothing about a credential appears: the provider block names the API, the
+    endpoint and the stateless flags, and the key itself is never read here at
+    all. ``revision`` carries the approved pinned snapshot when the account
+    exposes one and is null otherwise — a hosted model id is not a commit, and
+    pretending otherwise would put a fiction in the provenance.
+    """
+    dec, api = gen["decoding"], gen["openai"]
+    return RunEnvironment(
+        repo_id=gen["model"]["id"],
+        revision=gen["model"].get("pinned_snapshot"),
+        snapshot_path=None,
+        backend=gen["backend"],
+        endpoint=endpoint or api["endpoint"],
+        decoding=dict(dec),
+        seed=dec["seed"],
+        server=None,
+        dtype=None,
+        gpu=None,
+        libraries=library_versions(),
+        client_host=platform.node(),
+        offline_env={},
+        provider={
+            "provider": "openai",
+            "api": "responses",
+            "endpoint": api["endpoint"],
+            "structured_output": api["structured_output"],
+            "strict": api["strict"],
+            "store": api["store"],
+            "background": api["background"],
+            "tools": api["tools"],
+            "web_search": api["web_search"],
+            "files": api["files"],
+            "conversations": api["conversations"],
+            "previous_response_state": api["previous_response_state"],
+            "automatic_retries": api["automatic_retries"],
+            "api_key_env_name": api["api_key_env_name"],
+        },
+        reproducibility_note=HOSTED_REPRODUCIBILITY_NOTE,
         **measured,
     )

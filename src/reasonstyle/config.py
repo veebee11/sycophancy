@@ -681,7 +681,39 @@ def _check_drafting(cfg: ExperimentConfig) -> None:
     gen = cfg.raw["models"]["generator"]
     _check(gen["backend"] in gen["supported_backends"],
            f"generator backend {gen['backend']!r} is not one of {gen['supported_backends']}")
+    _check(gen["backend"] in _GENERATOR_CHECKS,
+           f"generator backend {gen['backend']!r} has no checks; a backend without them "
+           f"would be unvalidated configuration")
+    _GENERATOR_CHECKS[gen["backend"]](cfg, gen)
 
+    alloc = cfg.raw["markers"]["allocation"]
+    confirmatory = cfg.raw["markers"]["roles"]["confirmatory"]
+    inventory = cfg.raw["markers"]["primary_families"]
+    _check(alloc["pilot_families"] == confirmatory,
+           "the pilot allocates the confirmatory families; the exploratory family "
+           "is deferred to the full corpus")
+    _check(set(alloc["pilot_strings"]) == set(alloc["pilot_families"]),
+           "every pilot family needs its pilot strings")
+    for family, strings in alloc["pilot_strings"].items():
+        _check(len(strings) == len(set(strings)) == 2,
+               f"{family}: the pilot uses exactly two distinct strings")
+        unknown = [s for s in strings if s not in inventory[family]]
+        _check(not unknown, f"{family}: {unknown} are not in the marker inventory")
+
+    rep = cfg.raw["corpus"]["repair"]
+    _check(rep["max_calls_per_group"] == rep["max_repair_calls"] + 1,
+           "the call budget is the original attempt plus the repairs")
+    _check(rep["on_exhaustion"] == "needs_manual_review",
+           "an exhausted group is marked for manual review, never silently accepted")
+
+
+def _check_local_vllm_generator(cfg: ExperimentConfig, gen: dict) -> None:
+    """The local open-weights generator: a model on a GPU host behind vLLM.
+
+    Unchanged since the Qwen pilot, and it stays that way: the completed run of
+    2026-09-17 was produced under exactly these rules, and a second generator
+    does not get to relax the first one's checks.
+    """
     model = gen["model"]
     _check(bool(model["repo_id"]), "the generator repository id must be recorded")
     lowered = model["repo_id"].casefold()
@@ -730,25 +762,103 @@ def _check_drafting(cfg: ExperimentConfig) -> None:
     _check("live_calls_enabled" not in gen,
            "run authorisation does not belong in the experiment configuration")
 
-    alloc = cfg.raw["markers"]["allocation"]
-    confirmatory = cfg.raw["markers"]["roles"]["confirmatory"]
-    inventory = cfg.raw["markers"]["primary_families"]
-    _check(alloc["pilot_families"] == confirmatory,
-           "the pilot allocates the confirmatory families; the exploratory family "
-           "is deferred to the full corpus")
-    _check(set(alloc["pilot_strings"]) == set(alloc["pilot_families"]),
-           "every pilot family needs its pilot strings")
-    for family, strings in alloc["pilot_strings"].items():
-        _check(len(strings) == len(set(strings)) == 2,
-               f"{family}: the pilot uses exactly two distinct strings")
-        unknown = [s for s in strings if s not in inventory[family]]
-        _check(not unknown, f"{family}: {unknown} are not in the marker inventory")
 
-    rep = cfg.raw["corpus"]["repair"]
-    _check(rep["max_calls_per_group"] == rep["max_repair_calls"] + 1,
-           "the call budget is the original attempt plus the repairs")
-    _check(rep["on_exhaustion"] == "needs_manual_review",
-           "an exhausted group is marked for manual review, never silently accepted")
+def _check_openai_generator(cfg: ExperimentConfig, gen: dict) -> None:
+    """The hosted generator: OpenAI's Responses API, one stateless call a draft.
+
+    An external, paid provider is a different kind of risk from a model on our
+    own GPU, so the checks are different — not weaker. What they establish is
+    that the model is pinned rather than an alias, that the request is
+    stateless and toolless, that the decoding profile is stated as its own
+    profile rather than borrowed from the local one, and that no credential is
+    anywhere in this file.
+    """
+    model = gen["model"]
+    _check(bool(model.get("id")), "the generator model id must be recorded")
+    identifier = model["id"]
+    _check(identifier not in model["refused_aliases"],
+           f"the generator model {identifier!r} is a moving alias "
+           f"({model['refused_aliases']}): an alias can repoint between the scenario "
+           f"stage and the group stage, making one corpus two generators")
+    lowered = identifier.casefold()
+    clash = [f for f in model["excluded_families"] if f.casefold() in lowered]
+    _check(not clash,
+           f"the generator {identifier!r} belongs to an evaluated family {clash}: "
+           f"the corpus would share an ancestor with a model under test")
+    snapshot = model.get("pinned_snapshot")
+    _check(snapshot is None or snapshot.startswith(identifier),
+           f"pinned_snapshot {snapshot!r} is not a snapshot of {identifier!r}: a more "
+           f"specific pin is approved deliberately, never substituted for another model")
+
+    dec = gen["decoding"]
+    _check(dec.get("profile") == "openai_responses_v1",
+           "the OpenAI decoding settings are their own named profile; presenting them "
+           "as the local generator's settings would be false")
+    _check(dec["thinking"] == "disabled",
+           "the generator runs in non-thinking mode for this short structured task")
+    _check(dec.get("reasoning") == {"effort": "none"},
+           "reasoning effort is 'none' for this short structured drafting task")
+    _check(isinstance(dec["max_output_tokens"], int) and dec["max_output_tokens"] > 0,
+           "max_output_tokens must be a positive integer")
+    _check(0 < dec["temperature"] <= 1,
+           "temperature is recorded explicitly and lies in (0, 1]")
+    _check(dec["top_p"] is None,
+           "top_p is left at the provider default and not sent: tuning temperature and "
+           "top_p together is two knobs for one effect")
+    _check(dec["seed"] is None,
+           "no seed is sent to this API, so none is recorded as if it had been")
+    _check(dec["n"] == 1, "one response per call; no cherry-picking among samples")
+
+    api = gen["openai"]
+    _check(api["endpoint"] == "https://api.openai.com/v1/responses",
+           f"the generator must use the Responses API over HTTPS; got {api['endpoint']!r}")
+    _check(api["structured_output"] == "text_format_json_schema" and api["strict"] is True,
+           "output is constrained by a strict JSON schema through text.format, so the "
+           "model cannot answer with prose that merely resembles an object")
+    for flag in ("store", "background", "web_search", "files", "conversations",
+                 "previous_response_state"):
+        _check(api[flag] is False,
+               f"openai.{flag} must be false: every request is stateless and produces "
+               f"exactly one draft")
+    _check(api["tools"] == "none", "no tool is offered to the generator")
+    _check(api["automatic_retries"] == 0,
+           "no automatic retry at any level: an invisible retry is a second paid call "
+           "for the same draft")
+
+    # No credential of any kind belongs in a configuration. The only thing named
+    # here is the NAME of an environment variable; the value is read at the
+    # moment of the call and never stored, logged, hashed or printed.
+    _check(api["api_key_env_name"] == "OPENAI_API_KEY",
+           "the credential is named only as an environment variable name")
+    for forbidden in ("api_key", "token", "auth"):
+        _check(forbidden not in gen, f"{forbidden!r} must never appear in the configuration")
+    for path, value in _strings_in(gen):
+        _check(not value.startswith("sk-") and "Bearer " not in value,
+               f"models.generator.{path} looks like a credential; no secret may ever "
+               f"be written into a configuration that is read, copied and shared")
+
+    _check("live_calls_enabled" not in gen,
+           "run authorisation does not belong in the experiment configuration")
+
+
+def _strings_in(value, path: str = ""):
+    """Every string in a nested structure, with a dotted path, for the secret scan."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            yield from _strings_in(item, f"{path}.{key}" if path else str(key))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from _strings_in(item, f"{path}[{index}]")
+    elif isinstance(value, str):
+        yield path, value
+
+
+#: Which checks apply to which generator backend. A backend that is not here is
+#: refused rather than run unvalidated.
+_GENERATOR_CHECKS = {
+    "local_vllm_openai": _check_local_vllm_generator,
+    "openai_responses": _check_openai_generator,
+}
 
 
 def _check_splits_and_probes(cfg: ExperimentConfig) -> None:

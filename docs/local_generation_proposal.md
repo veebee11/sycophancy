@@ -1,10 +1,11 @@
 # Local generation on Chomusuke — proposed changes
 
-**Status: implemented and exercised through the pilot scenario gate.** The
+**Status: implemented and exercised through the complete pilot generation.** The
 server environment, pinned model cache and local endpoint have been used for the
-synthetic smokes, 24 pilot scenario calls and nine bounded redraft calls. As of
-2026-09-17 all 24 final scenario texts are approved; the 48-group pilot stage
-has not run. See [`current_status.md`](current_status.md).
+synthetic smokes, 24 pilot scenario calls, nine bounded redraft calls and the
+140 calls of the 48-group stage. As of 2026-09-17 all 24 final scenario texts
+are approved, 2 groups are machine-valid and 46 need inspection and correction.
+See [`current_status.md`](current_status.md).
 
 The Anthropic path described in `drafting_proposal.md` §5 is withdrawn in full:
 there is no Anthropic dependency, no API key anywhere, and no external paid call.
@@ -227,15 +228,18 @@ redraft, no repair and no continuation.
 
 Pilot generation itself is `scripts/pilot.py`, in two commands that cannot be
 combined: `scenarios` (24 calls, completed on 2026-09-16) and, after the curator
-has approved every scenario against its exact text, `groups` (48 drafts, at most
-144 calls with repairs; not yet run). Nine bounded scenario redrafts ran on
-2026-09-17. Four were approved as returned and five were human-corrected in a
+has approved every scenario against its exact text, `groups` (48 drafts; 140 of
+the permitted 144 calls, completed on 2026-09-17). Nine bounded scenario
+redrafts ran on 2026-09-17. Four were approved as returned and five were human-corrected in a
 separate exact-source-bound ledger and revalidated; model evidence was not
 edited. Each live stage needs `--send`, `REASONSTYLE_ALLOW_LOCAL_GENERATION=1`,
 `REASONSTYLE_ALLOW_PILOT_GENERATION=1` and `HF_HUB_OFFLINE=1`, runs the same
 pre-flight checks as the smoke tests, and refuses any subset of the pilot.
 `pilot.py assemble` then writes the corpus and its manifest, each replaced
-atomically. The group and assembly steps have not run.
+atomically. The group stage has since run; assembly has not, and cannot until
+the 46 failed groups carry approved corrections. `pilot.py group-review` is the
+read-only reading view of that recorded run: it contacts nothing, writes only
+Markdown, and proposes no corrected wording.
 
 A smoke call needs the local-generation key only; a pilot stage needs the
 pilot-generation key as well.
@@ -247,8 +251,9 @@ after the correction, sent two distinct repairs carrying numerical diagnostics
 and recorded the model's unchanged replies as no progress. Both ended
 `needs_manual_review`, which is the designed outcome for a group the model does
 not repair. **No further synthetic repair smoke is planned.** Pilot generation
-has reached the approved scenario gate; the group stage remains separately
-unauthorised and has made no call.
+has since completed both stages: the 48-group run on 2026-09-17 made 140 calls,
+produced 2 machine-valid groups, and routed 46 to manual review — no repair
+turned a failing group into a valid one.
 
 Exactly **one four-condition group** from the **synthetic fixture** —
 `data/fixtures/topics.yaml`, decision `energy_fixture_001` (§11), variant v1, `opt_1`, with the
