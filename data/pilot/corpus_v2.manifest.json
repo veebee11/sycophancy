@@ -1,0 +1,553 @@
+{
+  "approval_config_content_hash": "994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f",
+  "config_content_hash": "afa9abdba15f06510882b0b3b2401fd50adc851f346ba97b68a299a6f9c60f21",
+  "config_version": "v2_pilot_openai",
+  "corpus_file": "corpus_v2.jsonl",
+  "corpus_scope": "pilot",
+  "corpus_sha256": "7e0dae8415abe0499321bffb19742b031dea8eede08fca1fca20340373e625d8",
+  "machine_errors": 0,
+  "machine_warnings": 4,
+  "n_scenarios": 24,
+  "n_texts": 192,
+  "note": "Machine-valid and scenario-approved. Every item, pair and scenario judgement is still outstanding, and every record stays draft until they are recorded.",
+  "outstanding_human_review": 1032,
+  "scenario_source": {
+    "access": "read_only",
+    "approvals": "data/pilot/scenario_approvals_openai.yaml",
+    "config": "configs/experiment_openai_pilot.yaml",
+    "config_content_hash": "994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f",
+    "config_version": "openai_pilot_v1",
+    "expected_scenario_count": 24,
+    "mode": "reuse_approved_v1",
+    "run": "data/pilot/run_openai",
+    "scenario_count": 24,
+    "scenarios": {
+      "climate_01_v1": {
+        "call_id": "66cba6bbe17851df5a9e876f4b704801eb7ee523e6e6605d0d7ffdd4c8f7d82d",
+        "scenario_text_sha256": "165410fe76ec17be3bbb9e267bcb41f7d949d0a6c431c5132a5ae68b597c2b17",
+        "superseded_call_id": null
+      },
+      "climate_01_v2": {
+        "call_id": "95835137be50345d8e288fa8002675975961b8d0d87b379b7ef1baf7473cd065",
+        "scenario_text_sha256": "19f5677cbcb0a85c7f4d747a61039040a1dd46fceba58da6c9a2fa7893c7ed4e",
+        "superseded_call_id": null
+      },
+      "climate_02_v1": {
+        "call_id": "93b8551317fff7648971099ddd8666d449b5e254fc6500b86852da99b251e330",
+        "scenario_text_sha256": "b0ad9d733e5809dd74f15c9626edc41e5e5ac343feeace08dbb98498bd6171cc",
+        "superseded_call_id": null
+      },
+      "climate_02_v2": {
+        "call_id": "587532c52439b50e09fd8ca7a6502406432da0bb68b0462d1cc6bd3b607e9a7a",
+        "scenario_text_sha256": "96d04baec62fb6a3c2a016ba15b9259e437e619141b02c064b50d32d93b847e3",
+        "superseded_call_id": null
+      },
+      "climate_04_v1": {
+        "call_id": "717a431f617dc5f0dbeb61990f31c0ce3a967d82647342cf6e8957d552d30a9e",
+        "scenario_text_sha256": "b7ced9f0bd79e923cf55e48057d2b8f9764124785812e45bf248ba24ff533add",
+        "superseded_call_id": null
+      },
+      "climate_04_v2": {
+        "call_id": "fff5861c9b7783ec04f02759da7820e91683bd62d8974822e03b5f88d72d90cb",
+        "scenario_text_sha256": "4f6c456291dae7505ed3299037b5d23ff8c64cdc1c0966bbcb81f3bc5d1c404c",
+        "superseded_call_id": "f86620e91366d7972a8e49173358902654be5916ed7de20ed23f12e3963b061d"
+      },
+      "climate_05_v1": {
+        "call_id": "b1baa3becd45bda28f17ee9d4cba9df8977f219a8b28bafe0d75250aeec1cda9",
+        "scenario_text_sha256": "2611b5ff978e02099b1fda5f69ee6792646c30049922a2d6903228a9e112fe79",
+        "superseded_call_id": null
+      },
+      "climate_05_v2": {
+        "call_id": "1363ec4ce7008e7edf794494677367d5058c3304586e6162a284022db17fabe1",
+        "scenario_text_sha256": "c41ed9e3a9bfe4f474fb3938baa91b9a8491a2ccac2211bf1734ef0393835dcb",
+        "superseded_call_id": null
+      },
+      "energy_01_v1": {
+        "call_id": "9eda55ea540da9679d0d54b16f974cd5cddf8f30d4db1062bed2d29c0d15f389",
+        "scenario_text_sha256": "50961801171ad85b96c6dbb6eeab29986ce5f1b87d29e8eebc1c88d40a1b9ef6",
+        "superseded_call_id": null
+      },
+      "energy_01_v2": {
+        "call_id": "f3aaa2985245b4546695230077fd7b89ecc6bde4670cd7efbe2e19c7bf25ae5a",
+        "scenario_text_sha256": "e7b7980cd30cc71ad4a941f867ba662f4af5f377daee9fc9fce559b539e0f408",
+        "superseded_call_id": "da42ed48e6bc6173d8271a1351fd0265efc528e41d503587d515d95c90726e57"
+      },
+      "energy_02_v1": {
+        "call_id": "f810f9f9a72ee719b3f1f52a0ba1d6e0def51c23fad5c7a5488a0cff88e3cdc4",
+        "scenario_text_sha256": "610d260a8c3762091d646bd9c11874c2e918f0a12d281a8ba769456e2dfc770f",
+        "superseded_call_id": null
+      },
+      "energy_02_v2": {
+        "call_id": "10a70cd74c9dca510eeb1c0eaef1014ed73524d8c1ebb378ee89302979060266",
+        "scenario_text_sha256": "b3b734c127a9051c300109648ba190f5e5477a92d9430935da9b243e9bc6e47e",
+        "superseded_call_id": null
+      },
+      "energy_03_v1": {
+        "call_id": "8207e24a004ad1aeefc18599f5ea2cfc65b1d3a85897f16f32120d0147dbf056",
+        "scenario_text_sha256": "6bdd8e21ee0e170762593eb24ee193af6c06a59784277a7e55bf829551fffc9a",
+        "superseded_call_id": null
+      },
+      "energy_03_v2": {
+        "call_id": "7645ff035dab85763c6d747ebc4d55b8ec82ffac8fba9a292e13a5d029fa2d7b",
+        "scenario_text_sha256": "f0e7c79c84dc839fb42372b97c4f4ee9721590704acaef452fd568ac5c86b454",
+        "superseded_call_id": "219e45c2eb0075a8191f80ef44d05f2e6b4d07fbb1843f4ffb8f5e24389dcd80"
+      },
+      "energy_05_v1": {
+        "call_id": "922126770c42d15c8b2bdedfcb707976fd3f75be47d602b1c1af1de7fca38856",
+        "scenario_text_sha256": "31c2f57f81e3eb93c45cde7a953e9968adee78b9b37f7d449c80cf144c02e16f",
+        "superseded_call_id": null
+      },
+      "energy_05_v2": {
+        "call_id": "d15992345b36a8600e2d993503d06594be5e21f2ef0e6839a8032ac817a8ca9a",
+        "scenario_text_sha256": "2550dd91f39dce5a4db7dd7f71ba6293adfe9567cad537628d7423922b182369",
+        "superseded_call_id": null
+      },
+      "technology_01_v1": {
+        "call_id": "9dd95aa160986b490b812ba0be4ff71ad1cbf89298ed1d1b1d0c7588c848bcb2",
+        "scenario_text_sha256": "834c09802b73303d1c3e09f2ec94a6f71f90c09070877e99b2675a25d6da6e9c",
+        "superseded_call_id": "33ba4dbc9c76a2adae0c337a8e9275711c624af95108b6f0a287dc7c401d022b"
+      },
+      "technology_01_v2": {
+        "call_id": "ee31c9bd8e1ccc6a0d54ed4f2ab8f43535040eeb35231c5c1c8a91cf577a7baf",
+        "scenario_text_sha256": "bb51f97665c1e72ba07bc21d7e2ae83d33b2de21f533627a4116c40c5bea5f9a",
+        "superseded_call_id": null
+      },
+      "technology_02_v1": {
+        "call_id": "4c049315769e8406339e3be9f26a5610c28f9cfc4c4c67b005e21f368219b17a",
+        "scenario_text_sha256": "188a0c42eee87efaf53d278b57be24ca8cefd72fb8b5b4c4a739ab25c71ddc25",
+        "superseded_call_id": null
+      },
+      "technology_02_v2": {
+        "call_id": "0acc1ea6db618efd8f145a1c399b0a26dbfb1f5796cb3b14c50baf0d771a284f",
+        "scenario_text_sha256": "34b288a8e438ec81631a6d921cc1da131fe8bb2969f458eafafa4f724c589666",
+        "superseded_call_id": null
+      },
+      "technology_03_v1": {
+        "call_id": "8deee06e8dc3efd1ff99f7842bed68a7f9ebe2fe709c68ee78e8f0da7875212b",
+        "scenario_text_sha256": "635017712c4b1e147a885a0a936085065f9560e312d7b482386e3751a488b243",
+        "superseded_call_id": null
+      },
+      "technology_03_v2": {
+        "call_id": "549a82bb802e3b058d7524198935cb554e8547a60c5dba08192f8a074a528988",
+        "scenario_text_sha256": "93b01e2184b41a5739ceae0b1212678660e8d78421a900c63595fd718f572766",
+        "superseded_call_id": null
+      },
+      "technology_04_v1": {
+        "call_id": "7e550d437f7166d632b6660369c2fd411ba398edf3546abf7dcce29885316a16",
+        "scenario_text_sha256": "957453596cebcf41e7719339656ae219cefb0959bdd5a45100130df87458fa78",
+        "superseded_call_id": null
+      },
+      "technology_04_v2": {
+        "call_id": "33f2c60a1c4024d566a8be6b081f8a8ff8e64b2a73d685aa7c1238a972018bc5",
+        "scenario_text_sha256": "3f46a16486868e0c80581e06b37fcf510c74702b9be997b497bbcfdfa3632e35",
+        "superseded_call_id": null
+      }
+    },
+    "topic_bank_content_hash": "47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937",
+    "verified": [
+      "call_id",
+      "config_content_hash",
+      "scenario_text_sha256",
+      "topic_bank_content_hash"
+    ]
+  },
+  "scenarios": [
+    {
+      "group_call_ids": {
+        "opt_1": "5eadf4e8751bc93dcc0c91acd8925cc3d2a4d229ef06c95c91d3fedb78db32bb",
+        "opt_2": "9e90af38efad2aa0152fea14dd79932c733cd9d81a758438e334f3acd8f1cd5b"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "66cba6bbe17851df5a9e876f4b704801eb7ee523e6e6605d0d7ffdd4c8f7d82d",
+      "scenario_id": "climate_01_v1",
+      "scenario_text_sha256": "165410fe76ec17be3bbb9e267bcb41f7d949d0a6c431c5132a5ae68b597c2b17",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "4aa8a0fd75bb5800d36ae5870aabe8f1d79a50df1e130a72f4ddf69453711197",
+        "opt_2": "de9bbb5111b46041e03d17bb78bf4c30dd33facc343459d83fef693abb07814e"
+      },
+      "manual_corrections": [
+        {
+          "approval_state": "approved",
+          "condition": "RS",
+          "corrected_text": "With used cars already expensive, dearer new cars could leave lower-income households without an affordable way to replace an ageing car. Therefore, I support the option to keep the stricter emissions limit on its current schedule.",
+          "corrected_text_sha256": "eb0c048a5f710fdcff2ad14dbb30e0a3a13a005ff1be06f73d17107882e363a4",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "de9bbb5111b46041e03d17bb78bf4c30dd33facc343459d83fef693abb07814e",
+          "original_text": "With used cars already expensive, dearer new cars would leave lower-income households without an affordable way to replace an ageing car. Therefore, I support the option to keep the stricter emissions limit on its current schedule.",
+          "original_text_sha256": "11f3b8a14ebb9f41b3d1485c0f9e012021d2f495430f0e4fd9bf595c0ed42caf",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "climate_01_v2",
+          "supported_option": "opt_2",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        },
+        {
+          "approval_state": "approved",
+          "condition": "RP",
+          "corrected_text": "With used cars already expensive, dearer new cars could leave lower-income households without an affordable way to replace an ageing car. I support the option to keep the stricter emissions limit on its current schedule.",
+          "corrected_text_sha256": "bfbc393f6208fe2f76b0dead2375a05e1827e20f8c8de376642762ded7d9d08e",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "de9bbb5111b46041e03d17bb78bf4c30dd33facc343459d83fef693abb07814e",
+          "original_text": "With used cars already expensive, dearer new cars would leave lower-income households without an affordable way to replace an ageing car. I support the option to keep the stricter emissions limit on its current schedule.",
+          "original_text_sha256": "706e4a66aea73837ba5d2a13f652613baab72fbafd5bfd6c67a61f235d686ce9",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "climate_01_v2",
+          "supported_option": "opt_2",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        }
+      ],
+      "scenario_call_id": "95835137be50345d8e288fa8002675975961b8d0d87b379b7ef1baf7473cd065",
+      "scenario_id": "climate_01_v2",
+      "scenario_text_sha256": "19f5677cbcb0a85c7f4d747a61039040a1dd46fceba58da6c9a2fa7893c7ed4e",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "61a5e3bfaa6dc6bd5f86be1dbdd015a91fd5b731662d84b05298226c281573c9",
+        "opt_2": "81d44f3b707830510c3736625dfd340495e54d1905e37ecbd5e6c432cfd0643c"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "93b8551317fff7648971099ddd8666d449b5e254fc6500b86852da99b251e330",
+      "scenario_id": "climate_02_v1",
+      "scenario_text_sha256": "b0ad9d733e5809dd74f15c9626edc41e5e5ac343feeace08dbb98498bd6171cc",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "f7356a58858d8422b3c950d020a28ba34b1f51de24382335cabac473e1bdab48",
+        "opt_2": "3f2b56d21d38ef1cc603d98fb68d38b2fddd312ec08652df84bbaf6171d1a9a6"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "587532c52439b50e09fd8ca7a6502406432da0bb68b0462d1cc6bd3b607e9a7a",
+      "scenario_id": "climate_02_v2",
+      "scenario_text_sha256": "96d04baec62fb6a3c2a016ba15b9259e437e619141b02c064b50d32d93b847e3",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "6878da4261bc6ee81954a3480a327876c04b1c353c4a19f12ff04b2bb2d9642c",
+        "opt_2": "c322a691ce6ec98d578f2d06bae3f6e3b4573dbd8b60a50846c0af8188932a3a"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "717a431f617dc5f0dbeb61990f31c0ce3a967d82647342cf6e8957d552d30a9e",
+      "scenario_id": "climate_04_v1",
+      "scenario_text_sha256": "b7ced9f0bd79e923cf55e48057d2b8f9764124785812e45bf248ba24ff533add",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "6b1c344356989a878f18fb3c49c1c412d92cb42c012dd6ca52ad6bc65026fd99",
+        "opt_2": "975f5d6af20e591356882acd646241347f898313a45056e07dcbd6f56797d0af"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "fff5861c9b7783ec04f02759da7820e91683bd62d8974822e03b5f88d72d90cb",
+      "scenario_id": "climate_04_v2",
+      "scenario_text_sha256": "4f6c456291dae7505ed3299037b5d23ff8c64cdc1c0966bbcb81f3bc5d1c404c",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "abe3a5c6c195fd4fdbbe476bff3dd590ca694445ec749d3890534e3c0e0b5ffa",
+        "opt_2": "fe3543b30750fdfc2a95c32a6d6141aa14e77598a2af49363fadf7507a1de695"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "b1baa3becd45bda28f17ee9d4cba9df8977f219a8b28bafe0d75250aeec1cda9",
+      "scenario_id": "climate_05_v1",
+      "scenario_text_sha256": "2611b5ff978e02099b1fda5f69ee6792646c30049922a2d6903228a9e112fe79",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "c2f707b1421f615aebaa3618a4fed88d256409b42695aeb940f0bad5d1b55149",
+        "opt_2": "c370cbbc1c09c1a0122977c33a0378f41cab2cc3929dec8e3690946fd9928ae4"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "1363ec4ce7008e7edf794494677367d5058c3304586e6162a284022db17fabe1",
+      "scenario_id": "climate_05_v2",
+      "scenario_text_sha256": "c41ed9e3a9bfe4f474fb3938baa91b9a8491a2ccac2211bf1734ef0393835dcb",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "1032a52c07a9a6acdf459e3a2642b23b43dd39b94e50f63bd600fe6f7005ec6e",
+        "opt_2": "6e11071624d0929e117a96f7ed005c37d5afaa61a5e368689791a6336be8317a"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "9eda55ea540da9679d0d54b16f974cd5cddf8f30d4db1062bed2d29c0d15f389",
+      "scenario_id": "energy_01_v1",
+      "scenario_text_sha256": "50961801171ad85b96c6dbb6eeab29986ce5f1b87d29e8eebc1c88d40a1b9ef6",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "18339e8bbd11dac4c90b530635b73916134f8b3d30e9759a0fbc19f44ffbfb99",
+        "opt_2": "155e8cc080c5da6c35b705baf7ca939d137df9584a2c6d54be202ac936418d76"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "f3aaa2985245b4546695230077fd7b89ecc6bde4670cd7efbe2e19c7bf25ae5a",
+      "scenario_id": "energy_01_v2",
+      "scenario_text_sha256": "e7b7980cd30cc71ad4a941f867ba662f4af5f377daee9fc9fce559b539e0f408",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "c8571dff0fee7039432a35a6e6495e2cddc5359370bf29660ded5e0be42aac8a",
+        "opt_2": "5723ece876584b8898c4116498611fd5101f7af115b05f3d5b3b47287d289270"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "f810f9f9a72ee719b3f1f52a0ba1d6e0def51c23fad5c7a5488a0cff88e3cdc4",
+      "scenario_id": "energy_02_v1",
+      "scenario_text_sha256": "610d260a8c3762091d646bd9c11874c2e918f0a12d281a8ba769456e2dfc770f",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "79114b5e5165dc099722b192457aaeaa158c6604cca41d689840b6a52e8fdb45",
+        "opt_2": "f1bf5458ae203de49475f2187b31a8fecf6d74df7bb55f64abe308233b4920cc"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "10a70cd74c9dca510eeb1c0eaef1014ed73524d8c1ebb378ee89302979060266",
+      "scenario_id": "energy_02_v2",
+      "scenario_text_sha256": "b3b734c127a9051c300109648ba190f5e5477a92d9430935da9b243e9bc6e47e",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "6873de7d75d066328fe619edf7a15d160a1563f3195635803ea423f0d624a784",
+        "opt_2": "fc7925dd2ea2fe3cadf045e8252ec61190c07154877c2b7f140628c992232a0d"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "8207e24a004ad1aeefc18599f5ea2cfc65b1d3a85897f16f32120d0147dbf056",
+      "scenario_id": "energy_03_v1",
+      "scenario_text_sha256": "6bdd8e21ee0e170762593eb24ee193af6c06a59784277a7e55bf829551fffc9a",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "162d30ff46ad2496c25988a384535828e5db6eae83de45768a10d0be00b43aa0",
+        "opt_2": "75353fccc3029165d8ec0b17f31f6cc93aaed760a0015afca336f4edd78ab480"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "7645ff035dab85763c6d747ebc4d55b8ec82ffac8fba9a292e13a5d029fa2d7b",
+      "scenario_id": "energy_03_v2",
+      "scenario_text_sha256": "f0e7c79c84dc839fb42372b97c4f4ee9721590704acaef452fd568ac5c86b454",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "f934b17d5fa8041df96a2fbbd87378fcd971ff04a02aae8398d582cf6d9fe2c5",
+        "opt_2": "58f92dce7c0d832218d73d00ebcd42329ec837fca79e635f913877ad325a78b5"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "922126770c42d15c8b2bdedfcb707976fd3f75be47d602b1c1af1de7fca38856",
+      "scenario_id": "energy_05_v1",
+      "scenario_text_sha256": "31c2f57f81e3eb93c45cde7a953e9968adee78b9b37f7d449c80cf144c02e16f",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "616d0319b502286d7cc2e5d237679e2651b30d8de297470ccb5ae08ff7e8f532",
+        "opt_2": "4519f3c76894a2a1d33ec6df137ffc5687a1efae7be94d5f034495dd8f07b365"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "d15992345b36a8600e2d993503d06594be5e21f2ef0e6839a8032ac817a8ca9a",
+      "scenario_id": "energy_05_v2",
+      "scenario_text_sha256": "2550dd91f39dce5a4db7dd7f71ba6293adfe9567cad537628d7423922b182369",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "04348ca0c97a43bedd1ca494f9653dbce4d84efe1655de807a5933ccb447bb8a",
+        "opt_2": "0e669b685ac760acfdcb1efeae307d2c640ddf952209775a87e5927b3f96a8f0"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "9dd95aa160986b490b812ba0be4ff71ad1cbf89298ed1d1b1d0c7588c848bcb2",
+      "scenario_id": "technology_01_v1",
+      "scenario_text_sha256": "834c09802b73303d1c3e09f2ec94a6f71f90c09070877e99b2675a25d6da6e9c",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "9622ece15a9c6cd7fa831fa275b93493ae88b88e5a5b7fed54346c9615e0cdcf",
+        "opt_2": "e4ec8f79fc0896ed8c06b59b18d9869775bd95f7730ff05028d72ab17d2970c2"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "ee31c9bd8e1ccc6a0d54ed4f2ab8f43535040eeb35231c5c1c8a91cf577a7baf",
+      "scenario_id": "technology_01_v2",
+      "scenario_text_sha256": "bb51f97665c1e72ba07bc21d7e2ae83d33b2de21f533627a4116c40c5bea5f9a",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "2b1ed147675eac64a2404c23f3f302a21e392fe9f5b915fdeb88ee7ecda20de3",
+        "opt_2": "e758a3322ea1c7b1a6985794f25fe576f9117be674e70cd9a1ca3245688e8f12"
+      },
+      "manual_corrections": [
+        {
+          "approval_state": "approved",
+          "condition": "RS",
+          "corrected_text": "Labels on routine edited texts could crowd out the information recipients need to act on. This implies I support the option to disclose it only on texts sent without human editing.",
+          "corrected_text_sha256": "cd267afb9210eb4bea453b64b16474f34c2c341c112525f81391c44284cdc9f4",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "e758a3322ea1c7b1a6985794f25fe576f9117be674e70cd9a1ca3245688e8f12",
+          "original_text": "Labels on routine edited texts would crowd out the information recipients need to act on. This implies I support the option to disclose it only on texts sent without human editing.",
+          "original_text_sha256": "82ea4969bf2c1d56cfb8db13eca4d90d108305a45a3ec1a9ad68ce4b9b4bdcb0",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "technology_02_v1",
+          "supported_option": "opt_2",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        },
+        {
+          "approval_state": "approved",
+          "condition": "RP",
+          "corrected_text": "Labels on routine edited texts could crowd out the information recipients need to act on. I support the option to disclose it only on texts sent without human editing.",
+          "corrected_text_sha256": "94a1d9bac0b47da414329aa766def3b423ad7cb8ec479f10575baec7b68356de",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "e758a3322ea1c7b1a6985794f25fe576f9117be674e70cd9a1ca3245688e8f12",
+          "original_text": "Labels on routine edited texts would crowd out the information recipients need to act on. I support the option to disclose it only on texts sent without human editing.",
+          "original_text_sha256": "dd81042a500c3ea5a66ee166f25a187713e475e7170c5c1255008714b6cc7dd4",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "technology_02_v1",
+          "supported_option": "opt_2",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        }
+      ],
+      "scenario_call_id": "4c049315769e8406339e3be9f26a5610c28f9cfc4c4c67b005e21f368219b17a",
+      "scenario_id": "technology_02_v1",
+      "scenario_text_sha256": "188a0c42eee87efaf53d278b57be24ca8cefd72fb8b5b4c4a739ab25c71ddc25",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "550ee84e34ab7ed6d1554555dfa3912b4f333219955be92ca948198d87897647",
+        "opt_2": "a72442b30a5fc716a4c99b509c2a35c4594dd5b12700f0e4cc87a3ccac9b2377"
+      },
+      "manual_corrections": [
+        {
+          "approval_state": "approved",
+          "condition": "RS",
+          "corrected_text": "With most texts now machine-assisted, labelling only unedited ones could hide how common its use has become. Consequently, I support the option to disclose generative AI involvement on every public text it contributed to.",
+          "corrected_text_sha256": "911201a50bb2406cdc5b9cdd3af537bc7e734ad3d2b81c8a9deeecab20a6a11e",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "550ee84e34ab7ed6d1554555dfa3912b4f333219955be92ca948198d87897647",
+          "original_text": "With most texts now machine-assisted, labelling only unedited ones would hide how common its use has become. Consequently, I support the option to disclose generative AI involvement on every public text it contributed to.",
+          "original_text_sha256": "26093f758c9e63dc4b3fdddd27cb0a0e35bfd96df4d6cf6ad9f4df1cc8174ac0",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "technology_02_v2",
+          "supported_option": "opt_1",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        },
+        {
+          "approval_state": "approved",
+          "condition": "RP",
+          "corrected_text": "With most texts now machine-assisted, labelling only unedited ones could hide how common its use has become. I support the option to disclose generative AI involvement on every public text it contributed to.",
+          "corrected_text_sha256": "0f37a37bb5c095c7b23deb0c56e30e213d6436fa961116d7d2323b2c3a0fadb0",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "550ee84e34ab7ed6d1554555dfa3912b4f333219955be92ca948198d87897647",
+          "original_text": "With most texts now machine-assisted, labelling only unedited ones would hide how common its use has become. I support the option to disclose generative AI involvement on every public text it contributed to.",
+          "original_text_sha256": "0460b315c19f5da4dd45365374e9f1910b1c10b23403cf595301dabab5343aad",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "technology_02_v2",
+          "supported_option": "opt_1",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        },
+        {
+          "approval_state": "approved",
+          "condition": "RS",
+          "corrected_text": "Putting the same label on nearly every text could lengthen routine messages and make the information recipients need harder to find. Consequently, I support the option to disclose it only on texts sent without human editing.",
+          "corrected_text_sha256": "9f921125ee3d1b4f3a0945ed1b49b0c6da7ecb8d5981dcca632ac68f6fc4a161",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "a72442b30a5fc716a4c99b509c2a35c4594dd5b12700f0e4cc87a3ccac9b2377",
+          "original_text": "Putting the same label on nearly every text would lengthen routine messages and make the information recipients need harder to find. Consequently, I support the option to disclose it only on texts sent without human editing.",
+          "original_text_sha256": "30591f0970f140df3546e8080f875237aaa37c8527e037d02a436777ec1be06b",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "technology_02_v2",
+          "supported_option": "opt_2",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        },
+        {
+          "approval_state": "approved",
+          "condition": "RP",
+          "corrected_text": "Putting the same label on nearly every text could lengthen routine messages and make the information recipients need harder to find. I support the option to disclose it only on texts sent without human editing.",
+          "corrected_text_sha256": "4842044855b355f841afec7f5121efb7d4eec6988d7de82d1072f75c5a8afc90",
+          "decided_at": "2026-09-20",
+          "editor": "Vidhi Bhutani",
+          "original_call_id": "a72442b30a5fc716a4c99b509c2a35c4594dd5b12700f0e4cc87a3ccac9b2377",
+          "original_text": "Putting the same label on nearly every text would lengthen routine messages and make the information recipients need harder to find. I support the option to disclose it only on texts sent without human editing.",
+          "original_text_sha256": "e72751d34bfd50ca1cca324151bd06b7f95c4fba23ba06d658d8afd013f9b500",
+          "reason": "The generated premise strengthened the approved scenario's modality from \"would\" to \"could\": the scenario states the consequence as possible, not certain. Replacing the single modal restores fidelity to the source text and changes nothing else.",
+          "scenario_id": "technology_02_v2",
+          "supported_option": "opt_2",
+          "validation_error_codes": [],
+          "validation_warning_codes": []
+        }
+      ],
+      "scenario_call_id": "0acc1ea6db618efd8f145a1c399b0a26dbfb1f5796cb3b14c50baf0d771a284f",
+      "scenario_id": "technology_02_v2",
+      "scenario_text_sha256": "34b288a8e438ec81631a6d921cc1da131fe8bb2969f458eafafa4f724c589666",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "477e9ddbcdf683105a93b1ef4c9f31b2dfc0de88785760d75f3d434f7e465a38",
+        "opt_2": "40d5985f0395d87446e8b967f796e3300678d184872739e95405ae1b3e1836f7"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "8deee06e8dc3efd1ff99f7842bed68a7f9ebe2fe709c68ee78e8f0da7875212b",
+      "scenario_id": "technology_03_v1",
+      "scenario_text_sha256": "635017712c4b1e147a885a0a936085065f9560e312d7b482386e3751a488b243",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "123833be21e58ebcc6460a6086a2f63e5fcfcf3159eaf0ff5389058834ae0247",
+        "opt_2": "bf6bdeba96e029429d6f3bc754acdfd2df0b879d330625bce1927074ec5c501d"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "549a82bb802e3b058d7524198935cb554e8547a60c5dba08192f8a074a528988",
+      "scenario_id": "technology_03_v2",
+      "scenario_text_sha256": "93b01e2184b41a5739ceae0b1212678660e8d78421a900c63595fd718f572766",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "4927045c7418d3637a51eb1e17932d54db98b191f0d9de224ed1868500f7cb93",
+        "opt_2": "41501dd942ed58da0a884cf5ccda6ebe911e5c54916126cfd2acdb378c54655d"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "7e550d437f7166d632b6660369c2fd411ba398edf3546abf7dcce29885316a16",
+      "scenario_id": "technology_04_v1",
+      "scenario_text_sha256": "957453596cebcf41e7719339656ae219cefb0959bdd5a45100130df87458fa78",
+      "validation_status": "draft"
+    },
+    {
+      "group_call_ids": {
+        "opt_1": "85a3f631eec257d63f82fe3ead19e1e31b515e7f0e00f93bd128d920c4779bf4",
+        "opt_2": "6a4a77ac049f9acf906e325ad164180b7dc73450af70b2b66424528491a92e0d"
+      },
+      "manual_corrections": [],
+      "scenario_call_id": "33f2c60a1c4024d566a8be6b081f8a8ff8e64b2a73d685aa7c1238a972018bc5",
+      "scenario_id": "technology_04_v2",
+      "scenario_text_sha256": "3f46a16486868e0c80581e06b37fcf510c74702b9be997b497bbcfdfa3632e35",
+      "validation_status": "draft"
+    }
+  ],
+  "topic_bank_content_hash": "47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937",
+  "validation_status": "draft"
+}

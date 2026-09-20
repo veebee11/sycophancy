@@ -392,6 +392,7 @@ def test_a_source_marked_writable_is_refused(v2):
 
 def test_the_v1_source_run_is_never_copied_or_written(v2, tmp_path):
     import hashlib
+    v2_before = _run_v2_snapshot()
     run = ROOT / "data" / "pilot" / "run_openai"
     if not run.is_dir():
         pytest.skip("the hosted run is not on this machine (gitignored run artefacts)")
@@ -401,7 +402,7 @@ def test_the_v1_source_run_is_never_copied_or_written(v2, tmp_path):
     after = {p.relative_to(run): hashlib.sha256(p.read_bytes()).hexdigest()
              for p in sorted(run.rglob("*")) if p.is_file()}
     assert before == after and before
-    assert not (ROOT / "data" / "pilot" / "run_v2").exists()
+    assert _run_v2_snapshot() == v2_before, "nothing was written into the v2 run"
 
 
 def test_a_v2_call_records_both_provenance_layers(tmp_path, v2, segmenter, topics,
@@ -641,6 +642,10 @@ def test_the_real_v1_scenarios_drive_a_complete_offline_v2_group_run(real_source
 
 def test_the_real_source_run_directories_are_never_written(real_source_run):
     import hashlib
+    # The fixture drove a complete group run into tmp_path. The repository's own
+    # run directory belongs to the live v2 stage and this test never touches it,
+    # which is what the store path below establishes.
+    assert real_source_run[0].directory != ROOT / "data" / "pilot" / "run_v2"
     for name in ("run_openai", "run"):
         run = ROOT / "data" / "pilot" / name
         if not run.is_dir():
@@ -650,7 +655,6 @@ def test_the_real_source_run_directories_are_never_written(real_source_run):
             if path.is_file():
                 digest.update(path.read_bytes())
         assert digest.hexdigest(), f"{name} was read"
-    assert not (ROOT / "data" / "pilot" / "run_v2").exists()
 
 
 # --- source completeness -------------------------------------------------------
@@ -715,6 +719,7 @@ def test_the_expected_set_is_derived_from_the_topic_bank(v2, pilot_bank):
 @pytest.mark.parametrize("command", ["scenarios", "redraft-scenarios"])
 def test_a_source_declaring_design_refuses_to_draft_scenarios(command, tmp_path,
                                                               no_network):
+    before = _run_v2_snapshot()
     result = _run_cli(V2_CONFIG, command, "--allocation",
                       "data/pilot/marker_allocation.yaml", "--send",
                       env={"REASONSTYLE_ALLOW_OPENAI_GENERATION": "1",
@@ -725,7 +730,7 @@ def test_a_source_declaring_design_refuses_to_draft_scenarios(command, tmp_path,
     assert "reuses the approved scenarios" in result.stderr
     assert "no credential was read and no backend was built" in result.stderr
     assert "attempted to contact a backend" not in result.stderr
-    assert not (ROOT / "data" / "pilot" / "run_v2").exists()
+    assert _run_v2_snapshot() == before, "the refusal wrote nothing into the v2 run"
 
 
 def test_scenario_review_writes_no_v2_approval_template(tmp_path, no_network):
@@ -779,6 +784,19 @@ def test_the_repair_prompt_uses_the_same_rule_as_the_draft_prompt():
 # --- the one-call smoke, for both designs --------------------------------------
 
 SMOKE = ROOT / "scripts" / "openai_smoke_test.py"
+
+
+def _run_v2_snapshot() -> dict:
+    """What the v2 run directory holds right now, if it holds anything.
+
+    These tests used to assert the directory did not exist, which was true only
+    until the v2 group stage was run. The property that actually matters is
+    unchanged either way: the operation under test writes nothing into it.
+    """
+    import hashlib
+    run = ROOT / "data" / "pilot" / "run_v2"
+    return {p.relative_to(run): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(run.rglob("*")) if p.is_file()} if run.is_dir() else {}
 
 
 def _run_smoke(config, *args, env=None, sitecustomize):

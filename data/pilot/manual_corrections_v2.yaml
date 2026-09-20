@@ -1,0 +1,168 @@
+- approval_state: approved
+  condition: RS
+  corrected_text: With used cars already expensive, dearer new cars could leave lower-income
+    households without an affordable way to replace an ageing car. Therefore, I support
+    the option to keep the stricter emissions limit on its current schedule.
+  corrected_text_sha256: eb0c048a5f710fdcff2ad14dbb30e0a3a13a005ff1be06f73d17107882e363a4
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: de9bbb5111b46041e03d17bb78bf4c30dd33facc343459d83fef693abb07814e
+  original_text: With used cars already expensive, dearer new cars would leave lower-income
+    households without an affordable way to replace an ageing car. Therefore, I support
+    the option to keep the stricter emissions limit on its current schedule.
+  original_text_sha256: 11f3b8a14ebb9f41b3d1485c0f9e012021d2f495430f0e4fd9bf595c0ed42caf
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: climate_01_v2
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: With used cars already expensive, dearer new cars could leave lower-income
+    households without an affordable way to replace an ageing car. I support the option
+    to keep the stricter emissions limit on its current schedule.
+  corrected_text_sha256: bfbc393f6208fe2f76b0dead2375a05e1827e20f8c8de376642762ded7d9d08e
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: de9bbb5111b46041e03d17bb78bf4c30dd33facc343459d83fef693abb07814e
+  original_text: With used cars already expensive, dearer new cars would leave lower-income
+    households without an affordable way to replace an ageing car. I support the option
+    to keep the stricter emissions limit on its current schedule.
+  original_text_sha256: 706e4a66aea73837ba5d2a13f652613baab72fbafd5bfd6c67a61f235d686ce9
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: climate_01_v2
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: Labels on routine edited texts could crowd out the information recipients
+    need to act on. This implies I support the option to disclose it only on texts
+    sent without human editing.
+  corrected_text_sha256: cd267afb9210eb4bea453b64b16474f34c2c341c112525f81391c44284cdc9f4
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: e758a3322ea1c7b1a6985794f25fe576f9117be674e70cd9a1ca3245688e8f12
+  original_text: Labels on routine edited texts would crowd out the information recipients
+    need to act on. This implies I support the option to disclose it only on texts
+    sent without human editing.
+  original_text_sha256: 82ea4969bf2c1d56cfb8db13eca4d90d108305a45a3ec1a9ad68ce4b9b4bdcb0
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: technology_02_v1
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: Labels on routine edited texts could crowd out the information recipients
+    need to act on. I support the option to disclose it only on texts sent without
+    human editing.
+  corrected_text_sha256: 94a1d9bac0b47da414329aa766def3b423ad7cb8ec479f10575baec7b68356de
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: e758a3322ea1c7b1a6985794f25fe576f9117be674e70cd9a1ca3245688e8f12
+  original_text: Labels on routine edited texts would crowd out the information recipients
+    need to act on. I support the option to disclose it only on texts sent without
+    human editing.
+  original_text_sha256: dd81042a500c3ea5a66ee166f25a187713e475e7170c5c1255008714b6cc7dd4
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: technology_02_v1
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: With most texts now machine-assisted, labelling only unedited ones
+    could hide how common its use has become. Consequently, I support the option to
+    disclose generative AI involvement on every public text it contributed to.
+  corrected_text_sha256: 911201a50bb2406cdc5b9cdd3af537bc7e734ad3d2b81c8a9deeecab20a6a11e
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: 550ee84e34ab7ed6d1554555dfa3912b4f333219955be92ca948198d87897647
+  original_text: With most texts now machine-assisted, labelling only unedited ones
+    would hide how common its use has become. Consequently, I support the option to
+    disclose generative AI involvement on every public text it contributed to.
+  original_text_sha256: 26093f758c9e63dc4b3fdddd27cb0a0e35bfd96df4d6cf6ad9f4df1cc8174ac0
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: technology_02_v2
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: With most texts now machine-assisted, labelling only unedited ones
+    could hide how common its use has become. I support the option to disclose generative
+    AI involvement on every public text it contributed to.
+  corrected_text_sha256: 0f37a37bb5c095c7b23deb0c56e30e213d6436fa961116d7d2323b2c3a0fadb0
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: 550ee84e34ab7ed6d1554555dfa3912b4f333219955be92ca948198d87897647
+  original_text: With most texts now machine-assisted, labelling only unedited ones
+    would hide how common its use has become. I support the option to disclose generative
+    AI involvement on every public text it contributed to.
+  original_text_sha256: 0460b315c19f5da4dd45365374e9f1910b1c10b23403cf595301dabab5343aad
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: technology_02_v2
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: Putting the same label on nearly every text could lengthen routine
+    messages and make the information recipients need harder to find. Consequently,
+    I support the option to disclose it only on texts sent without human editing.
+  corrected_text_sha256: 9f921125ee3d1b4f3a0945ed1b49b0c6da7ecb8d5981dcca632ac68f6fc4a161
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: a72442b30a5fc716a4c99b509c2a35c4594dd5b12700f0e4cc87a3ccac9b2377
+  original_text: Putting the same label on nearly every text would lengthen routine
+    messages and make the information recipients need harder to find. Consequently,
+    I support the option to disclose it only on texts sent without human editing.
+  original_text_sha256: 30591f0970f140df3546e8080f875237aaa37c8527e037d02a436777ec1be06b
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: technology_02_v2
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: Putting the same label on nearly every text could lengthen routine
+    messages and make the information recipients need harder to find. I support the
+    option to disclose it only on texts sent without human editing.
+  corrected_text_sha256: 4842044855b355f841afec7f5121efb7d4eec6988d7de82d1072f75c5a8afc90
+  decided_at: '2026-09-20'
+  editor: Vidhi Bhutani
+  original_call_id: a72442b30a5fc716a4c99b509c2a35c4594dd5b12700f0e4cc87a3ccac9b2377
+  original_text: Putting the same label on nearly every text would lengthen routine
+    messages and make the information recipients need harder to find. I support the
+    option to disclose it only on texts sent without human editing.
+  original_text_sha256: e72751d34bfd50ca1cca324151bd06b7f95c4fba23ba06d658d8afd013f9b500
+  reason: 'The generated premise strengthened the approved scenario''s modality from
+    "would" to "could": the scenario states the consequence as possible, not certain.
+    Replacing the single modal restores fidelity to the source text and changes nothing
+    else.'
+  scenario_id: technology_02_v2
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
