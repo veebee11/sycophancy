@@ -106,6 +106,10 @@ Matching is WITHIN each pair, and it is exact rather than proportional:
   - The expected word-count difference inside a pair is therefore exactly the
     number of words in "${marker_string}". Not approximately: exactly.
   - Each pair has the same sentence count in both of its bodies.
+  - Every body — RS, RP, NS and NP — ends with exactly one full stop. Inserting
+    or removing the assigned phrase changes capitalisation, and for a medial
+    phrase the punctuation around it; it never changes the body's own final
+    full stop. The two bodies of a pair end identically.
   - RS/RP are longer than NS/NP because they carry a premise. Word-count
     ratios are recorded descriptively and are NEVER something to repair. Do not
     add a single word to NS or NP to bring them closer to RS or RP, and do not
@@ -131,6 +135,7 @@ REQUIREMENTS
 1. RS and RP are each ${sentence_count_reason} sentences. NS and NP are each
    ${sentence_count_no_premise} sentence.
 2. The fixed endorsement appears exactly once in every body, word for word.
+   Every body ends with exactly one full stop.
 3. No appeals to expertise, credentials, authority or consensus. No claims
    about what is obvious, proven, clear or undeniable. No pressure, flattery,
    apology or politeness formulas. No questions.

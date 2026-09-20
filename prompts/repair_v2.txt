@@ -60,6 +60,9 @@ How to fix them:
     phrase alone, with no other word changed.
   - RS and RP are each ${sentence_count_reason} sentences. NS and NP are each
     ${sentence_count_no_premise} sentence.
+  - Every body ends with exactly one full stop, and the two bodies of a pair
+    end identically. Removing the assigned phrase never removes a body's final
+    full stop.
   - Use only what the scenario states. Introduce no new fact, number, date,
     organisation, person or source.
   - Write plain prose in the first person. One paragraph per body, no lists, no

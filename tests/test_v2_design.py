@@ -460,3 +460,122 @@ def test_v1_prompts_and_thresholds_are_untouched(v1, v2):
         "content_plain": "exploratory_descriptive"}
     assert set(v2.parsed.contrasts.multiplicity.family) == {
         "style_without_reason", "style_with_reason", "interaction"}
+
+
+# --- terminal punctuation, from a live smoke call -----------------------------
+#
+# The live `it follows that` v2 smoke returned this NS/NP pair, and the
+# validator reported zero errors:
+#
+#   NS: It follows that I support the option to extend ... baseload plant.
+#   NP: I support the option to extend ... baseload plant        <- no full stop
+#
+# Nothing caught it. The residue check sees words and not punctuation; the
+# word-delta budget counts words; the pair-content screen tokenises. Removing
+# "It follows that" requires a capitalisation change, not the loss of the
+# sentence's own terminator, so this is drift and must fail.
+
+LIVE_ENDORSEMENT = ("I support the option to extend the operating life of the existing "
+                    "baseload plant")
+LIVE_NS = f"It follows that {LIVE_ENDORSEMENT}."
+LIVE_NP_BROKEN = LIVE_ENDORSEMENT                    # exactly as returned: no full stop
+LIVE_NP_FIXED = f"{LIVE_ENDORSEMENT[0].upper()}{LIVE_ENDORSEMENT[1:]}."
+LIVE_PREMISE = ("The extended plant can deliver full output through any cold spell")
+
+
+def _live_bodies(np_body: str) -> dict[str, str]:
+    return {
+        "RS": f"{LIVE_PREMISE}. It follows that {LIVE_ENDORSEMENT}.",
+        "RP": f"{LIVE_PREMISE}. {LIVE_ENDORSEMENT[0].upper()}{LIVE_ENDORSEMENT[1:]}.",
+        "NS": LIVE_NS,
+        "NP": np_body,
+    }
+
+
+def _live_allocation():
+    return allocation_for("it follows that", "metadiscursive_inference",
+                          "sentence_initial_metadiscursive_v1")
+
+
+def _live_findings(bodies, v2, segmenter):
+    return validate_group(
+        SCENARIO, v2.raw["corpus"]["counterargument_opening"],
+        block_for(bodies, _live_allocation()), v2, segmenter,
+        loc={"decision_id": "energy_fixture_001", "scenario_id": "energy_fixture_001_v1"},
+        endorsement=LIVE_ENDORSEMENT)
+
+
+def test_the_live_pair_with_the_missing_period_now_fails(v2, segmenter):
+    findings = _live_findings(_live_bodies(LIVE_NP_BROKEN), v2, segmenter)
+    failed = codes(findings)
+    assert "E_BODY_TERMINAL_PUNCTUATION" in failed
+    assert "E_PAIR_TERMINAL_PUNCTUATION_MISMATCH" in failed
+
+    cell = next(f for f in findings if f.code == "E_BODY_TERMINAL_PUNCTUATION")
+    assert cell.condition == "NP"
+    assert cell.detail["ends_with"] == "t", "the body ends on a word, not a stop"
+    pair = next(f for f in findings if f.code == "E_PAIR_TERMINAL_PUNCTUATION_MISMATCH")
+    assert pair.detail["pair"] == ["NS", "NP"]
+    assert pair.detail["tails"] == {"NS": ".", "NP": "t"}
+
+
+def test_the_same_live_pair_passes_once_the_period_is_restored(v2, segmenter):
+    findings = _live_findings(_live_bodies(LIVE_NP_FIXED), v2, segmenter)
+    assert codes(findings) == [], codes(findings)
+
+
+def test_a_marker_associated_capitalisation_change_is_still_accepted(v2, segmenter):
+    """`Therefore, ...` -> `...` changes capitalisation and drops a comma. That
+    is what removing a sentence-initial marker requires, and it stays valid."""
+    allocation = allocation_for("therefore", "conclusion_indicator",
+                                "sentence_initial_conclusion_v1")
+    findings = findings_for(v2_bodies("therefore"), allocation, v2, segmenter)
+    assert codes(findings) == []
+    bodies = v2_bodies("therefore")
+    assert bodies["NS"].startswith("Therefore, ") and bodies["NS"].endswith(".")
+    assert bodies["NP"].endswith(".")
+    assert bodies["NS"].rstrip()[-1] == bodies["NP"].rstrip()[-1] == "."
+
+
+@pytest.mark.parametrize("tail,expected", [
+    ("", "E_BODY_TERMINAL_PUNCTUATION"),          # nothing at all
+    ("..", "E_BODY_TERMINAL_PUNCTUATION"),        # two stops
+    ("!", "E_BODY_TERMINAL_PUNCTUATION"),         # the wrong terminator
+])
+def test_a_body_must_end_with_exactly_one_period(tail, expected, v2, segmenter):
+    allocation = allocation_for("therefore", "conclusion_indicator",
+                                "sentence_initial_conclusion_v1")
+    bodies = v2_bodies("therefore")
+    bodies["NP"] = bodies["NP"][:-1] + tail
+    assert expected in codes(findings_for(bodies, allocation, v2, segmenter))
+
+
+def test_both_pairs_are_checked_for_terminal_punctuation(v2, segmenter):
+    allocation = allocation_for("therefore", "conclusion_indicator",
+                                "sentence_initial_conclusion_v1")
+    bodies = v2_bodies("therefore")
+    bodies["RP"] = bodies["RP"][:-1]              # the reason-present pair this time
+    findings = findings_for(bodies, allocation, v2, segmenter)
+    pair = next(f for f in findings if f.code == "E_PAIR_TERMINAL_PUNCTUATION_MISMATCH")
+    assert pair.detail["pair"] == ["RS", "RP"]
+
+
+def test_nothing_is_normalised_or_rewritten_after_receipt(v2, segmenter):
+    """The malformed body is reported as it arrived, not quietly repaired."""
+    bodies = _live_bodies(LIVE_NP_BROKEN)
+    before = dict(bodies)
+    findings = _live_findings(bodies, v2, segmenter)
+    assert bodies == before, "validation mutates nothing"
+    assert any(f.severity == "error" for f in findings), \
+        "and an error is what sends it down the existing repair path"
+
+
+def test_v1_never_runs_the_terminal_punctuation_checks(v1, segmenter):
+    allocation = allocation_for("therefore", "conclusion_indicator",
+                                "sentence_initial_conclusion_v1")
+    bodies = v2_bodies("therefore")
+    bodies["NP"] = bodies["NP"][:-1]
+    findings = findings_for(bodies, allocation, v1, segmenter)
+    for v2_only in ("E_BODY_TERMINAL_PUNCTUATION",
+                    "E_PAIR_TERMINAL_PUNCTUATION_MISMATCH"):
+        assert v2_only not in codes(findings)

@@ -712,7 +712,7 @@ prompts:
             type: string
     group_draft_v2:
       path: prompts/group_draft_v2.txt
-      template_sha256: 3f6a3a8f325096850a35eee7e581c3da84b81bdbf8abd0be1573a2738903df16
+      template_sha256: 0586661d4cc75d4a8bc27124e116f7a1ac6a7102b9ce0e493bfd59bbad1fc30d
       placeholders:
       - counterargument_opening
       - endorsement
@@ -744,7 +744,7 @@ prompts:
             type: string
     repair_v2:
       path: prompts/repair_v2.txt
-      template_sha256: c174a1278f029bb8cbc043698ff756ab98282f579a32d6f8edde5000713c4215
+      template_sha256: 8e49b76a632b9f654213f38ae32eafc8471106daca5de844dd7e86be74d877ab
       placeholders:
       - attempt_history
       - diagnostics

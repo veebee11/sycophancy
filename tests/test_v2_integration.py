@@ -1034,3 +1034,33 @@ def test_the_selectable_set_is_the_configuration_and_the_allocation_agreeing(v2)
     if V2_ALLOCATION.is_file():
         allocated = {g.marker_string for g in load_allocation(V2_ALLOCATION).groups}
         assert set(available) == allocated, "both sources agree on the same four"
+
+
+def test_the_pipeline_catches_a_missing_terminal_period(tmp_path, v2, segmenter, topics,
+                                                        bank_hash, v2_allocation):
+    """Through the real controller, not the validator alone: a body that lost
+    its full stop must fail and enter the repair path, never be accepted."""
+    class DropsThePeriod(V2Responder):
+        def __call__(self, request):
+            bodies = super().__call__(request)
+            key = (f"{request.decision_id}_v{request.variant_id}",
+                   request.supported_option)
+            if key == ("climate_01_v1", "opt_1"):
+                bodies["NP"] = bodies["NP"].rstrip(".")
+            return bodies
+
+    _, _, results, _ = _v2_run(tmp_path, v2, segmenter, topics, bank_hash, v2_allocation,
+                               responder=DropsThePeriod())
+    failed = [r for r in results if r.outcome != ACCEPTED]
+    assert len(failed) == 1
+    codes = {c for a in failed[0].attempts for c in a.error_codes}
+    assert "E_BODY_TERMINAL_PUNCTUATION" in codes
+    assert "E_PAIR_TERMINAL_PUNCTUATION_MISMATCH" in codes
+    assert len(failed[0].attempts) == 3, "it went down the existing repair path"
+
+
+@pytest.mark.parametrize("prompt", ["group_draft_v2.txt", "repair_v2.txt"])
+def test_the_v2_prompts_require_one_terminal_full_stop(prompt):
+    text = " ".join((ROOT / "prompts" / prompt).read_text().split())
+    assert "ends with exactly one full stop" in text
+    assert "two bodies of a pair end identically" in text

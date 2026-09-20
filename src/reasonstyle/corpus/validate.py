@@ -477,9 +477,37 @@ def _v2_structure(c, cfg: ExperimentConfig, block, endorsement: str | None,
     premise_cells = set(pairs[0])
     no_premise_cells = {cell for pair in pairs[1:] for cell in pair}
 
+    # The two cells of a pair end the same way. Implied by the per-cell rule
+    # above while that rule holds, and stated separately because it is the
+    # comparison that actually failed: the pair differed in its terminator, and
+    # a terminator is not something removing a marker may change.
+    for pair in pairs:
+        tails = {condition: block.cells[condition].body.rstrip()[-1:] for condition in pair}
+        if len(set(tails.values())) != 1:
+            c.add("E_PAIR_TERMINAL_PUNCTUATION_MISMATCH", "error",
+                  f"{_pair_id(pair)} must end with the same punctuation; got {tails}. "
+                  f"Removing the marker changes capitalisation and, for a medial marker, "
+                  f"internal punctuation — never the body's own terminator.",
+                  "pair", **{**gloc, "detail": {"pair": list(pair), "tails": tails}})
+
     for condition in CORE_CONDITIONS:
         cell = block.cells[condition]
         cloc = {**gloc, "condition": condition}
+
+        # Every body ends with exactly one period. Dropping the marker from a
+        # styled cell requires a capitalisation change and, for a medial
+        # marker, a punctuation one — it never requires removing the sentence's
+        # own terminator. A live smoke call returned an NS/NP pair whose NP had
+        # lost its final stop, and nothing caught it: the residue check sees
+        # words, not punctuation, and the word-delta budget counts words.
+        stripped = cell.body.rstrip()
+        if not stripped.endswith(".") or stripped.endswith(".."):
+            c.add("E_BODY_TERMINAL_PUNCTUATION", "error",
+                  f"every body ends with exactly one period; {condition} ends "
+                  f"{stripped[-12:]!r}", "cell",
+                  detail={"ends_with": stripped[-1:] if stripped else "",
+                          "tail": stripped[-12:]}, **cloc)
+
         _, occurrences = _strip_once(cell.body, endorsement)
         if occurrences != 1:
             c.add("E_ENDORSEMENT_NOT_EXACTLY_ONCE", "error",
