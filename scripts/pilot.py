@@ -143,6 +143,15 @@ def live_problems(send: bool, cfg=None, env=None) -> list[str]:
     other.
     """
     env = os.environ if env is None else env
+    block = (cfg.raw["corpus"].get("generation_block") or {}) if cfg is not None else {}
+    if block.get("blocked"):
+        # A configuration can refuse its own generation. The full-corpus draft
+        # does, until its allocation, seed import, tested orchestration and
+        # paid-call authorisation are all in place; the configuration's own
+        # reason says which. Lifting it is an edit to the configuration, made
+        # deliberately.
+        return [f"{cfg.config_version}: generation is blocked by this configuration. "
+                f"{block.get('reason', '')}".strip()]
     if cfg is not None and cfg.raw["models"]["generator"]["backend"] == OPENAI_BACKEND:
         # A paid external call. The local-generation key does not authorise one,
         # and offline mode is meaningless: there are no weights to fetch.

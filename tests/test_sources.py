@@ -20,7 +20,11 @@ from reasonstyle.corpus.sources import SourceRegistryError, load_registry
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "data" / "sources" / "registry.yaml"
 SCRIPT = ROOT / "scripts" / "verify_sources.py"
-TODAY = date(2026, 9, 11)
+#: The date the committed registry is checked against. It moves forward when the
+#: registry legitimately gains a later access date — the EUR-Lex climate sources
+#: were accessed on 2026-09-21 — and never past today: the no-future-dates rule
+#: itself is exercised by its own tests below.
+TODAY = date(2026, 9, 21)
 
 CITABLE = {
     "canonical_name": "Synthetic Citable Dataset",

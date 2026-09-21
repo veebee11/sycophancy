@@ -43,3 +43,36 @@ files:
   extract: false
   sha256: 4eddd8319d154fa25b7cfe78cec49892a17e61ed6039a3bae501960ab46ef6cc
   access_date: '2026-09-11'
+- name: eurlex_02003L0087-20240301_EN.pdf
+  registry_key: eurlex_ets_directive
+  url: https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:02003L0087-20240301
+  size_bytes: 1138753
+  provider_checksum:
+    algorithm: none
+    value: null
+    published_by: EUR-Lex publishes no checksum for its documents. The file is pinned by the sha256 below, which was confirmed by two independent fetches returning identical bytes.
+  extract: false
+  sha256: 646dcdbfc8e38accc3037523e7fa4ba7cacd93c330d7403163771e898ec9fb59
+  access_date: '2026-09-21'
+- name: eurlex_02018R0842-20230516_EN.pdf
+  registry_key: eurlex_effort_sharing
+  url: https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:02018R0842-20230516
+  size_bytes: 293470
+  provider_checksum:
+    algorithm: none
+    value: null
+    published_by: EUR-Lex publishes no checksum for its documents. The file is pinned by the sha256 below, which was confirmed by two independent fetches returning identical bytes.
+  extract: false
+  sha256: ae108c7b4fb25dbc2ee888e1a37be55504ba1107f60bba1e6144d4114ccf9dbc
+  access_date: '2026-09-21'
+- name: eurlex_02018R0841-20230511_EN.pdf
+  registry_key: eurlex_lulucf
+  url: https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:02018R0841-20230511
+  size_bytes: 468522
+  provider_checksum:
+    algorithm: none
+    value: null
+    published_by: EUR-Lex publishes no checksum for its documents. The file is pinned by the sha256 below, which was confirmed by two independent fetches returning identical bytes.
+  extract: false
+  sha256: afb3c634d66c9f4190d2aba064e0e43039943cd63d08e3c2b211066a8f80c371
+  access_date: '2026-09-21'

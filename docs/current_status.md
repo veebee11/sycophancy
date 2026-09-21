@@ -1,28 +1,174 @@
 # Current status
 
-*Updated 2026-09-18. Kept short; history is in git, rules in `design_notes.md`.*
+*Updated 2026-09-21. Kept short; history is in git, rules in `design_notes.md`.
+Sections under* Historical record (v1) *are kept as they were written and are
+superseded wherever they say something has not yet run.*
 
-## Done
+## Where things stand
 
-- **Design and configuration.** Four frozen conditions (RS, RP, NS, NP), contrasts, marker inventory, matching and validation rules in `configs/experiment.yaml`, checked at load. The research-plan hash is pinned.
-- **Corpus tooling.** Schemas, pinned segmenter, validator, annotation schemas, prompt renderer, deterministic review export.
-- **Sources.** Registry with checked outcomes; POLIANNA and the GenAI4PA JRC snapshot are downloaded and verified. IBM-ArgQ is citable but optional.
-- **Topic bank.** 12 curated **pilot** decisions (4 climate, 4 energy, 4 technology), 2 variants each. No machine errors; the overlap screen has been run. They are the first 12 of the 60-decision main corpus (see *Corpus scope*).
-- **Marker allocation.** 48 groups, 16 per confirmatory family, 8 per string.
-- **Generation client.** Hashed prompt templates and request/response files. Local vLLM backend with two-key authorisation, offline enforcement, a read-only cache preflight, three-way revision agreement, the server launcher and the one-group smoke test, which has been run live twice, draft-only, on 2026-09-15 and 2026-09-16 (see below). The Anthropic backend has been removed.
-- **Launcher fixes after the first server attempts (2026-09-15).** Library versions are read from package metadata instead of by import; setup installs `setuptools==79.0.1`; the runtime record is published once the launcher's own child first answers `/health`, kept while that process is alive, and removed on exit, and a port that already answers `/health` is refused.
-- **Corrections after the first live smoke call, exercised by the second (2026-09-16).** Both drafting prompts now state that a body excludes the shared opening, that all four bodies share one endorsement clause, that each pair must keep the same content words, what NS and NP may not say, and that the four word counts are checked before returning. The validator gained `E_OPENING_REPEATED_IN_BODY` and the lexical pair screen `E_PAIR_CONTENT_DRIFT`. The smoke test now persists its validation result, records the codes, prints `stop_reason`, labels human-review counts by scope, and no longer logs a validation failure as an accepted result. The second live smoke confirmed the effect: neither the repeated opening nor the pair drift recurred.
-- **Reliability sampler.** Stratified quotas plus an exactly optimal marginal opt_1/opt_2 balance; any shortfall is reported (2026-09-15).
-- **No hidden sampling defaults.** The launcher passes `--generation-config vllm` and records it; all sampling fields are sent at explicit neutral values.
-- **Scenario drafting (2026-09-16).** The scenario stage **has run live**, inside `pipeline_smoke.py`, and its scenario was accepted. The standalone `smoke_test.py --kind scenario` command is implemented and offline-tested but has not itself been run.
-- **Bounded repair controller (2026-09-16).** One draft plus at most two validator-driven repairs, then `needs_manual_review`; recorded per call, resumable, transport failures retryable. It **ran live twice** through `scripts/pipeline_smoke.py`. The first run's repairs were identical requests; after the correction, the second run sent two distinct, diagnosed repairs and recorded the model's unchanged replies as no progress — **the corrected mechanism was confirmed live**. Both runs ended `needs_manual_review`. No further synthetic repair smoke is planned.
-- **Live calls so far: 183 model calls** — ten synthetic-smoke calls, 24 pilot scenario calls on 2026-09-16, nine bounded scenario-redraft calls on 2026-09-17, and the 140 calls of the pilot group stage on 2026-09-17 (see *Live group stage* below).
-- **`scripts/pilot.py`.** The two-stage pilot runner: `scenarios` and `groups` as separate commands that cannot be combined, plus `redraft-scenarios`, `scenario-review`, `approvals`, `group-review`, `assemble`, `status` and `log`. A live stage needs `--send` **and** both authorisation keys, and runs on the complete pilot only — a subset is refused. The scenario, redraft and group stages have all run.
-- **Scenario gate complete (2026-09-17).** Vidhi approved the review decisions reported here. Fifteen original scenarios remained approved; four Qwen redrafts were approved as returned; five further redrafts were corrected in `data/pilot/scenario_corrections.yaml`. Each correction is a separate record bound to the exact model call and text, with editor, date, reason and both text hashes. The generated results, raw responses and log were not edited. All five corrected texts pass the ordinary scenario validator, and `pilot.py approvals` reports **24/24 approved, zero gate blockers**.
-- **Group stage complete (2026-09-17).** All 48 groups were attempted; 2 are machine-valid and 46 need inspection and correction. Details in *Live group stage* below.
-- **Read-only group review (2026-09-17, offline).** `pilot.py group-review` turns the recorded group run into deterministic Markdown: all 48 groups by decision, variant and supported option, with the current approved scenario, both options, the allocated marker, the final call, the four bodies side by side, the rendered counterargument, body and full-text word and sentence counts, the exact findings with their measurements, the outstanding human judgements, and — for the 46 — a per-attempt history in which an unchanged repair is marked as such. It re-uses `validate_group` and the validator's own measurement function rather than re-implementing a rule, and its output reproduces every code each call recorded at the time. The index also flags, informationally, the three groups whose earlier attempt recorded fewer distinct error codes than their final one — `climate_01_v1 / opt_1`, `climate_04_v2 / opt_2` and `energy_02_v1 / opt_2`. The final recorded attempt stays canonical, the flag selects and approves nothing, and fewer machine-error codes is a statement about form, not about quality. It makes no call, writes nothing into the run directory, and neither generates nor populates `data/pilot/manual_corrections.yaml`.
-- **A second generator, implemented and not yet run (2026-09-18).** `gpt-5.6-sol` through OpenAI's Responses API, as a first-class backend beside the local Qwen/vLLM one. Its own configuration (`configs/experiment_openai_pilot.yaml`, `openai_pilot_v1`, its own content hash), its own gitignored run directory (`data/pilot/run_openai/`), its own approvals file and correction ledgers, and its own one-call smoke script. **Nothing has been sent**: no request has been made, no key has been read, and no dataset has been generated with it. Details below under *Hosted generator*.
-- **Tests.** The full suite passes on a laptop, with no server.
+| | |
+|---|---|
+| v1 group design (Qwen, then hosted) | **historical evidence**; neither v1 group set was corrected or assembled |
+| v2 pairwise group design | adopted; the design of the final corpus |
+| v2 pilot (12 decisions) | **generated and assembled**: `data/pilot/corpus_v2.jsonl`, `validation_status: draft`, 1032 human judgements outstanding |
+| manipulation-check protocol | recorded before any rating was examined; pending mentor review |
+| full topic bank (60 decisions) | **curated 2026-09-21**; 0 citability errors, 0 outstanding curation judgements |
+| full marker allocation | not built |
+| full scenario and group generation | not started; `data/full/` does not exist; **no full-corpus API call has been made** |
+
+## Records and their authority
+
+- **Authoritative data and provenance:** YAML, JSONL and manifests — configs,
+  topic bank, source registry and download manifest, approvals, correction
+  ledgers, allocations, corpora and their manifests, and the generation logs
+  and raw responses (the last kept locally and gitignored).
+- **Committed Markdown** records design (`design_notes.md`) and status (this
+  file). It describes the data; where the two disagree, the data wins.
+- **`review/`** holds deterministic reading views regenerated from the data.
+  They are local and gitignored, never the committed record.
+- **Chat reports are not project records.** What matters from them is written
+  into the files above.
+
+## Model calls made, recomputed from the stored logs (2026-09-21)
+
+Counted from the `generation_log.jsonl` files under `data/pilot/` (gitignored),
+one line per call. Overlapping Qwen snapshot directories are de-duplicated by
+call id; within a single log every line counts, because the first repair smoke
+sent two byte-identical repair requests. Only metadata fields were read.
+
+| Stage | Model | Calls | What they were |
+|---|---|---|---|
+| Local Qwen synthetic smokes | `Qwen/Qwen3-14B` | **9 stored** | 1 draft-only group (2026-09-15); 2 repair smokes × 4 (2026-09-16) |
+| Local Qwen v1 pilot | `Qwen/Qwen3-14B` | **173** | 24 scenarios, 9 scenario redrafts, 48 group drafts, 92 repairs |
+| Hosted v1 smoke | `gpt-5.6-sol` | **1** | one synthetic group (2026-09-18) |
+| Hosted v1 pilot | `gpt-5.6-sol` | **141** + 1 transport error | 24 scenarios, 4 scenario redrafts, 48 group drafts, 65 repairs; one draft attempt failed in transport with no response and was retried |
+| v2 smokes | `gpt-5.6-sol` | **3** | single groups: 1 `therefore`, 2 `it follows that` (2026-09-20) |
+| v2 pilot groups | `gpt-5.6-sol` | **48** | one call per group, no repairs needed |
+
+Totals: **182 local Qwen calls stored** and **193 hosted calls** (142 v1, 51
+v2), plus one hosted transport error. A second draft-only Qwen smoke on
+2026-09-16 is documented below (call `05a54889…`) but its log is not stored in
+this working copy — call ids are derived from the request, and that id now
+belongs to the hosted smoke of the same synthetic group — so the earlier
+documented Qwen figure of 183 includes one call not countable from local logs.
+**No call of any kind has been made for the full corpus.**
+
+## Historical: the v1 runs
+
+v1 required all four cells of a group to sit inside one word ratio.
+
+- **Qwen3-14B, local (2026-09-15 to 17).** Scenario gate completed (24/24
+  approved after nine redrafts and five audited corrections); group stage 2 of
+  48 machine-valid, 46 `needs_manual_review`, no repair ever producing an
+  accepted group. The 46 were never corrected and nothing was assembled.
+- **`gpt-5.6-sol`, hosted (2026-09-18).** Same rules, same prompts. 24
+  scenarios drafted; review approved 20 and sent 4 for a bounded redraft, all 4
+  then approved (`data/pilot/scenario_approvals_openai.yaml`, 24/24). Group
+  stage 36 of 48 machine-valid (3 on the first draft, 33 after repair), 12
+  `needs_manual_review`. Not corrected or assembled: the v2 design superseded
+  the group layer before that.
+
+Both runs stay as read-only evidence, and the detail is kept below under
+*Historical record (v1)*.
+
+## The v2 pairwise design, and why it replaced v1
+
+v1's four-way length rule could only be met by padding the no-premise cells:
+Qwen failed it in 44 of 46 groups (median body ratio 1.51 against 1.15), the
+hosted model in 9 of its 12 failures, and where it was met it was met with
+self-referential filler — a second commitment in a condition meant to carry
+one. v2 (`configs/experiment_v2_pilot.yaml`; `design_notes.md`,
+*Version-2 group design*) replaces it:
+
+- a **fixed endorsement**, `I support the option to ${supported_option_text}`,
+  word for word, once, in every cell;
+- **pairwise, marker-only matching**: RS is RP plus the marker, NS is NP plus the
+  same marker in the same position, an exact word budget rather than a ratio;
+- NS and NP state **no explicit task-relevant premise**; reason cells are
+  longer by design, so `RS − NS` and `RP − NP` become exploratory and `NS − NP`
+  stays primary confirmatory;
+- **four marker strings in two families** — `therefore`, `consequently`
+  (`conclusion_indicator`); `it follows that`, `this implies`
+  (`metadiscursive_inference`); premise indicators deferred;
+- consistent terminal punctuation across all four cells, added after a v2 smoke
+  returned an NP cell without its final period.
+
+## Completed v2 pilot
+
+- **12 decisions**, 4 per domain (`data/topics/pilot_topics.yaml`).
+- **24 approved scenarios reused read-only** from the hosted scenario run,
+  verified against that run's configuration hash, call ids, text hashes and
+  topic-bank hash; their approvals keep the hash they were granted under.
+- **Marker allocation** `data/pilot/marker_allocation_v2.yaml`: 48 groups, 12
+  per marker string, 24 per family.
+- **48 v2 groups, 192 texts.** **All 48 groups were machine-valid on their first
+  generation call**; no repair was needed.
+- **4 groups / 8 RS–RP cells carry approved modal corrections** ("would" →
+  "could"), recorded in `data/pilot/manual_corrections_v2.yaml`, each bound to
+  its exact call and original text and re-validated.
+- **Assembled:** `data/pilot/corpus_v2.jsonl` (24 scenario records) and
+  `data/pilot/corpus_v2.manifest.json` — 0 machine errors, 4 machine warnings,
+  corpus SHA-256 `7e0dae8415ab…`.
+- **Validation status `draft`.** **1032 formal human judgements** (item, pair
+  and scenario) are outstanding; none has been recorded.
+
+## Manipulation-check protocol
+
+`configs/manipulation_checks_v1.yaml` fixes the rules that decide whether the
+manipulations worked — reason/no-reason and styled/plain separation,
+proposition preservation, equivalence bounds and what low agreement means —
+**recorded on 2026-09-20 before any annotation rating was examined**. Status
+`researcher_approved_pending_mentor_review`. It is a separate file so the v2
+pilot's configuration hash is unchanged, and nothing in generation reads it.
+
+## Full topic bank (curated 2026-09-21)
+
+`data/topics/full_topics_v2.yaml`:
+
+- **60 curated decisions — 20 climate, 20 energy, 20 technology**: the **12
+  pilot decisions preserved byte for byte**, plus **48 curated additions**
+  (climate_06–21, energy_06–21, technology_06–21), curated by Vidhi Bhutani on
+  2026-09-21 with all nine judgements true;
+- the **3 rejected pilot candidates** (climate_03, energy_04, technology_05) are
+  carried as rejected and excluded from every count;
+- per-brief checker: **0 errors, 0 warnings — 0 source-citability errors, 0
+  outstanding curation judgements**;
+- whole-bank validator (`scripts/check_full_topic_bank.py`): 0 errors and **two
+  lexical-overlap warnings retained**, not suppressed — climate_10/climate_14
+  and energy_01/energy_06, each 0.40. Both pairs are recorded as substantively
+  distinct review notes in `docs/full_topics_v2_climate_coverage.md`.
+
+Before curation, every variant context was audited for tilt and 62 of 96 were
+rewritten to state only the setting; climate_09 was reworked so both points of
+obligation are operationally plausible; climate_18 was replaced because the
+earlier version misstated Effort Sharing art. 8.
+
+## Sources
+
+Three consolidated EU acts were added from EUR-Lex on 2026-09-21 to support the
+climate additions: `eurlex_ets_directive` (Directive 2003/87/EC,
+02003L0087-20240301), `eurlex_effort_sharing` (Regulation 2018/842,
+02018R0842-20230516) and `eurlex_lulucf` (Regulation 2018/841,
+02018R0841-20230511). Each is **citable, seed-only, under CC BY 4.0 with
+attribution required**, confirmed by Vidhi Bhutani on 2026-09-21 against the
+EUR-Lex legal notice and Decision 2011/833/EU. A consolidated text has no legal
+effect, which the registry records. The official PDFs are pinned by SHA-256 in
+`data/sources/downloads.yaml` (EUR-Lex publishes no checksum of its own); the
+raw files are never committed. The registry holds 6 citable, 5 excluded and 1
+unverified candidate.
+
+## Full corpus: what does not exist yet
+
+- **No full marker allocation.** `data/full/marker_allocation_full_v2.yaml` is
+  planned (60 groups per marker string, the pilot's 48 fixed) and not built.
+- **No full scenario or group generation**, and **`data/full/` does not exist**.
+- **No full-corpus API call has been made.**
+- `configs/experiment_v2_full.draft.yaml` is a draft with **generation
+  blocked**; the orchestration it needs — frozen-pilot import, union
+  completeness checks, seed-aware skipping, combined assembly — is audited in
+  `docs/full_corpus_orchestration_audit.md` and not implemented.
+- All of this Phase 1 work was uncommitted until the commit "Prepare curated
+  full v2 topic bank".
 
 ## Corpus scope (settled 2026-09-16)
 
@@ -34,24 +180,40 @@
 - **Evaluated-model runs wait** until the complete 60-decision corpus is validated, human-reviewed and frozen.
 - **Any change from 60 is a documented design amendment**, made before any main evaluated-model outcome is examined.
 
-The order this implies:
+The order this implies (updated 2026-09-21):
 
-1. **Now — engineering.** Generate and human-review the 12-decision pilot.
-2. **Then — production.** Build the remaining decisions to reach 60, then validate, human-review and freeze the whole corpus.
-3. **Only then.** Run the main behavioural evaluation.
-4. **After that.** Mechanistic analysis over 40 of the 60, by the documented selection rule.
+1. **Engineering — done.** The 12-decision v2 pilot is generated and assembled as a draft; its human review is outstanding.
+2. **Production — in progress.** The 60-decision topic bank is curated. Next: full marker allocation, the frozen-pilot import and seed-aware orchestration, then the remaining 48 decisions' drafting. Building the full draft text corpus may precede mentor review.
+3. **Gate.** Mentor review, then formal annotation and freezing of the whole corpus.
+4. **Only then.** The main behavioural evaluation.
+5. **After that.** Mechanistic analysis over 40 of the 60, by the documented selection rule.
 
 ## Resolved
 
 - **Reliability sample size (2026-09-15).** The implemented rule stays: `round(N × 0.20)`. Pilot: 38 items covering all 36 item strata, and 19 pairs covering all 18 pair strata. The older 48-item / 24-pair statement is withdrawn.
 
-## Not yet completed
+## Next steps
 
-- **Inspection and audited correction of the 46 failed groups.** This is the next gate. The groups have been generated and read into `review/pilot_groups/`; what is outstanding is a person reading each one and recording an approved correction bound to its exact call and text. Nothing about that has been decided yet.
-- **Pilot assembly and counterargument review.** These wait for the 46 corrections. The assembled pilot will contain 24 scenario records, 48 groups and 192 cells, and remains `draft` until item, pair and scenario review is complete.
-- **The remaining decisions to reach 60** (normally 48 more), then validation, human review and the corpus freeze.
-- **The mechanistic subset's selection rule** — 40 of the 60 — documented before mechanistic analysis.
-- Model adapter, answer-token verification, logit scoring and every later analysis and mechanistic stage.
+1. **Build the full marker allocation** for all 60 decisions, with the pilot's 48 groups fixed as allocated.
+2. **Implement the orchestration** audited in `docs/full_corpus_orchestration_audit.md`: verified read-only import of the frozen v2 pilot, union completeness checks, seed-aware generation that skips the pilot's 12 decisions, and combined assembly.
+3. **Dry-run and test it offline**, then seek explicit authorisation for the paid calls (ceiling 768; expected about 304).
+4. Only then lift the generation block in `configs/experiment_v2_full.draft.yaml`, deliberately.
+5. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
+
+## Open, not resolved
+
+- **Compute.** The A6000 is for generation and possibly the first Llama-3.1-8B compatibility and behavioural tests. Larger causal sweeps may need Wisteria or an A100-class GPU, depending on measurements not yet taken.
+- **Family overlap.** If an optional Qwen model is evaluated, it shares a family with the corpus generator. That would be disclosed as a limitation.
+---
+
+# Historical record (v1)
+
+> Kept as written, for provenance. These sections describe the v1 group design
+> and its Qwen and hosted runs as of the dates in their headings. Where they say
+> something "has not run", is "next" or is "not yet" done, that statement is
+> **superseded** by the sections above: the hosted generator has run, v1 was
+> replaced by the v2 pairwise design, and the v2 pilot has been generated and
+> assembled.
 
 ## Server (Chomusuke02), as of 2026-09-15
 
@@ -303,7 +465,7 @@ anything — is a decision for after the 46 have been read, not an inference fro
 the counts above. `data/pilot/manual_corrections.yaml` does not exist and has
 not been drafted.
 
-## Hosted generator, implemented and unrun (2026-09-18)
+## Hosted generator, as implemented on 2026-09-18 (since run)
 
 **Why.** The Qwen pilot finished with **2 of 48 groups machine-valid**; the
 dominant failure is cross-condition length matching, and **no repair produced
@@ -323,8 +485,10 @@ Responses API state; it is not a retention guarantee, since abuse-monitoring
 retention may still apply under the account's data-control policy, and Zero Data
 Retention is not claimed.
 
-**What has not happened.** **No API request has been made, no key has been read
-and no dataset content has been generated.** Every test runs against fake
+**What had not happened as of 2026-09-18 — superseded.** *The hosted generator
+has since run (smoke, 24 scenarios, 4 redrafts, 48 groups with repairs; see* Model
+calls made *above). The following was true when written:* **No API request had
+been made, no key had been read and no dataset content had been generated.** Every test runs against fake
 responses with networking disabled; none needs a key or costs anything. The
 smoke call, the scenario stage, the approval gate and the group stage are all
 still ahead, in that order.
@@ -439,33 +603,3 @@ corpus without `--overwrite`, and validates the whole corpus before writing.
 The redraft path and exact-source-bound scenario correction ledger are now
 implemented and exercised. `pilot.py approvals` reports 24/24 approved and zero
 scenario blockers, which is the gate the group stage then passed.
-
-## Next steps
-
-0. **Decide which generator the pilot is drafted with.** The hosted backend is
-   implemented and unrun; the Qwen evidence stands either way. Nothing below
-   changes if you stay with the Qwen material and correct it by hand; if you run
-   the hosted pilot instead, it starts at its own smoke call and its own
-   scenario gate, and produces its own 24 scenarios to approve before any group
-   is drafted.
-1. **If the Qwen material stands: inspection and audited correction of the 46 failed groups.**
-   Read them in `review/pilot_groups/` (`pilot.py group-review`), then record an
-   approved correction per corrected cell in `data/pilot/manual_corrections.yaml`,
-   each bound to the exact call and original text. The validator re-checks every
-   corrected cell at assembly; a human approval never overrides a machine error.
-   The two machine-valid groups need no correction and are not approved either:
-   their human judgements are outstanding like everyone else's.
-2. **No generator, model, prompt, validator or threshold decision has been taken**
-   in response to the group run, and none should be until the 46 have been read.
-   Whether the failures are correctable by hand, whether the drafting prompts
-   need changing, and whether this model can draft this corpus at all are the
-   questions that reading answers — not questions the counts answer by themselves.
-3. **Then assemble:** `pilot.py assemble`, and export the 192 cells for item,
-   pair and scenario review.
-4. **After the pilot is reviewed**, extend to the full 60 decisions, then
-   validate, human-review and freeze before any evaluated-model run.
-
-## Open, not resolved
-
-- **Compute.** The A6000 is for generation and possibly the first Llama-3.1-8B compatibility and behavioural tests. Larger causal sweeps may need Wisteria or an A100-class GPU, depending on measurements not yet taken.
-- **Family overlap.** If an optional Qwen model is evaluated, it shares a family with the corpus generator. That would be disclosed as a limitation.

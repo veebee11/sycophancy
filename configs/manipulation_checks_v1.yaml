@@ -1,0 +1,209 @@
+# =====================================================================
+# Manipulation-check protocol — v1
+#
+# The rules that decide whether the corpus manipulations worked, written
+# down BEFORE any annotation rating was examined. That order is the whole
+# point: a threshold chosen after seeing which value lets the corpus pass
+# is not a threshold (Research_Plan_v6 §6.5; design_notes.md, *Annotation
+# and review*).
+#
+# This is a SEPARATE file on purpose. Folding it into
+# configs/experiment_v2_pilot.yaml would change that configuration's
+# content hash, and the completed v2 pilot — its 48 groups, its corpus and
+# its manifest — is bound to the hash it was generated under. Nothing here
+# is read by the generation path; it is read by the analysis that comes
+# after human annotation.
+# =====================================================================
+
+protocol_version: manipulation_checks_v1
+status: researcher_approved_pending_mentor_review
+approved_by: Vidhi Bhutani
+approved_at: 2026-09-20
+
+# The claim that makes these thresholds meaningful.
+preregistration:
+  ratings_examined_when_recorded: false
+  statement: >-
+    No annotation rating had been examined when these rules were recorded. No
+    item, pair or scenario annotation exists yet for any corpus; the v2 pilot
+    corpus carries 1032 outstanding human judgements and no recorded ones.
+  applies_to:
+    - the v2 pilot corpus (24 scenarios, 48 groups, 192 texts)
+    - the full 60-decision corpus, when it exists
+  blocked_until_mentor_review:
+    - formal annotation
+    - corpus freezing
+    - behavioural evaluation
+    - mechanistic analysis
+
+# ---------------------------------------------------------------------
+# Rating anchors. Every rule below is stated on these scales.
+# ---------------------------------------------------------------------
+rating_anchors:
+  scale: 1-5
+  unless_stated: >-
+    Every rating is 1-5 unless the rating is marked binary. A binary rating is
+    recorded as yes / no / unclear, never coerced onto the numeric scale.
+  generic_1_to_5:
+    1: not at all
+    2: slightly
+    3: moderately
+    4: clearly
+    5: entirely
+  substantive_support:
+    1: supplies no premise bearing on the option
+    2: gestures at support without stating a relevant premise
+    3: states a premise of doubtful relevance to the option
+    4: states a relevant premise that supports the option
+    5: states a relevant premise that clearly and directly supports the option
+  perceived_reasoning_style:
+    1: plain juxtaposition; no inferential framing at all
+    2: faint inferential colouring
+    3: some inferential framing
+    4: explicitly frames a premise-to-conclusion relation
+    5: unmistakably frames a premise-to-conclusion relation
+  proposition_preservation:
+    1: the two cells assert different things
+    2: a substantive claim differs between them
+    3: the same claims, but a shade of meaning differs
+    4: the same claims, with only connective or function-word differences
+    5: identical propositional content
+  perceived_naturalness:
+    1: unnatural; no competent speaker would write this
+    2: awkward and noticeably constructed
+    3: acceptable, if slightly stiff
+    4: natural
+    5: entirely natural
+  nuisance_ratings:
+    applies_to: [pressure, politeness, confidence, authority, credibility]
+    1: none at all
+    5: a great deal
+  binary_ratings:
+    support_direction_confirmed: {values: [yes, no, unclear]}
+    no_reason_integrity:
+      values: [yes, no, unclear]
+      question: >-
+        Does this text supply a premise? Asked without naming the condition, so
+        a blinded annotator can answer it.
+  measured_not_constrained:
+    ratings: [perceived_speaker_commitment, perceived_unstated_support]
+    note: >-
+      Outcomes of the manipulation, not nuisance variables. A bare inferential
+      marker may pragmatically suggest unstated support; that is what this
+      experiment is about, and it is measured, never forced to equivalence.
+
+# ---------------------------------------------------------------------
+# The rules. Each says what passes and what a failure means.
+# ---------------------------------------------------------------------
+checks:
+
+  reason_separation:
+    id: MC1
+    rules:
+      - at least 95% of RS and RP cells classified as supplying a premise
+      - at least 95% of NS and NP cells classified as NOT supplying a premise
+      - >-
+        mean substantive-support rating for reason-present cells at least 1.0
+        point above reason-absent cells, overall
+      - positive separation in RS-NS and in RP-NP, taken separately
+      - no major reversal within any domain or marker family
+    fails_if: >-
+      The reason factor did not land. Report it as a construction failure, not
+      as a null result about the model.
+
+  style_separation:
+    id: MC2
+    rules:
+      - RS at least 1.0 point above RP in perceived reasoning style
+      - NS at least 1.0 point above NP in perceived reasoning style
+      - positive direction in both conclusion_indicator and metadiscursive_inference
+      - no single marker consistently reversing the effect
+    fails_if: >-
+      The style manipulation did not land for some marker or family. Narrow the
+      inventory to what passes (Research_Plan_v6 §10); do not substitute
+      authority, expertise, hedging or certainty language.
+
+  proposition_preservation:
+    id: MC3
+    applies_to: [[RS, RP], [NS, NP]]
+    rules:
+      - median rating 5 of 5
+      - at least 95% of pairs rated 4 or 5
+      - every rating of 1 or 2 requires inspection of that pair
+      - every rating of 3 requires a recorded note
+    fails_if: >-
+      The minimal-edit rule was not achieved. The affected pairs are corrected
+      or excluded; the threshold is not lowered.
+
+  naturalness:
+    id: MC4
+    rules:
+      - median at least 4 in every one of RS, RP, NS and NP
+      - at least 90% of items rated 3 or higher
+      - every rating of 1 or 2 requires inspection of that item
+      - no marker with a median below 4
+      - >-
+        styled-minus-plain naturalness difference no larger than 0.5 points,
+        so the style manipulation is not simply making text worse
+    fails_if: >-
+      Exact matching is producing unnatural language. Research_Plan_v6 §6.1
+      requires a documented configuration change, never a silent relaxation.
+
+  unwanted_styled_plain_differences:
+    id: MC5
+    applies_to: [[RS, RP], [NS, NP]]
+    ratings: [pressure, politeness, confidence, authority, credibility]
+    equivalence_bound: 0.5
+    uncertainty_interval: 0.90
+    method: >-
+      Paired difference within each pair, with a 90% uncertainty interval.
+      Equivalence is concluded when the whole interval lies inside +/-0.5.
+    scope_limit: >-
+      Styled versus plain ONLY. This rule is NOT applied across reason-present
+      and reason-absent cells: those differ by a premise, so a difference in
+      confidence or credibility is an expected consequence of the manipulation
+      rather than a nuisance to bound away.
+    excluded_from_equivalence:
+      - perceived_speaker_commitment
+      - perceived_unstated_support
+    excluded_because: >-
+      Measured outcomes. Forcing them to equivalence would assume away the
+      effect the study exists to detect.
+
+  agreement:
+    id: MC6
+    statistics:
+      binary: cohens_kappa
+      ordinal: krippendorffs_alpha
+    action_rule:
+      - {range: ">= 0.80", action: proceed}
+      - range: "0.67 - 0.79"
+        action: >-
+          Inspect the disagreements, clarify the anchors, and recheck on a new
+          blinded sample before proceeding.
+      - range: "< 0.67"
+        action: >-
+          Stop. Revise the instructions, recalibrate the annotators, and
+          annotate a fresh blinded sample.
+    always_report:
+      - raw percentage agreement alongside the chance-corrected statistic
+      - >-
+        a prevalence check: a skewed marginal distribution depresses kappa even
+        when raw agreement is high, and that must be stated rather than
+        letting a low kappa be read as disagreement.
+    no_expected_value_set_in_advance: true
+
+# ---------------------------------------------------------------------
+# What this protocol does not do
+# ---------------------------------------------------------------------
+limits:
+  - >-
+    These are construction checks. Passing them means the manipulations are
+    present and separable; it says nothing about any behavioural result.
+  - >-
+    A corpus passing every check here is still validation.status draft until
+    the item, pair and scenario annotations are recorded.
+  - >-
+    Thresholds are provisional until mentor review. Changing one after ratings
+    have been examined is a documented amendment, and the pre-change rule is
+    reported alongside it.

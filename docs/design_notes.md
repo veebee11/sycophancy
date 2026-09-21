@@ -636,6 +636,14 @@ the two configurations differ in the generator block and nowhere else. Whether
 this changes anything is a question the new pilot answers after machine
 validation *and* human review; until then nothing is claimed about it.
 
+*Outcome, recorded 2026-09-21.* The hosted v1 pilot ran on 2026-09-18: all 24
+scenarios were approved (20 directly, 4 after a bounded redraft), and 36 of 48
+groups were machine-valid (3 on the first draft, 33 after repair), with 12
+`needs_manual_review` — 9 of those 12 again on the word ratio. Neither v1 group
+set was corrected or assembled. The four-way length rule itself was then
+replaced by the version-2 pairwise design below; both v1 runs remain read-only
+evidence.
+
 **The hosted generator's own rules.** It is the project's only external, paid
 dependency, so it carries requirements the local one does not.
 
@@ -696,15 +704,19 @@ dependency, so it carries requirements the local one does not.
 
 ---
 
-## Version-2 group design — proposed, dated 2026-09-18
+## Version-2 group design — proposed 2026-09-18, adopted
 
-**Status: proposed and implemented, not yet run.** Everything above this heading
+**Status (updated 2026-09-21): adopted, and the v2 pilot has run.** When this
+section was first written on 2026-09-18 it was proposed and not yet run, and it
+said that no v2 group and no v2 marker allocation existed; that is superseded.
+The v2 pilot allocation (`data/pilot/marker_allocation_v2.yaml`) and all 48 v2
+pilot groups exist, and the assembled pilot corpus is
+`data/pilot/corpus_v2.jsonl` with its manifest. Everything above this heading
 describes **version 1**, which produced the Qwen and hosted pilots and remains
 the historical account of what was generated, validated and reviewed. Nothing
 in v1 is withdrawn or rewritten here. What follows is a *second group design*,
 in its own configuration (`configs/experiment_v2_pilot.yaml`) with its own
-content hash, its own prompts, its own run directory and its own outputs. No v2
-group has been drafted, and no marker allocation for it has been created.
+content hash, its own prompts, its own run directory and its own outputs.
 
 **Why four-way length matching failed.** v1 required all four cells of a group
 to sit inside one word ratio. A reason-present cell carries a premise and a
@@ -819,6 +831,48 @@ scenario at all, and writes no approval template. Every v2 request, result, log
 line and corpus manifest records **both** layers: the v1 scenario source, and
 the v2 group-design configuration hash.
 
+### Full-corpus status (2026-09-21)
+
+**Why the final corpus uses v2.** The v1 four-way length rule could be met only
+by padding the no-premise cells, which manufactured the confound it was meant
+to control (above). The v2 pairwise design removes that pressure, and its pilot
+drafted all 48 groups machine-valid on the first call. The final corpus is
+therefore built under v2, not v1.
+
+**What stays fixed.** The endorsement `I support the option to
+${supported_option_text}` appears word for word, once, in every cell; RS is RP
+plus the marker and NS is NP plus the same marker in the same position — a
+minimal pair edit with an exact word budget and no other permitted difference.
+Four marker strings in two families: `therefore` and `consequently`
+(`conclusion_indicator`), `it follows that` and `this implies`
+(`metadiscursive_inference`).
+
+**Target.** 60 decisions (20 climate, 20 energy, 20 technology), 120
+scenarios, 240 groups, **960 texts**. The completed 12-decision v2 pilot — 24
+scenarios, 48 groups, 192 texts, `data/pilot/corpus_v2.jsonl` — is **preserved
+as the seed** and imported read-only, never regenerated; the **remaining 48
+decisions** (96 scenarios, 192 groups, 768 texts) are what is left to draft.
+
+**Topic curation completed on 2026-09-21.** `data/topics/full_topics_v2.yaml`
+holds 60 curated decisions: the 12 pilot decisions byte for byte and 48 curated
+additions; the three rejected pilot candidates are carried as rejected and
+excluded. The per-brief checker reports no errors, and the whole-bank validator
+two retained lexical-overlap warnings.
+
+**Still outstanding.** The full marker allocation
+(`data/full/marker_allocation_full_v2.yaml`) is not built, and no full scenario
+or group has been generated; `configs/experiment_v2_full.draft.yaml` keeps
+generation blocked until the allocation, the verified seed import, tested
+orchestration with dry runs, and explicit authorisation of the paid calls are
+all in place (`docs/full_corpus_orchestration_audit.md`).
+
+---
+
+*The paragraphs from here to* Known limitations *were written with v1 and
+continue to apply to v2 except where the v2 section above says otherwise. In
+particular,* Marker allocation (pilot) *describes the v1 allocation,
+`data/pilot/marker_allocation.yaml`, not the v2 one.*
+
 **Generator family.** The generator should preferably differ from the
 **primary** evaluated family. Llama-3.1 is the primary family, and a Llama
 generator is refused at config load. `Qwen/Qwen3-14B` is therefore acceptable.
@@ -856,7 +910,7 @@ trimmed or patched — if they do not fit.
 
 **The first generator is a local open-weights model on a lab GPU server**,
 served by vLLM behind an OpenAI-compatible endpoint bound to `127.0.0.1`. (A
-second, hosted generator was added on 2026-09-18 and has not been run; see the
+second, hosted generator was added on 2026-09-18 and has since run; see the
 amendment above.) No external
 service, no paid call, and no credential anywhere: there is nothing to
 authenticate to. The proposed model is `Qwen/Qwen3-14B` in non-thinking mode
@@ -1057,5 +1111,5 @@ filename checks alone would not catch an edit to a frozen file's contents.
 - Style and content are not perfectly separable in language; the residual confound is stated rather than argued away.
 - The six-word overlap screen detects possible verbatim reuse only; independence is a property of the construction procedure, not of the screen.
 - The corpus generator is a Qwen model. If an optional Qwen model is later evaluated, corpus and evaluated model share a family.
-- A second, hosted generator (`gpt-5.6-sol`) is implemented but unrun. A hosted model is not pinned to weights we hold: the provider's model id, the response id and the saved raw response are the whole record, and nothing about it is reproducible in the sense a local checkpoint is.
+- A second, hosted generator (`gpt-5.6-sol`) drafted the hosted v1 pilot and the v2 pilot groups. A hosted model is not pinned to weights we hold: the provider's model id, the response id and the saved raw response are the whole record, and nothing about it is reproducible in the sense a local checkpoint is.
 - With a hosted generator, drafting material leaves our machines. `store: false` keeps it out of retrievable Responses API state but is not a retention guarantee: abuse-monitoring retention may still apply under the account's data-control policy, and Zero Data Retention is not claimed.

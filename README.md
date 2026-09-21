@@ -8,6 +8,31 @@ Vidhi Bhutani, University of Tokyo. The research plan is
 [`docs/design_notes.md`](docs/design_notes.md); where the work stands is in
 [`docs/current_status.md`](docs/current_status.md).
 
+## Current workflow (2026-09-21)
+
+Where the work stands, in detail: [`docs/current_status.md`](docs/current_status.md).
+
+- The **v2 pilot** (12 decisions, 48 groups, 192 texts) is generated and
+  assembled as a draft corpus, `data/pilot/corpus_v2.jsonl`; its human review
+  is outstanding.
+- The **manipulation-check rules** are fixed in
+  [`configs/manipulation_checks_v1.yaml`](configs/manipulation_checks_v1.yaml),
+  recorded before any rating was examined and pending mentor review.
+- The **full topic bank** — 60 curated decisions, 20 per domain — is
+  [`data/topics/full_topics_v2.yaml`](data/topics/full_topics_v2.yaml); the
+  sources behind its climate additions are set out in
+  [`docs/full_topics_v2_climate_coverage.md`](docs/full_topics_v2_climate_coverage.md).
+- **Next:** full marker allocation and the seed-aware orchestration audited in
+  [`docs/full_corpus_orchestration_audit.md`](docs/full_corpus_orchestration_audit.md).
+  Full generation is blocked in `configs/experiment_v2_full.draft.yaml`, and no
+  full-corpus call has been made.
+
+**What is authoritative.** YAML, JSONL and manifests are the data and its
+provenance. Committed Markdown records design and status. **`review/` contains
+generated, gitignored reading views** — deterministic local exports rebuilt
+from the data — and is **not** the authoritative committed record. Chat reports
+are not project records.
+
 ## The design in one paragraph
 
 Each scenario is a normatively underdetermined public-policy trade-off with two
@@ -32,7 +57,8 @@ support direction is never inferred from them.
 
 The **pilot** is 12 policy decisions, four per domain, with two scenario
 variants each: 24 scenarios, 48 four-condition groups, 192 counterargument
-texts. Generating and reviewing it is the current milestone.
+texts. It has been generated and assembled under the v2 pairwise design; its
+human review is outstanding.
 
 The **main corpus** is 60 policy decisions — 20 climate, 20 energy, 20
 technology — giving 120 scenarios, 240 groups and 960 texts. The 12 pilot
@@ -56,6 +82,7 @@ prompts/                      hashed drafting templates: scenario, group, repair
 data/sources/                 reference-source registry, pinned downloads, inventory
                               (raw files in data/sources/raw/ are never committed)
 data/topics/pilot_topics.yaml curated topic briefs: 12 pilot decisions, 4 per domain
+data/topics/full_topics_v2.yaml  the full bank: 60 curated decisions, 20 per domain
 data/pilot/                   marker allocation (committed); run artefacts (gitignored)
 data/fixtures/                small synthetic corpus and briefs used by tests and the smoke test
 src/reasonstyle/
@@ -104,11 +131,15 @@ draft is machine-validated and then reviewed by a person.
 | 8. Approve every scenario between the two stages, then assemble what passes | `pilot.py scenario-review`, `pilot.py approvals`, `pilot.py assemble` | scenario gate complete: 24/24 approved. The next gate is inspecting and correcting the 46 failed groups; assembly waits for that |
 | 9. Extend to the full 60 decisions, then validate, review and freeze | — | not started |
 
-A second generator, `gpt-5.6-sol` through OpenAI's Responses API, is implemented
-and **has not been run**: no request has been made, no key has been read and no
-dataset content has been generated with it. See *A second generator* below.
+*The table above records the v1 Qwen workflow as it stood on 2026-09-17 and is
+historical.* A second generator, `gpt-5.6-sol` through OpenAI's Responses API,
+**has since run**: the hosted v1 pilot on 2026-09-18 and the v2 pilot groups on
+2026-09-20. Counts, per stage, are in [`docs/current_status.md`](docs/current_status.md).
 
-## A second generator (implemented, not yet run)
+## A second generator (hosted; since run)
+
+*Written 2026-09-18, before it ran. Statements below that nothing has been sent
+are superseded: see* Current workflow *above.*
 
 The Qwen pilot finished with **2 of 48 groups machine-valid**; the dominant
 failure is cross-condition length matching, and no repair produced an accepted

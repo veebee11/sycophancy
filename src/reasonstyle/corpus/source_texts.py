@@ -22,6 +22,9 @@ _WORD = re.compile(r"[a-z0-9]+(?:['’-][a-z0-9]+)*")
 
 POLIANNA_JSON = Path("POLIANNA_v1_1/POLIANNA_v1_1/03b_processed_to_json")
 POLIANNA_SCHEME = Path("POLIANNA_v1_1/POLIANNA_v1_1/01_policy_info/Coding_Scheme.json")
+#: Plain-text extractions of the pinned EUR-Lex PDFs. The PDF is what the
+#: download manifest pins; the text is derived from it, deterministically.
+EURLEX_TEXT_GLOB = "eurlex_*_EN.txt"
 JRC_TABLES = ("Export_PSTW_GENAI_AnnexI_guidelines_dataset.csv",
               "Export_PSTW_GENAI_AnnexII_usecases_dataset.csv")
 
@@ -70,6 +73,12 @@ def load_source_texts(raw_dir: str | Path) -> dict[str, str]:
             text = " \n ".join(cell for cell in row if cell.strip())
             if text:
                 texts[f"jrc:{path.stem}:{i}"] = text
+    # Consolidated EU legislation, pinned as official PDFs with a plain-text
+    # extraction beside each. Screened like every other source: a brief that
+    # shared six consecutive words with the act it cites would otherwise pass
+    # the overlap check simply because the check could not see that act.
+    for path in sorted(raw.glob(EURLEX_TEXT_GLOB)):
+        texts[f"eurlex:{path.stem}"] = path.read_text(encoding="utf-8", errors="replace")
     return texts
 
 

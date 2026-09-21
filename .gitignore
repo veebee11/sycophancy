@@ -98,3 +98,12 @@ data/pilot/smoke_openai/
 # directory is one design's evidence, and v2 never writes into v1's.
 data/pilot/run_v2/
 data/pilot/smoke_v2/
+
+# A live smoke call writes real provider responses under its own directory.
+# Those are run evidence like any other and are never committed. The glob
+# catches the per-marker directories a smoke run creates.
+data/pilot/smoke_v2_*/
+
+# The `!data/**` negation above re-includes everything under data/, which would
+# otherwise let a macOS directory-metadata file be committed with research data.
+data/.DS_Store

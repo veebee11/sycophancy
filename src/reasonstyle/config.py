@@ -230,6 +230,10 @@ class RawConfig(_Base):
     #: Where already-approved scenarios are read from, when this design reuses
     #: another's instead of drafting its own. Read-only by construction.
     scenario_source: dict[str, Any] | None = None
+    #: A completed corpus this one grows from, imported read-only rather than
+    #: regenerated. Absent everywhere except the full-corpus design, which
+    #: reuses the frozen v2 pilot's 12 decisions.
+    seed_corpus: dict[str, Any] | None = None
 
 
 # --- public wrapper ---------------------------------------------------------

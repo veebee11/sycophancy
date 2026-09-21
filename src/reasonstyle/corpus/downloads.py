@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 __all__ = [
+    "NO_PROVIDER_CHECKSUM",
     "ChecksumMismatch",
     "UnsafeArchive",
     "ExtractionResult",
@@ -56,10 +57,25 @@ def provider_digest(data: bytes, algorithm: str) -> str:
     raise ValueError(f"unsupported provider checksum algorithm {algorithm!r}")
 
 
-def verify(data: bytes, *, size: int, algorithm: str, expected: str) -> str:
-    """Check size and provider checksum; return our own SHA-256."""
+#: What a manifest records when the provider publishes no checksum at all.
+#: EUR-Lex is one: its documents carry none. The file is then pinned by the
+#: SHA-256 we computed, which must already be recorded — never trusted on first
+#: sight — so a re-fetch is still checked against a known value.
+NO_PROVIDER_CHECKSUM = "none"
+
+
+def verify(data: bytes, *, size: int, algorithm: str, expected: str | None) -> str:
+    """Check size and provider checksum; return our own SHA-256.
+
+    With ``algorithm`` ``"none"`` there is no provider checksum to compare, and
+    the caller is responsible for comparing the returned SHA-256 against the
+    one recorded in the manifest. Nothing here is skipped silently: an absent
+    checksum is a declared value, not a missing one.
+    """
     if len(data) != size:
         raise ChecksumMismatch(f"size {len(data)} bytes, expected {size}")
+    if algorithm == NO_PROVIDER_CHECKSUM:
+        return file_digest(data, "sha256")
     actual = provider_digest(data, algorithm)
     if actual != expected:
         raise ChecksumMismatch(f"{algorithm} {actual}, expected {expected}")

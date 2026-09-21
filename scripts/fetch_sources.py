@@ -23,7 +23,13 @@ from pathlib import Path
 
 import yaml
 
-from reasonstyle.corpus.downloads import ChecksumMismatch, UnsafeArchive, safe_extract, verify
+from reasonstyle.corpus.downloads import (
+    NO_PROVIDER_CHECKSUM,
+    ChecksumMismatch,
+    UnsafeArchive,
+    safe_extract,
+    verify,
+)
 
 
 def _header(path: Path) -> str:
@@ -65,6 +71,13 @@ def main(argv: list[str] | None = None) -> int:
             fetched = False
 
         checksum = entry["provider_checksum"]
+        if checksum["algorithm"] == NO_PROVIDER_CHECKSUM and not entry.get("sha256"):
+            # With no provider checksum, the recorded SHA-256 IS the pin. A file
+            # accepted on first sight with nothing to check it against would be
+            # trusted, not verified, so one is required up front.
+            print(f"REFUSED {entry['name']}: the provider publishes no checksum, so a "
+                  f"sha256 must already be recorded in the manifest", file=sys.stderr)
+            return 1
         try:
             sha256 = verify(data, size=entry["size_bytes"], algorithm=checksum["algorithm"],
                             expected=checksum["value"])
@@ -84,8 +97,10 @@ def main(argv: list[str] | None = None) -> int:
             entry["sha256"] = sha256
             entry["access_date"] = date.today().isoformat()
             changed = True
-        print(f"  ok  {entry['name']}: {len(data):,} bytes, {checksum['algorithm']} matches, "
-              f"sha256 {sha256}")
+        how = ("no provider checksum published; recorded sha256 pin matches"
+               if checksum["algorithm"] == NO_PROVIDER_CHECKSUM
+               else f"{checksum['algorithm']} matches")
+        print(f"  ok  {entry['name']}: {len(data):,} bytes, {how}, sha256 {sha256}")
 
         if entry.get("extract"):
             target = raw / Path(entry["name"]).stem

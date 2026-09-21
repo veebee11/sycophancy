@@ -265,3 +265,102 @@ datasets:
       The page states "© 2026 OECD. All rights reserved" and gives a citation
       format but no reuse licence. Entries are submitted by national contact
       points. OECD's general open-access policy page returned 403 when checked.
+  eurlex_ets_directive:
+    canonical_name: Directive 2003/87/EC establishing a system for greenhouse gas emission allowance trading
+      within the Union (consolidated)
+    citation: Directive 2003/87/EC of the European Parliament and of the Council, consolidated version
+      02003L0087-20240301, EUR-Lex
+    version: consolidated 2024-03-01 (CELEX 02003L0087-20240301); ELI http://data.europa.eu/eli/dir/2003/87/oj
+    access_url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02003L0087-20240301
+    outcome: citable
+    access_date: '2026-09-21'
+    licence: Creative Commons Attribution 4.0 International
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    usage: seed_only
+    usage_permitted: true
+    attribution_required: true
+    registration_required: false
+    checked_by: Vidhi Bhutani
+    checked_at: 2026-09-21
+    exclusion_reason: null
+    notes: 'Role: climate-policy topics. Consolidated text, used as topic inspiration only. REUSE: verified
+      2026-09-21 from the EUR-Lex legal notice (https://eur-lex.europa.eu/content/legal-notice/legal-notice.html),
+      which states that the consolidated texts, owned by the EU, are licensed under CC BY 4.0, and that
+      the Commission''s reuse policy rests on Decision 2011/833/EU. CAVEAT, recorded as the text states
+      it: a consolidated text is ''meant purely as a documentation tool and has no legal effect''; the
+      authentic versions are those in the Official Journal. That is no obstacle for topic seeds, which
+      use no legal force. VERSION: the latest consolidation, confirmed 2026-09-21 by reading every consolidation
+      linked from the original act and confirming the pinned version''s own page links no later one. LOCAL
+      SNAPSHOT: the official PDF rendition, chosen because two fetches returned byte-identical files;
+      the HTML rendition carries a per-request monitoring script and its bytes are not reproducible. STATUS:
+      the technical checks above were made by the coding assistant. The outcome stays ''unverified'' until
+      Vidhi Bhutani confirms them and records herself as checked_by; an assistant cannot take responsibility
+      for a verification, and her name is not written on her behalf. CONFIRMED 2026-09-21: Vidhi Bhutani reviewed the EUR-Lex
+      legal notice and Commission Decision 2011/833/EU and confirmed seed-only use of this consolidated
+      text under CC BY 4.0 with attribution; outcome set to citable.'
+  eurlex_effort_sharing:
+    canonical_name: Regulation (EU) 2018/842 on binding annual greenhouse gas emission reductions by Member
+      States from 2021 to 2030 (consolidated)
+    citation: Regulation (EU) 2018/842 of the European Parliament and of the Council, consolidated version
+      02018R0842-20230516, EUR-Lex
+    version: consolidated 2023-05-16 (CELEX 02018R0842-20230516); ELI http://data.europa.eu/eli/reg/2018/842/oj
+    access_url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02018R0842-20230516
+    outcome: citable
+    access_date: '2026-09-21'
+    licence: Creative Commons Attribution 4.0 International
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    usage: seed_only
+    usage_permitted: true
+    attribution_required: true
+    registration_required: false
+    checked_by: Vidhi Bhutani
+    checked_at: 2026-09-21
+    exclusion_reason: null
+    notes: 'Role: climate-policy topics. Consolidated text, used as topic inspiration only. REUSE: verified
+      2026-09-21 from the EUR-Lex legal notice (https://eur-lex.europa.eu/content/legal-notice/legal-notice.html),
+      which states that the consolidated texts, owned by the EU, are licensed under CC BY 4.0, and that
+      the Commission''s reuse policy rests on Decision 2011/833/EU. CAVEAT, recorded as the text states
+      it: a consolidated text is ''meant purely as a documentation tool and has no legal effect''; the
+      authentic versions are those in the Official Journal. That is no obstacle for topic seeds, which
+      use no legal force. VERSION: the latest consolidation, confirmed 2026-09-21 by reading every consolidation
+      linked from the original act and confirming the pinned version''s own page links no later one. LOCAL
+      SNAPSHOT: the official PDF rendition, chosen because two fetches returned byte-identical files;
+      the HTML rendition carries a per-request monitoring script and its bytes are not reproducible. STATUS:
+      the technical checks above were made by the coding assistant. The outcome stays ''unverified'' until
+      Vidhi Bhutani confirms them and records herself as checked_by; an assistant cannot take responsibility
+      for a verification, and her name is not written on her behalf. CONFIRMED 2026-09-21: Vidhi Bhutani reviewed the EUR-Lex
+      legal notice and Commission Decision 2011/833/EU and confirmed seed-only use of this consolidated
+      text under CC BY 4.0 with attribution; outcome set to citable.'
+  eurlex_lulucf:
+    canonical_name: Regulation (EU) 2018/841 on the inclusion of greenhouse gas emissions and removals
+      from land use, land use change and forestry (consolidated)
+    citation: Regulation (EU) 2018/841 of the European Parliament and of the Council, consolidated version
+      02018R0841-20230511, EUR-Lex
+    version: consolidated 2023-05-11 (CELEX 02018R0841-20230511); ELI http://data.europa.eu/eli/reg/2018/841/oj
+    access_url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02018R0841-20230511
+    outcome: citable
+    access_date: '2026-09-21'
+    licence: Creative Commons Attribution 4.0 International
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    usage: seed_only
+    usage_permitted: true
+    attribution_required: true
+    registration_required: false
+    checked_by: Vidhi Bhutani
+    checked_at: 2026-09-21
+    exclusion_reason: null
+    notes: 'Role: climate-policy topics. Consolidated text, used as topic inspiration only. REUSE: verified
+      2026-09-21 from the EUR-Lex legal notice (https://eur-lex.europa.eu/content/legal-notice/legal-notice.html),
+      which states that the consolidated texts, owned by the EU, are licensed under CC BY 4.0, and that
+      the Commission''s reuse policy rests on Decision 2011/833/EU. CAVEAT, recorded as the text states
+      it: a consolidated text is ''meant purely as a documentation tool and has no legal effect''; the
+      authentic versions are those in the Official Journal. That is no obstacle for topic seeds, which
+      use no legal force. VERSION: the latest consolidation, confirmed 2026-09-21 by reading every consolidation
+      linked from the original act and confirming the pinned version''s own page links no later one. LOCAL
+      SNAPSHOT: the official PDF rendition, chosen because two fetches returned byte-identical files;
+      the HTML rendition carries a per-request monitoring script and its bytes are not reproducible. STATUS:
+      the technical checks above were made by the coding assistant. The outcome stays ''unverified'' until
+      Vidhi Bhutani confirms them and records herself as checked_by; an assistant cannot take responsibility
+      for a verification, and her name is not written on her behalf. CONFIRMED 2026-09-21: Vidhi Bhutani reviewed the EUR-Lex
+      legal notice and Commission Decision 2011/833/EU and confirmed seed-only use of this consolidated
+      text under CC BY 4.0 with attribution; outcome set to citable.'
