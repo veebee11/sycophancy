@@ -13,8 +13,9 @@ superseded wherever they say something has not yet run.*
 | v2 pilot (12 decisions) | **generated and assembled**: `data/pilot/corpus_v2.jsonl`, `validation_status: draft`, 1032 human judgements outstanding |
 | manipulation-check protocol | recorded before any rating was examined; pending mentor review |
 | full topic bank (60 decisions) | **curated 2026-09-21**; 0 citability errors, 0 outstanding curation judgements |
-| full marker allocation | not built |
-| full scenario and group generation | not started; `data/full/` does not exist; **no full-corpus API call has been made** |
+| frozen-pilot import and seed-aware planning | **implemented and tested (Phase 2)**; all offline dry runs passed 2026-09-23 |
+| full marker allocation | **built and committed** (`data/full/marker_allocation_full_v2.yaml`, 240 groups) |
+| full scenario and group generation | not started; no full scenario or group exists; **no full-corpus API call has been made**; generation blocked, awaiting only paid-call authorisation |
 
 ## Records and their authority
 
@@ -157,18 +158,68 @@ effect, which the registry records. The official PDFs are pinned by SHA-256 in
 raw files are never committed. The registry holds 6 citable, 5 excluded and 1
 unverified candidate.
 
+## Full corpus, Phase 2: seed import and full allocation (2026-09-21, offline)
+
+Implemented and tested; **not committed yet**. No request was sent, no key was
+read, no scenario or group was generated and no corpus was assembled.
+
+- **Frozen-pilot importer** (`src/reasonstyle/generation/corpus_source.py`).
+  Before returning a record it verifies the seed configuration hash against
+  the manifest and the pins; corpus/manifest agreement and their pinned
+  SHA-256s; all 192 texts under the pilot's own configuration, with nothing
+  restamped; exactly 12 decisions, 24 scenarios, 48 groups and 192 texts; that
+  the 12 are the curated pilot decisions with unchanged definitions in the full
+  bank; scenario text hashes and approvals; group call ids and all 8 approved
+  corrections; the pinned pilot allocation and every record's marker; and
+  that seed plus remainder is exactly the 60 curated decisions. The committed
+  files suffice; the gitignored run directory is checked read-only only when
+  present. Its provenance block keeps the pilot's own hashes.
+- **Seed pins.** `seed_corpus.pins` in `configs/experiment_v2_full.draft.yaml`
+  records six hashes of the committed seed; a missing or malformed pin is a
+  refusal. The draft configuration's content hash is now
+  `1907344906a543f914c5fe5980c2c7a0059f9ab0d557c886450247e185116409`.
+- **Full marker allocation**, `data/full/marker_allocation_full_v2.yaml`,
+  allocation hash `ba39dbcb24f5…`: the 48 pilot rows imported exactly and 192
+  new rows allocated around them. Every marker has 60 groups — 20 per domain,
+  30 per supported option, 30 per variant — and every family 120. A fresh
+  rebuild is byte-identical and `--check` rejects any edit. **It is a
+  committed-data candidate but is not committed yet.** The v1 and v2 pilot
+  allocations still rebuild byte for byte.
+- **Seed-aware planning.** Drafting commands on the full configuration run on
+  the 48 new decisions only: 96 scenarios, 192 groups, 768 texts. Every send
+  path refuses a seed decision before recovery or backend, and outputs under
+  `data/pilot/` are refused.
+- **Combined assembly interface** (`combine_corpus`): seed lines pass through
+  byte for byte, new records must be exactly the planned scenarios under the
+  full configuration, order is by scenario id, and the manifest names both
+  sources. It is tested but **not used**; no full corpus exists.
+- **Offline preflight and status**: `pilot.py preflight` and `pilot.py status`
+  on the full configuration. Read-only; no credential, no backend, no
+  connection.
+- **Offline dry runs, run 2026-09-23.** All five passed, writing nothing:
+  `preflight`; the scenario stage (96 planned); the group stage (192 planned);
+  `status`; and the synthetic combined-assembly test. No credential was read,
+  no connection opened, no run directory created and nothing written under
+  `data/pilot/`; `data/full/marker_allocation_full_v2.yaml` was byte-identical
+  before and after.
+- **Status derives its readiness live.** `pilot.py status` rebuilds and
+  compares the allocation, verifies the seed and performs the dry run each
+  time it runs. There is no stored claim that a check once passed. Before
+  2026-09-23 the dry-run line was a hard-coded "outstanding" that checked
+  nothing; that is fixed.
+- **Generation remains blocked.** Of the four requirements, three are met —
+  the allocation, the verified seed import, and the orchestration tests and
+  offline dry runs. **Explicit authorisation of the paid calls is the only
+  one outstanding.**
+
 ## Full corpus: what does not exist yet
 
-- **No full marker allocation.** `data/full/marker_allocation_full_v2.yaml` is
-  planned (60 groups per marker string, the pilot's 48 fixed) and not built.
-- **No full scenario or group generation**, and **`data/full/` does not exist**.
+- **No full scenario or group** has been generated, and no full corpus has been
+  assembled. `data/full/` holds only the uncommitted allocation.
 - **No full-corpus API call has been made.**
-- `configs/experiment_v2_full.draft.yaml` is a draft with **generation
-  blocked**; the orchestration it needs — frozen-pilot import, union
-  completeness checks, seed-aware skipping, combined assembly — is audited in
-  `docs/full_corpus_orchestration_audit.md` and not implemented.
-- All of this Phase 1 work was uncommitted until the commit "Prepare curated
-  full v2 topic bank".
+- `configs/experiment_v2_full.draft.yaml` keeps **generation blocked**.
+- The Phase 1 work was committed as "Prepare curated full v2 topic bank"; the
+  Phase 2 work above as "Add frozen pilot import and full marker allocation".
 
 ## Corpus scope (settled 2026-09-16)
 
@@ -194,9 +245,9 @@ The order this implies (updated 2026-09-21):
 
 ## Next steps
 
-1. **Build the full marker allocation** for all 60 decisions, with the pilot's 48 groups fixed as allocated.
-2. **Implement the orchestration** audited in `docs/full_corpus_orchestration_audit.md`: verified read-only import of the frozen v2 pilot, union completeness checks, seed-aware generation that skips the pilot's 12 decisions, and combined assembly.
-3. **Dry-run and test it offline**, then seek explicit authorisation for the paid calls (ceiling 768; expected about 304).
+1. ~~Build the full marker allocation~~ — built in Phase 2, uncommitted.
+2. ~~Implement the orchestration~~ — importer, planning, seed guard and combined-assembly interface implemented and tested in Phase 2, uncommitted.
+3. ~~Dry-run the full stages offline~~ — all five offline checks passed on 2026-09-23. **Next: seek explicit authorisation for the paid calls** (ceiling 768; expected about 304), which is the only outstanding requirement in the generation block.
 4. Only then lift the generation block in `configs/experiment_v2_full.draft.yaml`, deliberately.
 5. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
 

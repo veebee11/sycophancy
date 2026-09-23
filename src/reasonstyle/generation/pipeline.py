@@ -217,6 +217,10 @@ class CallStore:
     #: design's own configuration hash, so a group is always traceable to both
     #: the scenario it was built on and the group design it was built under.
     scenario_source: dict[str, Any] | None = None
+    #: Decisions this run must never request: a full-corpus run grows from a
+    #: frozen seed, and the seed's decisions are imported, never redrafted. Set
+    #: by the caller that verified the seed; enforced on every send path below.
+    refused_decisions: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         self.directory = Path(self.directory)
@@ -447,6 +451,13 @@ def _send_or_resume(store: CallStore, request: DraftRequest, backend, cfg: Exper
     A completed call is never sent again: its ``call_id`` is content-addressed,
     so the same request in a resumed run resolves to the same recorded result.
     """
+    if request.decision_id in store.refused_decisions:
+        # Before recovery, before the backend: a seed decision is not looked up,
+        # not sent and not logged. Every stage — scenario, group, repair and
+        # redraft — reaches a backend only through here.
+        raise PipelineAbort(
+            f"{request.decision_id} belongs to the imported seed corpus; its material is "
+            f"reused read-only and no request is ever made for it")
     done = store.recover(request)
     if done is not None:
         return (done["status"], done.get("fields"), done.get("error"), True, None)
@@ -793,6 +804,14 @@ def recorded_groups(store: CallStore) -> dict[tuple[str, str], dict[str, Any]]:
     return out
 
 
+def _refuse_seed_topics(topics, store: CallStore) -> None:
+    """Refuse a whole stage before its first call if it names a seed decision."""
+    seeded = sorted({t.decision_id for t in topics} & set(store.refused_decisions))
+    if seeded:
+        raise PipelineAbort(f"the stage names seed decision(s) {seeded}; they are imported "
+                            f"read-only and never requested, so nothing was sent")
+
+
 def run_scenario_stage(topics, cfg: ExperimentConfig, segmenter: Segmenter, backend,
                        store: CallStore, *, allow_live: bool = False,
                        variants: tuple[int, ...] = (1, 2)) -> list[StageResult]:
@@ -805,6 +824,7 @@ def run_scenario_stage(topics, cfg: ExperimentConfig, segmenter: Segmenter, back
     Ceiling: one call per requested scenario, and no scenario repair — there is
     no scenario repair template, and a failing scenario is a curator decision.
     """
+    _refuse_seed_topics(topics, store)
     results = []
     for topic in sorted(topics, key=lambda t: t.decision_id):
         for variant_id in variants:
@@ -827,6 +847,7 @@ def run_group_stage(topics, allocation_groups, cfg: ExperimentConfig, segmenter:
 
     The gate is all-or-nothing and is checked before the first group call.
     """
+    _refuse_seed_topics(topics, store)
     scenarios = recorded_scenarios(store) if scenarios is None else scenarios
     # ``gate_verified_elsewhere`` means the scenarios were read from another
     # design's approved set and verified against THAT design's configuration

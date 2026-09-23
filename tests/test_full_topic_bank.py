@@ -205,6 +205,20 @@ def test_anything_generated_from_the_draft_bank_is_caught(tmp_path):
     assert "E_BANK_DOWNSTREAM_EXISTS" in codes(check(root=tmp_path))
 
 
+def test_the_pre_drafting_allocation_may_exist(tmp_path):
+    (tmp_path / "data" / "full").mkdir(parents=True)
+    (tmp_path / "data" / "full" / "marker_allocation_full_v2.yaml").write_text("groups: []\n")
+    assert "E_BANK_DOWNSTREAM_EXISTS" not in codes(check(root=tmp_path))
+
+
+@pytest.mark.parametrize("name", ["corpus_full_v2.jsonl", "scenario_approvals_full_v2.yaml",
+                                  "manual_corrections_full_v2.yaml"])
+def test_generated_material_beside_the_allocation_is_still_caught(tmp_path, name):
+    (tmp_path / "data" / "full").mkdir(parents=True)
+    (tmp_path / "data" / "full" / name).write_text("x\n")
+    assert "E_BANK_DOWNSTREAM_EXISTS" in codes(check(root=tmp_path))
+
+
 def test_nothing_generated_passes(tmp_path):
     assert "E_BANK_DOWNSTREAM_EXISTS" not in codes(check(root=tmp_path))
 

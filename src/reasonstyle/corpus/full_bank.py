@@ -57,6 +57,10 @@ _STOP = frozenset(
     "whether must decide should only all each every any more than into over under not no own "
     "new keep let allow require make use have has".split())
 
+#: Configuration paths that hold material fixed before any drafting, and so may
+#: exist while generation is blocked.
+PRE_DRAFTING_PATHS = frozenset({"allocation"})
+
 _RECORD = re.compile(r"^  - decision_id: (\S+)$", re.M)
 _BOUNDARY = re.compile(r"^  - decision_id: |^  # =", re.M)
 
@@ -335,7 +339,12 @@ def check_full_bank(
                 f"{a} and {b}: similarity {score:.2f}; check they differ in trade-off", b)
 
     # -- nothing downstream exists yet ---------------------------------------------
+    # The marker allocation is design data fixed BEFORE drafting — the drafting
+    # scripts read it and never choose a marker themselves — so it may exist.
+    # Everything else a configuration's paths name is produced by generation.
     for name, path in sorted(output_paths.items()):
+        if name in PRE_DRAFTING_PATHS:
+            continue
         if (root / path).exists():
             add("E_BANK_DOWNSTREAM_EXISTS", "error",
                 f"paths.{name} ({path}) exists, but nothing may be generated while the "

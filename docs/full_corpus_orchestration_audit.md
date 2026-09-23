@@ -16,7 +16,8 @@ modules already provide it, and the smallest changes that close the gap.*
 - the generation block, which keeps the draft configuration from drafting
   anything.
 
-**Unimplemented orchestration work (this audit's subject):**
+**Orchestration work (this audit's subject; implemented offline in Phase 2 — see
+below):**
 
 - the verified, read-only **import of the frozen v2 pilot** corpus;
 - **union completeness checks** — pilot plus new material covers exactly the 60
@@ -25,6 +26,48 @@ modules already provide it, and the smallest changes that close the gap.*
   redrafting them;
 - **combined assembly** of one 60-decision corpus and manifest from both
   sources.
+
+## Phase 2 status (2026-09-21, offline; uncommitted)
+
+The importer, the union checks, seed-aware planning and the combined-assembly
+interface are **implemented and tested**, and the full marker allocation is
+**built**. Generation remains blocked: no request was sent, no key was read, no
+full scenario or group exists and no corpus was assembled. How each change
+proposed below was realised:
+
+| Proposed change | What was built |
+|---|---|
+| 1. `generation/corpus_source.py` | Built as proposed, and stricter: besides corpus/manifest agreement and re-validation, it checks scenario approvals, correction provenance against the committed ledger, topic definitions, and six hashes pinned in `seed_corpus.pins`. The committed files suffice; the gitignored run directory is read only when present. |
+| 2. `assemble_pilot` gains `seed_records` | **Not done that way.** `assemble_pilot` is unchanged, which keeps the pilot's behaviour byte-identical. A separate `combine_corpus` carries the seed's committed lines byte for byte and adds new records. It is tested and not used. |
+| 3. manifest `sources` list | In `combine_corpus`'s manifest: `sources` (seed provenance, then full run) and a per-scenario `scenario_sources` map. |
+| 4. stages skip the seed | Done in the runner, not by adding skip arguments: drafting commands on a seed-aware config run on the 48 new decisions only. A `CallStore.refused_decisions` guard in the single send path (`_send_or_resume`) and at the start of both stages makes a seed request impossible from any entry point. |
+| 5. union completeness check | In the importer and the planner: seed plus remainder must be exactly the 60 curated decisions, with no overlap. |
+| 6. `data/full/` run artefacts gitignored | `data/full/run_v2/` and `data/full/smoke*/` are ignored; the allocation stays trackable. |
+
+Also built:
+
+- **The full marker allocation**, `data/full/marker_allocation_full_v2.yaml`
+  (`scripts/allocate_markers.py --seed-allocation`): 240 groups, the pilot's 48
+  imported exactly, every marker and family balanced exactly across domain,
+  supported option and variant. It is a committed-data candidate, **not yet
+  committed**.
+- **`pilot.py preflight`** on the full configuration: read-only; it reports the
+  seed checks, the plan and the call budget, and fails before any networking on
+  a mismatch.
+- **`pilot.py status`**, which reports the seed, the new material, the eventual
+  corpus and the blockers separately.
+
+**Offline dry runs, 2026-09-23.** All five passed and wrote nothing: the
+preflight; the scenario stage (96 planned); the group stage (192 planned);
+`status`; and the synthetic combined-assembly test. Each keeps the block
+active, reads no credential, opens no connection, creates no run directory and
+leaves the allocation byte-identical. `status` and `preflight` derive their
+readiness from checks performed in the run itself — the allocation rebuilt and
+compared, the seed verified, the dry run actually rendered — rather than from
+any stored claim.
+
+Still outstanding before generation: **explicit authorisation of the paid
+calls**, the only unmet requirement in the generation block.
 
 The full run is **not** a bigger pilot run. It is a pilot run plus an import:
 12 of the 60 decisions already exist as a completed, corrected, assembled

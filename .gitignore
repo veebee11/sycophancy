@@ -107,3 +107,8 @@ data/pilot/smoke_v2_*/
 # The `!data/**` negation above re-includes everything under data/, which would
 # otherwise let a macOS directory-metadata file be committed with research data.
 data/.DS_Store
+
+# The full v2 corpus's run evidence, like every other run's, is never committed.
+# Its allocation, approvals, correction ledgers, corpus and manifest stay tracked.
+data/full/run_v2/
+data/full/smoke*/

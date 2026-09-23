@@ -41,9 +41,14 @@ __all__ = [
     "AllocationError",
     "GroupAllocation",
     "MarkerAllocation",
+    "SeededAllocation",
+    "allocate_full_markers",
     "allocate_markers",
     "allocation_problems",
+    "balance_table",
+    "full_allocation_problems",
     "load_allocation",
+    "render_full_allocation",
     "save_allocation",
 ]
 
@@ -383,3 +388,342 @@ def load_allocation(path: str | Path) -> MarkerAllocation:
             f"(recorded {raw['allocation_content_hash'][:12]}, "
             f"actual {alloc.content_hash[:12]})")
     return alloc
+
+
+# --------------------------------------------------------------------------
+# The full corpus: 60 decisions grown from the frozen v2 pilot
+# --------------------------------------------------------------------------
+#
+# The pilot's 48 groups are already drafted, corrected and assembled under
+# their allocation, so their assignments are fixed facts, not choices. The full
+# allocation imports them exactly and allocates only the 192 new groups, so
+# that the WHOLE corpus is balanced: 60 groups per marker string, 20 per
+# domain, 30 per supported option and 30 per variant; 120 per family, 40 per
+# domain and 60 per option and per variant. The pilot allocation above is not
+# touched: this is a separate mode, and the pilot files still rebuild byte for
+# byte.
+
+_FULL_HEADER = """\
+# Marker allocation for the full v2 corpus. GENERATED — do not edit by hand.
+#
+# Rebuild with:
+#   uv run python scripts/allocate_markers.py --config configs/experiment_v2_full.draft.yaml \\
+#       --topics data/topics/full_topics_v2.yaml \\
+#       --seed-allocation data/pilot/marker_allocation_v2.yaml \\
+#       --out data/full/marker_allocation_full_v2.yaml
+#   ... --check   rebuild and fail unless this file is byte-identical
+#
+# The 48 groups named under seed_allocation are the frozen v2 pilot's own
+# assignments, imported exactly; the 192 under new_allocation were allocated
+# around them. Fixed before drafting: the drafting scripts read this file and
+# never choose a marker themselves.
+"""
+
+
+@dataclass(frozen=True, slots=True)
+class SeededAllocation:
+    """A full allocation and where each of its rows came from."""
+
+    allocation: MarkerAllocation
+    seed_allocation: MarkerAllocation
+    seed_allocation_path: str
+
+    @property
+    def seed_keys(self) -> set[tuple[str, str]]:
+        return {(g.scenario_id, g.supported_option) for g in self.seed_allocation.groups}
+
+    def as_dict(self) -> dict[str, Any]:
+        alloc = self.allocation
+        seed_scenarios = sorted({g.scenario_id for g in self.seed_allocation.groups})
+        new_scenarios = sorted({g.scenario_id for g in alloc.groups} - set(seed_scenarios))
+        return {
+            "seed": alloc.seed,
+            "config_content_hash": alloc.config_content_hash,
+            "topic_bank_content_hash": alloc.topic_bank_content_hash,
+            "allocation_content_hash": alloc.content_hash,
+            "seed_allocation": {
+                "path": self.seed_allocation_path,
+                "allocation_content_hash": self.seed_allocation.content_hash,
+                "config_content_hash": self.seed_allocation.config_content_hash,
+                "topic_bank_content_hash": self.seed_allocation.topic_bank_content_hash,
+                "groups": len(self.seed_allocation.groups),
+                "scenario_ids": seed_scenarios,
+            },
+            "new_allocation": {
+                "groups": len(alloc.groups) - len(self.seed_allocation.groups),
+                "scenario_ids": new_scenarios,
+            },
+            "groups": [g.as_dict() for g in alloc.groups],
+        }
+
+
+def _full_curated(bank: TopicBank, cfg: ExperimentConfig) -> dict[str, str]:
+    curated = {t.decision_id: t.domain for t in bank.topics if t.status == "curated"}
+    expected = cfg.raw["corpus"]["decisions_full"]
+    if len(curated) != expected:
+        raise AllocationError(
+            f"the full allocation needs exactly {expected} curated decisions; got {len(curated)}")
+    per_domain = Counter(curated.values())
+    want = cfg.raw["domains"]["decisions_per_domain_full"]
+    if set(per_domain) != set(cfg.raw["domains"]["ids"]) or set(per_domain.values()) != {want}:
+        raise AllocationError(f"the full corpus must be {want} curated decisions per domain; "
+                              f"got {dict(per_domain)}")
+    return curated
+
+
+def _split(slots_by_domain, need_first_by_domain, need_first_v1, *, family, first):
+    """How many of each domain's variant-1 slots take the first string.
+
+    Exact constraints: domain d gives ``need_first_by_domain[d]`` of its slots
+    to the first string, and across domains ``need_first_v1`` of the first
+    string's slots are variant 1. Every feasible split is enumerated and the
+    most proportional one kept, ties broken by the sorted domain order, so the
+    result is deterministic and never a matter of search order.
+    """
+    domains = sorted(slots_by_domain)
+    ranges = []
+    for d in domains:
+        a = sum(1 for _, v in slots_by_domain[d] if v == 1)
+        b = len(slots_by_domain[d]) - a
+        need = need_first_by_domain[d]
+        lo, hi = max(0, need - b), min(a, need)
+        if lo > hi:
+            raise AllocationError(
+                f"{family}/{first}: domain {d} needs {need} new slots of {first} but has "
+                f"{a} variant-1 and {b} variant-2 new slots; no split exists")
+        ideal = need * a / (a + b) if a + b else 0
+        ranges.append((d, lo, hi, ideal))
+    best = None
+    def walk(i, chosen, total):
+        nonlocal best
+        if i == len(ranges):
+            if total != need_first_v1:
+                return
+            cost = sum((x - r[3]) ** 2 for x, r in zip(chosen, ranges))
+            key = (round(cost, 9), tuple(chosen))
+            if best is None or key < best[0]:
+                best = (key, dict(zip(domains, chosen)))
+            return
+        _, lo, hi, _ = ranges[i]
+        for x in range(lo, hi + 1):
+            walk(i + 1, chosen + [x], total + x)
+    walk(0, [], 0)
+    if best is None:
+        raise AllocationError(
+            f"{family}/{first}: no split gives {first} exactly {need_first_v1} new variant-1 "
+            f"slots while meeting every domain's count — the frozen pilot assignments and the "
+            f"required balance cannot coexist")
+    return best[1]
+
+
+def allocate_full_markers(bank: TopicBank, cfg: ExperimentConfig, seed: MarkerAllocation,
+                          *, seed_allocation_path: str) -> SeededAllocation:
+    """The full allocation: the seed's rows exactly, and the rest allocated so the
+    whole corpus meets every balance. Pure: same inputs, same output."""
+    alloc_cfg = cfg.raw["markers"]["allocation"]
+    families: list[str] = list(alloc_cfg["pilot_families"])
+    if len(families) != 2:
+        raise AllocationError(f"the full scheme balances exactly two families; got {families}")
+    strings = {f: list(alloc_cfg["pilot_strings"][f]) for f in families}
+    if any(len(s) != 2 for s in strings.values()):
+        raise AllocationError(f"the full scheme uses two strings per family; got {strings}")
+    realizations = {f: _realizations(cfg, f) for f in families}
+    curated = _full_curated(bank, cfg)
+    domains = list(cfg.raw["domains"]["ids"])
+    per_domain = cfg.raw["domains"]["decisions_per_domain_full"]
+    n_decisions = len(curated)
+
+    seed_slots: dict[tuple[str, int], GroupAllocation] = {}
+    for g in seed.groups:
+        if curated.get(g.decision_id) != g.domain:
+            raise AllocationError(f"seed row {g.scenario_id}/{g.supported_option} is not a "
+                                  f"curated decision of domain {g.domain} in the full bank")
+        seed_slots.setdefault(g.slot, g)
+    seed_decisions = {d for d, _ in seed_slots}
+    for decision_id in seed_decisions:
+        if {(decision_id, 1), (decision_id, 2)} - set(seed_slots):
+            raise AllocationError(f"the seed allocation does not cover both variants of "
+                                  f"{decision_id}")
+    new = {d: dom for d, dom in curated.items() if d not in seed_decisions}
+
+    seed_value = cfg.raw["determinism"]["seeds"]["marker_family_assignment"]
+    rng = random.Random(seed_value)
+
+    # -- 1. which variant leads with the first family, per domain -------------
+    # Each decision's two variants take different families, so a family's slots
+    # are one per decision; balance by variant means half the decisions lead
+    # with each family. Done per domain, so every domain is balanced too.
+    lead = families[0]
+    slot_family: dict[tuple[str, int], str] = {s: g.marker_family for s, g in seed_slots.items()}
+    for domain in domains:
+        seeded = sum(1 for (d, v), f in slot_family.items()
+                     if v == 1 and f == lead and curated[d] == domain)
+        in_domain = sorted(d for d, dom in new.items() if dom == domain)
+        k = per_domain // 2 - seeded
+        if not 0 <= k <= len(in_domain):
+            raise AllocationError(
+                f"{domain}: {seeded} seed decisions already lead with {lead}; the "
+                f"{len(in_domain)} new ones cannot bring it to {per_domain // 2}")
+        rng.shuffle(in_domain)
+        for i, decision_id in enumerate(in_domain):
+            first, second = (families[0], families[1]) if i < k else (families[1], families[0])
+            slot_family[(decision_id, 1)] = first
+            slot_family[(decision_id, 2)] = second
+
+    # -- 2. strings within each family ----------------------------------------
+    slot_string: dict[tuple[str, int], str] = {s: g.marker_string for s, g in seed_slots.items()}
+    per_string_domain = per_domain // 2          # 10: a family has 20 slots per domain
+    per_string_variant = n_decisions // 4        # 15: a string has 30 slots, half per variant
+    for family in families:
+        first, second = strings[family]
+        new_by_domain = {d: sorted(s for s, f in slot_family.items()
+                                   if f == family and s not in seed_slots and curated[s[0]] == d)
+                         for d in domains}
+        need_by_domain = {d: per_string_domain - sum(
+            1 for s, g in seed_slots.items()
+            if g.marker_string == first and curated[s[0]] == d) for d in domains}
+        need_v1 = per_string_variant - sum(1 for s, g in seed_slots.items()
+                                           if g.marker_string == first and s[1] == 1)
+        split = _split(new_by_domain, need_by_domain, need_v1, family=family, first=first)
+        for domain in domains:
+            for variant, take in ((1, split[domain]),
+                                  (2, need_by_domain[domain] - split[domain])):
+                here = [s for s in new_by_domain[domain] if s[1] == variant]
+                rng.shuffle(here)
+                for i, slot in enumerate(here):
+                    slot_string[slot] = first if i < take else second
+
+    # -- 3. rows: the seed's exactly, the new ones built -----------------------
+    groups: list[GroupAllocation] = list(seed.groups)
+    for family in families:
+        new_slots = sorted(s for s, f in slot_family.items() if f == family and s not in seed_slots)
+        for index, slot in enumerate(new_slots):
+            decision_id, variant_id = slot
+            one, two = realizations[family]
+            if index % 2:
+                one, two = two, one
+            for option, realization in zip(SEMANTIC_OPTIONS, (one, two), strict=True):
+                groups.append(GroupAllocation(
+                    decision_id=decision_id, domain=curated[decision_id],
+                    variant_id=variant_id, scenario_id=f"{decision_id}_v{variant_id}",
+                    supported_option=option, marker_family=family,
+                    marker_string=slot_string[slot], marker_realization_id=realization))
+    groups.sort(key=lambda g: (g.decision_id, g.variant_id, g.supported_option))
+    return SeededAllocation(
+        allocation=MarkerAllocation(
+            groups=tuple(groups), seed=seed_value, config_content_hash=cfg.content_hash,
+            topic_bank_content_hash=content_hash(bank.model_dump(mode="json"))),
+        seed_allocation=seed, seed_allocation_path=seed_allocation_path)
+
+
+def balance_table(groups) -> dict[str, dict[str, dict[str, int]]]:
+    """``{marker_string | marker_family: {value: {dimension: count}}}``."""
+    out: dict[str, dict[str, dict[str, int]]] = {}
+    for level in ("marker_string", "marker_family"):
+        table: dict[str, dict[str, int]] = {}
+        for g in groups:
+            row = table.setdefault(getattr(g, level), Counter())
+            row["groups"] += 1
+            row[g.domain] += 1
+            row[g.supported_option] += 1
+            row[f"v{g.variant_id}"] += 1
+        out[level] = {k: dict(v) for k, v in sorted(table.items())}
+    return out
+
+
+def full_allocation_problems(seeded: SeededAllocation, bank: TopicBank,
+                             cfg: ExperimentConfig) -> list[str]:
+    """Every rule the full allocation must meet, checked on the result alone."""
+    alloc, seed = seeded.allocation, seeded.seed_allocation
+    rules = cfg.raw["markers"]["allocation"]
+    target = rules.get("full_target") or {}
+    problems: list[str] = []
+    curated = {t.decision_id: t.domain for t in bank.topics if t.status == "curated"}
+    domains = list(cfg.raw["domains"]["ids"])
+    variants = range(1, cfg.raw["corpus"]["variants_per_decision"] + 1)
+
+    expected = {(f"{d}_v{v}", o) for d in curated for v in variants for o in SEMANTIC_OPTIONS}
+    keys = [(g.scenario_id, g.supported_option) for g in alloc.groups]
+    if len(keys) != len(set(keys)):
+        problems.append("a group is allocated more than once")
+    if set(keys) != expected:
+        problems.append(f"{len(set(keys))} groups allocated; exactly {len(expected)} are "
+                        f"required (every curated decision, both variants, both options)")
+    if target.get("groups_total") and len(alloc.groups) != target["groups_total"]:
+        problems.append(f"{len(alloc.groups)} groups; the target is {target['groups_total']}")
+    for g in alloc.groups:
+        if curated.get(g.decision_id) != g.domain or \
+                g.scenario_id != f"{g.decision_id}_v{g.variant_id}":
+            problems.append(f"{g.scenario_id}/{g.supported_option}: identity fields disagree "
+                            f"with the topic bank")
+
+    # -- the seed, exactly ------------------------------------------------------
+    rows = {(g.scenario_id, g.supported_option): g for g in alloc.groups}
+    for g in seed.groups:
+        if rows.get((g.scenario_id, g.supported_option)) != g:
+            problems.append(f"seed row {g.scenario_id}/{g.supported_option} was not "
+                            f"preserved exactly")
+    if target.get("pilot_assignments_fixed") and \
+            len(seed.groups) != target["pilot_assignments_fixed"]:
+        problems.append(f"{len(seed.groups)} seed rows; the target fixes "
+                        f"{target['pilot_assignments_fixed']}")
+
+    # -- scenario pairs and decision variants ---------------------------------
+    by_slot: dict[tuple[str, int], list[GroupAllocation]] = {}
+    for g in alloc.groups:
+        by_slot.setdefault(g.slot, []).append(g)
+    for slot, pair in sorted(by_slot.items()):
+        if len({(g.marker_family, g.marker_string, g.marker_realization_id) for g in pair}) != 1:
+            problems.append(f"{slot}: both supported options must share family, string and "
+                            f"realization")
+    fams_by_decision: dict[str, set[str]] = {}
+    for (decision_id, _), pair in by_slot.items():
+        fams_by_decision.setdefault(decision_id, set()).add(pair[0].marker_family)
+    for decision_id, fams in sorted(fams_by_decision.items()):
+        if len(fams) != 2:
+            problems.append(f"{decision_id}: its two variants must take different families")
+
+    # -- only the permitted families, strings and realizations ----------------
+    selectable = set(rules.get("selectable_families") or rules["pilot_families"])
+    refused = set(rules.get("refused_families") or ())
+    registry = cfg.raw["markers"]["realization"]["registry"]
+    for g in alloc.groups:
+        where = f"{g.scenario_id}/{g.supported_option}"
+        if g.marker_family in refused or g.marker_family not in selectable:
+            problems.append(f"{where}: family {g.marker_family!r} may not be allocated")
+        if g.marker_string not in rules["pilot_strings"].get(g.marker_family, ()):
+            problems.append(f"{where}: {g.marker_string!r} is not a string of {g.marker_family}")
+        spec = registry.get(g.marker_realization_id) or {}
+        if spec.get("family") != g.marker_family or spec.get("position") != "sentence_initial":
+            problems.append(f"{where}: {g.marker_realization_id!r} is not a sentence-initial "
+                            f"{g.marker_family} realization")
+
+    # -- whole-corpus balance -----------------------------------------------------
+    n = len(curated)
+    table = balance_table(alloc.groups)
+    markers = list(target.get("markers") or [s for f in rules["pilot_strings"].values() for s in f])
+    per_marker = target.get("groups_per_marker") or len(expected) // len(markers)
+    want_marker = {"groups": per_marker, **{d: per_marker // len(domains) for d in domains},
+                   **{o: per_marker // 2 for o in SEMANTIC_OPTIONS}, "v1": per_marker // 2,
+                   "v2": per_marker // 2}
+    want_family = {"groups": 2 * n, **{d: 2 * n // len(domains) for d in domains},
+                   **{o: n for o in SEMANTIC_OPTIONS}, "v1": n, "v2": n}
+    for level, wanted_keys, want in (("marker_string", markers, want_marker),
+                                     ("marker_family", sorted(selectable), want_family)):
+        got_keys = sorted(table[level])
+        if got_keys != sorted(wanted_keys):
+            problems.append(f"{level}: allocated {got_keys}; expected {sorted(wanted_keys)}")
+        for key in wanted_keys:
+            row = table[level].get(key, {})
+            for dim, value in want.items():
+                if row.get(dim, 0) != value:
+                    problems.append(f"{level} {key!r}: {dim} = {row.get(dim, 0)}, "
+                                    f"required {value}")
+    return problems
+
+
+def render_full_allocation(seeded: SeededAllocation) -> str:
+    """The exact bytes of the full allocation file. A rebuild is compared
+    against these, so any hand edit — rows or metadata — is detected."""
+    body = yaml.safe_dump(seeded.as_dict(), sort_keys=False, allow_unicode=True, width=100)
+    return _FULL_HEADER + body

@@ -1173,12 +1173,30 @@ seed_corpus:
   run: data/pilot/run_v2
   allocation: data/pilot/marker_allocation_v2.yaml
   corrections: data/pilot/manual_corrections_v2.yaml
+  topics: data/topics/pilot_topics.yaml
+  # The seed's identity, pinned here as well as in its own manifest. A corpus
+  # and manifest rewritten together would agree with each other; they would not
+  # agree with these. Every value is read from the committed pilot evidence.
+  pins:
+    config_content_hash: afa9abdba15f06510882b0b3b2401fd50adc851f346ba97b68a299a6f9c60f21
+    corpus_sha256: 7e0dae8415abe0499321bffb19742b031dea8eede08fca1fca20340373e625d8
+    manifest_sha256: 44fab90e5c915d17ee5189feca7f8d1421aa27228a57a5d6ae9935de0e9b0974
+    allocation_content_hash: 973ffb2ea6bfac1b09b00d628fea16c540d3031cd44f29acd0c06094771f02cc
+    corrections_sha256: 3d3f56005eacbe5b379ef893bf274d6bc6e1327f0cb584fc25153431d1af441c
+    topic_bank_content_hash: 47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937
   verify:
   - config_content_hash
   - corpus_sha256
+  - manifest_sha256
+  - record_validation
+  - seed_counts
+  - topic_definitions
   - scenario_text_sha256
+  - scenario_approvals
   - group_call_id
+  - correction_provenance
   - marker_allocation
+  - union_with_remainder
   contributes:
     decisions: 12
     scenarios: 24

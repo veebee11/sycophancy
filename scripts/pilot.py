@@ -20,6 +20,8 @@ Commands::
     group-review       the recorded groups, for reading; writes Markdown only
     assemble           build data/pilot/corpus.jsonl and its manifest from what is recorded
     status             counts: generated, approved, accepted, repaired, blocking
+    preflight          full corpus only: verify the seed, the allocation and the plan;
+                       read-only, no credential, no connection
 
 A live stage needs all three keys — ``--send``,
 ``REASONSTYLE_ALLOW_LOCAL_GENERATION=1``, ``REASONSTYLE_ALLOW_PILOT_GENERATION=1``
@@ -110,6 +112,12 @@ from reasonstyle.generation.scenario_source import (
     ScenarioSourceError,
     load_scenario_source,
     scenario_source_spec,
+)
+from reasonstyle.generation.corpus_source import (
+    SeedCorpusError,
+    load_seed_corpus,
+    plan_full_corpus,
+    seed_corpus_spec,
 )
 from reasonstyle.generation.scenario_corrections import (
     ScenarioCorrectionError,
@@ -310,7 +318,7 @@ def run_directory_problems(store: CallStore, cfg) -> list[str]:
     # Every run directory any design owns, including the ones a configuration
     # declares for itself. A design may write only to its own.
     owned = dict(RUN_DIRECTORIES)
-    owned.update({"v2_pilot": "data/pilot/run_v2"})
+    owned.update({"v2_pilot": "data/pilot/run_v2", "v2_full": "data/full/run_v2"})
     for other, path in owned.items():
         if Path(path).resolve() == here and Path(expected).resolve() != here:
             problems.append(f"{store.directory} belongs to {other!r}; this configuration "
@@ -353,6 +361,26 @@ def whole_pilot_problems(args, bank, cfg) -> list[str]:
     return problems
 
 
+PILOT_TOPICS = "data/topics/pilot_topics.yaml"
+
+#: Commands that would draft, or write requests for, material. For a design that
+#: grows from a seed they run on the new decisions only.
+DRAFTING_COMMANDS = ("plan", "scenarios", "groups", "redraft-scenarios")
+
+
+def seed_output_problems(cfg) -> list[str]:
+    """Why a seed-aware design's outputs are not safely its own. A design that
+    imports the pilot read-only never writes anywhere under data/pilot/."""
+    problems = []
+    pilot = Path("data/pilot").resolve()
+    for name, path in sorted(profile_paths(cfg).items()):
+        resolved = Path(path).resolve()
+        if resolved == pilot or pilot in resolved.parents:
+            problems.append(f"{name} {path} is under data/pilot/, which a seed-aware design "
+                            f"only ever reads")
+    return problems
+
+
 def _inputs(args):
     """Load the configuration, resolve this design's paths, then everything else.
 
@@ -364,6 +392,10 @@ def _inputs(args):
     for name, default in profile_paths(cfg).items():
         if getattr(args, name, None) is None:
             setattr(args, name, default)
+    if args.topics is None:
+        # A configuration that names its own topic bank is read against it; one
+        # that names none is a pilot configuration, read against the pilot bank.
+        args.topics = (cfg.raw.get("topics") or {}).get("bank") or PILOT_TOPICS
     bank = load_topic_bank(args.topics)
     allocation = load_allocation(args.allocation)
     topics = [t for t in bank.topics if t.status == "curated"]
@@ -1059,19 +1091,229 @@ def _counts(args, cfg, bank, topics, store: CallStore) -> int:
     return 0
 
 
+#: The pilot's measured rates, used only for the *expected* call estimate: 4 of
+#: the 24 hosted scenarios were sent back for a redraft, and every one of the 48
+#: v2 groups was accepted on its first call. Ceilings never use them.
+PILOT_REDRAFT_RATE = (4, 24)
+
+
+def call_budget(cfg, plan) -> dict[str, int]:
+    """Expected calls and the two ceilings, for the new material only."""
+    per_group = cfg.raw["corpus"]["repair"]["max_calls_per_group"]
+    scenarios, groups = len(plan.new_scenario_ids), len(plan.new_groups)
+    redrafts, of = PILOT_REDRAFT_RATE
+    return {"scenarios": scenarios, "groups": groups,
+            "expected": scenarios + scenarios * redrafts // of + groups,
+            "primary_ceiling": scenarios + groups * per_group,
+            "absolute_ceiling": scenarios + groups * per_group + scenarios}
+
+
+def _allocation_check(cfg, bank, allocation, seed, plan, path) -> list[str]:
+    """The stored full allocation against the seed, the plan and a fresh build."""
+    from reasonstyle.generation.allocation import (
+        allocate_full_markers,
+        full_allocation_problems,
+        render_full_allocation,
+    )
+    spec = seed_corpus_spec(cfg)
+    problems = []
+    rows = {(g.scenario_id, g.supported_option) for g in allocation.groups}
+    seed_rows = {(g.scenario_id, g.supported_option) for g in seed.allocation.groups}
+    if rows - seed_rows != set(plan.new_groups):
+        problems.append("the full allocation's new rows are not the planned new groups")
+    for g in seed.allocation.groups:
+        if allocation.for_group(g.scenario_id, g.supported_option) != g:
+            problems.append(f"seed row {g.scenario_id}/{g.supported_option} differs")
+    seeded = allocate_full_markers(bank, cfg, seed.allocation,
+                                   seed_allocation_path=spec["allocation"])
+    problems += full_allocation_problems(seeded, bank, cfg)
+    # The file actually loaded for this command, which is what a run would use.
+    path = Path(path)
+    if not path.is_file() or path.read_text(encoding="utf-8") != render_full_allocation(seeded):
+        problems.append(f"{path} is not byte-identical to a fresh build")
+    return problems
+
+
+def offline_dry_run(cfg, bank, allocation, topics, plan) -> tuple[dict[str, int], list[str]]:
+    """Render every request a full run would send, in memory. Writes nothing.
+
+    This is the dry run itself, not a record that one happened: each scenario
+    and group request is built and discarded, so a template, placeholder or
+    allocation fault is found here rather than on a paid call. It is what lets
+    ``status`` and ``preflight`` report the offline checks as satisfied without
+    a state file anyone could forge.
+    """
+    problems: list[str] = []
+    seed_ids = set(plan.seed_decisions)
+    by_group = {(g.decision_id, g.variant_id, g.supported_option): g for g in allocation.groups}
+    scenarios = groups = 0
+    for topic in sorted(topics, key=lambda t: t.decision_id):
+        if topic.decision_id in seed_ids:
+            problems.append(f"{topic.decision_id} is a seed decision and must not be planned")
+            continue
+        for variant_id in plan.variants:
+            try:
+                scenario_request(topic, variant_id, cfg)
+            except RequestError as exc:
+                problems.append(f"{topic.decision_id}_v{variant_id}: {exc}")
+                continue
+            scenarios += 1
+            for option in cfg.raw["corpus"]["supported_options"]:
+                group = by_group.get((topic.decision_id, variant_id, option))
+                if group is None:
+                    problems.append(f"{topic.decision_id}_v{variant_id}/{option}: no allocation")
+                    continue
+                try:
+                    # The brief's framing stands in for scenario text, exactly as
+                    # the `plan` command does: no scenario exists in a dry run.
+                    group_request(topic, variant_id, topic.decision_framing, group, cfg)
+                except RequestError as exc:
+                    problems.append(f"{topic.decision_id}_v{variant_id}/{option}: {exc}")
+                    continue
+                groups += 1
+    counts = {"scenarios": scenarios, "groups": groups}
+    if scenarios != len(plan.new_scenario_ids):
+        problems.append(f"{scenarios} scenario requests planned; the plan needs "
+                        f"{len(plan.new_scenario_ids)}")
+    if groups != len(plan.new_groups):
+        problems.append(f"{groups} group requests planned; the plan needs {len(plan.new_groups)}")
+    return counts, problems
+
+
+def _preflight(args, cfg, bank, allocation, seed, plan) -> int:
+    """Read-only. Verifies everything a full run would rely on, and prints the
+    plan. Builds no backend, reads no credential and opens no connection."""
+    problems = _allocation_check(cfg, bank, allocation, seed, plan, args.allocation)
+    new_topics = [t for t in bank.topics
+                  if t.status == "curated" and t.decision_id in set(plan.new_decisions)]
+    dry, dry_problems = offline_dry_run(cfg, bank, allocation, new_topics, plan)
+    problems += dry_problems
+    block = cfg.raw["corpus"].get("generation_block") or {}
+    if not block.get("blocked"):
+        problems.append("the generation block is NOT active")
+    if not seed.provenance["pinned"]:
+        problems.append("the seed declaration carries no pins")
+    budget = call_budget(cfg, plan)
+    p = seed.provenance
+    print(f"config            {cfg.config_version} {cfg.content_hash}")
+    print(f"seed integrity    verified: {', '.join(p['verified'])}")
+    print(f"                  pins: {'all six checked against the configuration' if p['pinned'] else 'NONE declared'}")
+    print(f"                  run evidence: {p['run_evidence']}")
+    print(f"seed counts       {p['counts']['decisions']} decisions, "
+          f"{p['counts']['scenarios']} scenarios, {p['counts']['groups']} groups, "
+          f"{p['counts']['texts']} texts ({p['manual_corrections']} approved corrections, "
+          f"validation {p['validation_status']})")
+    print(f"seed config       {p['config']} {p['config_version']} {p['config_content_hash']}")
+    print(f"seed corpus       {p['corpus']} sha256 {p['corpus_sha256']}")
+    print(f"seed manifest     {p['manifest']} sha256 {p['manifest_sha256']}")
+    print(f"seed allocation   {p['allocation']} {p['allocation_content_hash']}")
+    print(f"full topic bank   {args.topics} {content_hash(bank.model_dump(mode='json'))}")
+    print(f"full allocation   {args.allocation} {allocation.content_hash} "
+          f"({len(allocation.groups)} groups)")
+    print(f"skipped (seed)    {len(plan.seed_decisions)}: {' '.join(plan.seed_decisions)}")
+    print(f"to generate       {len(plan.new_decisions)}: {' '.join(plan.new_decisions)}")
+    print(f"scenarios         {budget['scenarios']} would be requested "
+          f"({dry['scenarios']} rendered in this dry run, nothing written)")
+    print(f"groups            {budget['groups']} would be requested "
+          f"({dry['groups']} rendered in this dry run, nothing written)")
+    print(f"new texts         {plan.new_texts}")
+    print(f"calls expected    about {budget['expected']} (at the pilot's rates: "
+          f"{PILOT_REDRAFT_RATE[0]} of {PILOT_REDRAFT_RATE[1]} scenarios redrafted, every group "
+          f"accepted first time)")
+    print(f"ceiling, primary  {budget['primary_ceiling']} (scenarios + {budget['groups']} "
+          f"groups x {cfg.raw['corpus']['repair']['max_calls_per_group']})")
+    print(f"ceiling, absolute {budget['absolute_ceiling']} (every scenario also redrafted once)")
+    print(f"outputs           {profile_paths(cfg)['out']} (nothing under data/pilot/)")
+    print(f"generation block  {'ACTIVE' if block.get('blocked') else 'NOT ACTIVE'}: "
+          f"{' ; '.join(block.get('requires') or [])}")
+    print("network           no credential was read, no backend was built and no connection "
+          "was made")
+    if problems:
+        print("\npreflight FAILED:", file=sys.stderr)
+        for problem in problems:
+            print(f"  - {problem}", file=sys.stderr)
+        return 1
+    print("\npreflight passed. Nothing was sent, and generation stays blocked.")
+    return 0
+
+
+def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
+    """Read-only: the seed, what is new, the eventual corpus, and what blocks it."""
+    p = seed.provenance
+    scenarios = recorded_scenarios(store) if store.log.path.is_file() else {}
+    groups = recorded_groups(store) if store.log.path.is_file() else {}
+    made_scenarios = sum(1 for sid in plan.new_scenario_ids
+                         if (scenarios.get(sid) or {}).get("scenario_text"))
+    made_groups = sum(1 for key in plan.new_groups if key in groups)
+    block = cfg.raw["corpus"].get("generation_block") or {}
+    total_decisions = len(plan.expected_decisions)
+    print(f"config                 {cfg.config_version} {cfg.content_hash[:12]}")
+    print("\nIMPORTED SEED (read-only, verified; never regenerated)")
+    print(f"  decisions            {p['counts']['decisions']}")
+    print(f"  scenarios            {p['counts']['scenarios']}")
+    print(f"  groups               {p['counts']['groups']}")
+    print(f"  texts                {p['counts']['texts']}")
+    print(f"  source               {p['corpus']} ({p['config_version']} "
+          f"{p['config_content_hash'][:12]}), validation {p['validation_status']}, "
+          f"{seed.manifest.get('outstanding_human_review')} human judgements outstanding")
+    print("\nNEW MATERIAL (not generated)")
+    print(f"  decisions            {len(plan.new_decisions)}")
+    print(f"  scenarios            {made_scenarios} of {len(plan.new_scenario_ids)} generated")
+    print(f"  groups               {made_groups} of {len(plan.new_groups)} generated")
+    print(f"  texts                0 of {plan.new_texts} assembled")
+    print(f"  run directory        {store.directory} "
+          f"({'exists' if store.directory.exists() else 'does not exist'})")
+    print("\nTOTAL EVENTUAL CORPUS")
+    print(f"  decisions            {total_decisions}")
+    print(f"  scenarios            {p['counts']['scenarios'] + len(plan.new_scenario_ids)}")
+    print(f"  groups               {len(allocation.groups)} allocated "
+          f"({p['counts']['groups']} imported + {len(plan.new_groups)} new)")
+    print(f"  texts                {p['counts']['texts'] + plan.new_texts}")
+    print("\nCURRENT BLOCKERS")
+    # Every state below is derived here, now: the allocation is rebuilt and
+    # compared, the seed is verified, and the dry run is actually performed.
+    # Nothing is read from a stored claim that a check once passed.
+    allocation_ok = not _allocation_check(cfg, bank, allocation, seed, plan, args.allocation)
+    new_topics = [t for t in bank.topics
+                  if t.status == "curated" and t.decision_id in set(plan.new_decisions)]
+    dry, dry_problems = offline_dry_run(cfg, bank, allocation, new_topics, plan)
+    if block.get("blocked"):
+        print("  generation block     ACTIVE — lifted only by a deliberate edit to the config")
+        for item in block.get("requires") or []:
+            if "allocation" in item:
+                state = "met: rebuilt and compared byte for byte" if allocation_ok else "NOT MET"
+            elif "pilot corpus" in item:
+                state = "met: verified read-only in this run"
+            elif "dry run" in item or "test" in item:
+                state = (f"met: {dry['scenarios']} scenario and {dry['groups']} group requests "
+                         f"rendered offline in this run" if not dry_problems
+                         else f"NOT MET: {dry_problems[0]}")
+            elif "authorisation" in item or "authorization" in item:
+                state = "OUTSTANDING — the only remaining requirement"
+            else:
+                state = "outstanding"
+            print(f"    - {item}  [{state}]")
+    else:
+        print("  generation block     not active")
+    print("\nNothing here sends a request. Seed decisions are refused on every send path.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["plan", "scenarios", "scenario-review", "approvals",
                                        "redraft-scenarios", "groups", "group-review",
-                                       "assemble", "status", "log"],
+                                       "assemble", "status", "log", "preflight"],
                     help="plan; draft the scenarios; export them for review; report the "
                          "gate; redraft the scenarios the curator rejected; draft the "
                          "groups; export the recorded groups for reading; assemble the "
                          "corpus; or report counts")
     ap.add_argument("--approvals-file", default=None)
     ap.add_argument("--config", required=True)
-    ap.add_argument("--topics", default="data/topics/pilot_topics.yaml")
+    ap.add_argument("--topics", default=None,
+                    help="the topic bank; defaults to the one the configuration names, "
+                         "else the pilot bank")
     ap.add_argument("--allocation", default=None)
     ap.add_argument("--out", default=None,
                     help="the run directory; defaults to this generator's own "
@@ -1112,10 +1354,40 @@ def main(argv: list[str] | None = None) -> int:
             print("Targeted filtering is available on the reporting commands: "
                   "scenario-review, approvals, status, log and plan.", file=sys.stderr)
             return 1
+    seed = plan = None
+    if seed_corpus_spec(cfg):
+        # A design that grows from a frozen seed verifies it first, every time,
+        # before anything else reads a run or plans a request.
+        problems = seed_output_problems(cfg)
+        if problems:
+            print("refusing: " + "; ".join(problems), file=sys.stderr)
+            return 1
+        try:
+            seed = load_seed_corpus(cfg, bank=bank)
+            plan = plan_full_corpus(cfg, bank, seed)
+        except SeedCorpusError as exc:
+            print(f"refusing: {exc}", file=sys.stderr)
+            return 1
+        if args.command == "assemble":
+            print("refusing: the full corpus is assembled from the verified seed plus a "
+                  "completed full run (corpus_source.combine_corpus); no full run exists, so "
+                  "nothing is assembled", file=sys.stderr)
+            return 1
+        if args.command in DRAFTING_COMMANDS:
+            topics = [t for t in topics if t.decision_id in set(plan.new_decisions)]
+    elif args.command == "preflight":
+        print("refusing: preflight checks a seed-aware full-corpus configuration, and "
+              f"{args.config} declares no seed_corpus", file=sys.stderr)
+        return 1
     out = Path(args.out)
     store = CallStore(out, cfg,
                       topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
-                      allocation_content_hash=allocation.content_hash)
+                      allocation_content_hash=allocation.content_hash,
+                      refused_decisions=frozenset(plan.seed_decisions) if plan else frozenset())
+    if args.command == "preflight":
+        return _preflight(args, cfg, bank, allocation, seed, plan)
+    if args.command == "status" and seed is not None:
+        return _full_status(args, cfg, bank, allocation, seed, plan, store)
 
     try:
         if args.command == "log":

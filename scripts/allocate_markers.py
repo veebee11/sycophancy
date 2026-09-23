@@ -5,6 +5,15 @@
     ... --check   rebuild and fail if the file on disk differs
     ... --table   print the full allocation table
 
+Full-corpus mode imports a frozen allocation's rows exactly and allocates only
+the rest, so the whole corpus is balanced:
+
+    uv run python scripts/allocate_markers.py --config configs/experiment_v2_full.draft.yaml \
+        --topics data/topics/full_topics_v2.yaml \
+        --seed-allocation data/pilot/marker_allocation_v2.yaml \
+        --out data/full/marker_allocation_full_v2.yaml
+    ... --check   rebuild and fail unless the stored file is byte-identical
+
 The drafting scripts read this file; they never choose a marker themselves. The
 allocation is checked against every rule in the configuration before it is
 written, and the file records its own content hash so a hand edit is detected.
@@ -21,9 +30,13 @@ from reasonstyle.config import load_config
 from reasonstyle.corpus.topics import TopicBankError, load_topic_bank
 from reasonstyle.generation.allocation import (
     AllocationError,
+    allocate_full_markers,
     allocate_markers,
     allocation_problems,
+    balance_table,
+    full_allocation_problems,
     load_allocation,
+    render_full_allocation,
     save_allocation,
 )
 
@@ -56,9 +69,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--check", action="store_true",
                     help="rebuild and fail if the stored allocation differs")
     ap.add_argument("--table", action="store_true", help="print the allocation table")
+    ap.add_argument("--seed-allocation", default=None,
+                    help="full-corpus mode: import this allocation's rows exactly and "
+                         "allocate only the rest")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
+    if args.seed_allocation:
+        return _full(args, cfg)
     try:
         bank = load_topic_bank(args.topics)
         alloc = allocate_markers(bank, cfg)
@@ -95,6 +113,60 @@ def main(argv: list[str] | None = None) -> int:
     for family, n in sorted(Counter(g.marker_family for g in alloc.groups).items()):
         markers = sorted({g.marker_string for g in alloc.groups if g.marker_family == family})
         print(f"  {family:<26} {n} groups, markers {markers}")
+    if args.table:
+        print("\n" + _table(alloc))
+    return 0
+
+
+def _full(args, cfg) -> int:
+    """Seed-aware mode. The stored file is compared byte for byte, so an edit to
+    any row or to the recorded provenance is caught, not only an edit to a row."""
+    try:
+        bank = load_topic_bank(args.topics)
+        seed = load_allocation(args.seed_allocation)
+        seeded = allocate_full_markers(bank, cfg, seed,
+                                       seed_allocation_path=args.seed_allocation)
+    except (TopicBankError, AllocationError, FileNotFoundError) as exc:
+        print(f"cannot allocate:\n  {exc}", file=sys.stderr)
+        return 1
+    problems = allocation_problems(seeded.allocation, cfg) + \
+        full_allocation_problems(seeded, bank, cfg)
+    if problems:
+        print("the full allocation violates its own rules:", file=sys.stderr)
+        for p in problems:
+            print(f"  {p}", file=sys.stderr)
+        return 1
+    text = render_full_allocation(seeded)
+    alloc = seeded.allocation
+    out = Path(args.out)
+    if args.check:
+        if not out.is_file():
+            print(f"cannot read the stored allocation: {out} does not exist", file=sys.stderr)
+            return 1
+        stored = out.read_text(encoding="utf-8")
+        if stored != text:
+            print(f"the stored full allocation is not byte-identical to a fresh build\n"
+                  f"  {out} was edited, or its inputs changed", file=sys.stderr)
+            return 1
+        try:
+            load_allocation(out)
+        except AllocationError as exc:                      # pragma: no cover - byte-equal
+            print(f"cannot read the stored allocation: {exc}", file=sys.stderr)
+            return 1
+        print(f"full allocation matches its inputs byte for byte ({len(alloc.groups)} groups: "
+              f"{len(seed.groups)} imported, {len(alloc.groups) - len(seed.groups)} new; "
+              f"{alloc.content_hash[:12]}).")
+        return 0
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding="utf-8")
+    print(f"wrote {len(alloc.groups)} groups to {out}: {len(seed.groups)} imported from "
+          f"{args.seed_allocation} ({seed.content_hash[:12]}), "
+          f"{len(alloc.groups) - len(seed.groups)} newly allocated")
+    print(f"  seed {alloc.seed}, allocation {alloc.content_hash[:12]}, "
+          f"config {cfg.config_version} {cfg.content_hash[:12]}")
+    for level, rows in balance_table(alloc.groups).items():
+        for key, row in rows.items():
+            print(f"  {level:<13} {key:<26} " + " ".join(f"{k}={row[k]}" for k in sorted(row)))
     if args.table:
         print("\n" + _table(alloc))
     return 0
