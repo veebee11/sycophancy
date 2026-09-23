@@ -13,9 +13,11 @@ superseded wherever they say something has not yet run.*
 | v2 pilot (12 decisions) | **generated and assembled**: `data/pilot/corpus_v2.jsonl`, `validation_status: draft`, 1032 human judgements outstanding |
 | manipulation-check protocol | recorded before any rating was examined; pending mentor review |
 | full topic bank (60 decisions) | **curated 2026-09-21**; 0 citability errors, 0 outstanding curation judgements |
-| frozen-pilot import and seed-aware planning | **implemented and tested (Phase 2)**; all offline dry runs passed 2026-09-23 |
+| frozen-pilot import and seed-aware planning | **implemented and tested**; Phase 2 committed as `39b1a2528ef8c0700f87f4905f6bc0b51e1f1f75`; all offline dry runs passed 2026-09-23 |
 | full marker allocation | **built and committed** (`data/full/marker_allocation_full_v2.yaml`, 240 groups) |
-| full scenario and group generation | not started; no full scenario or group exists; **no full-corpus API call has been made**; generation blocked, awaiting only paid-call authorisation |
+| final full configuration | **frozen 2026-09-23** at `configs/frozen/v2_full.yaml` (`v2_full`, content hash `7548650b42e7…`); block lifted deliberately |
+| paid-call authorisation | **96 initial scenario calls only**, one per new scenario; redrafts, groups, repairs, evaluation and mechanistic analysis are excluded and refused |
+| full scenario and group generation | not started; **no full-corpus API call has been made**; scenario review is the next gate |
 
 ## Records and their authority
 
@@ -174,7 +176,7 @@ read, no scenario or group was generated and no corpus was assembled.
   that seed plus remainder is exactly the 60 curated decisions. The committed
   files suffice; the gitignored run directory is checked read-only only when
   present. Its provenance block keeps the pilot's own hashes.
-- **Seed pins.** `seed_corpus.pins` in `configs/experiment_v2_full.draft.yaml`
+- **Seed pins.** `seed_corpus.pins` in `configs/frozen/v2_full.yaml`
   records six hashes of the committed seed; a missing or malformed pin is a
   refusal. The draft configuration's content hash is now
   `1907344906a543f914c5fe5980c2c7a0059f9ab0d557c886450247e185116409`.
@@ -212,12 +214,39 @@ read, no scenario or group was generated and no corpus was assembled.
   offline dry runs. **Explicit authorisation of the paid calls is the only
   one outstanding.**
 
+## Final configuration frozen (2026-09-23)
+
+- `configs/experiment_v2_full.draft.yaml` became **`configs/frozen/v2_full.yaml`**
+  — version `v2_full`, `status: frozen`, in the directory the project reserves
+  for frozen configurations — with its file and content hashes recorded in
+  `configs/frozen/MANIFEST.json` and verified by tests.
+- **Content hash `7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94`.**
+  The model, endpoint, prompts, decoding settings, corpus design, marker
+  inventory, seed pins and every scientific rule are unchanged from the draft.
+- **The generation block was lifted deliberately**, recording who lifted it and
+  when, after all four requirements were met and checked.
+- **The authorisation is narrower than the block.**
+  `corpus.generation_authorization` records: scope
+  `scenario_stage_initial_only`, at most **96 paid calls**, one per scenario,
+  authorised by Vidhi Bhutani on 2026-09-23. Scenario redrafts, group
+  drafting, repairs, behavioural evaluation and mechanistic analysis are
+  excluded. The runner refuses an unauthorised stage before a backend is built,
+  and the send path refuses an unauthorised call kind, so a resumed run cannot
+  make one either.
+- **The allocation was rebound** to the frozen configuration's hash. Its 240
+  assignments and its content hash `ba39dbcb24f5…` are unchanged, and all 48
+  pilot rows remain identical.
+- **No full-corpus API call has been made.** The next gate after the scenario
+  stage is **scenario review**: the 96 drafted scenarios must be read and
+  approved before any group is drafted, and group drafting needs its own
+  authorisation recorded in the configuration.
+
 ## Full corpus: what does not exist yet
 
 - **No full scenario or group** has been generated, and no full corpus has been
-  assembled. `data/full/` holds only the uncommitted allocation.
+  assembled. `data/full/` holds only the committed allocation.
 - **No full-corpus API call has been made.**
-- `configs/experiment_v2_full.draft.yaml` keeps **generation blocked**.
+- `configs/frozen/v2_full.yaml` keeps **generation blocked**.
 - The Phase 1 work was committed as "Prepare curated full v2 topic bank"; the
   Phase 2 work above as "Add frozen pilot import and full marker allocation".
 
@@ -247,8 +276,8 @@ The order this implies (updated 2026-09-21):
 
 1. ~~Build the full marker allocation~~ — built in Phase 2, uncommitted.
 2. ~~Implement the orchestration~~ — importer, planning, seed guard and combined-assembly interface implemented and tested in Phase 2, uncommitted.
-3. ~~Dry-run the full stages offline~~ — all five offline checks passed on 2026-09-23. **Next: seek explicit authorisation for the paid calls** (ceiling 768; expected about 304), which is the only outstanding requirement in the generation block.
-4. Only then lift the generation block in `configs/experiment_v2_full.draft.yaml`, deliberately.
+3. ~~Dry-run the full stages offline~~ and ~~freeze the final configuration~~ — done 2026-09-23. **Next: run the authorised 96-call scenario stage**, then review those scenarios. Group drafting needs its own recorded authorisation.
+4. Only then lift the generation block in `configs/frozen/v2_full.yaml`, deliberately.
 5. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
 
 ## Open, not resolved

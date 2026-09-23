@@ -1,7 +1,7 @@
 # Marker allocation for the full v2 corpus. GENERATED — do not edit by hand.
 #
 # Rebuild with:
-#   uv run python scripts/allocate_markers.py --config configs/experiment_v2_full.draft.yaml \
+#   uv run python scripts/allocate_markers.py --config configs/frozen/v2_full.yaml \
 #       --topics data/topics/full_topics_v2.yaml \
 #       --seed-allocation data/pilot/marker_allocation_v2.yaml \
 #       --out data/full/marker_allocation_full_v2.yaml
@@ -12,7 +12,7 @@
 # around them. Fixed before drafting: the drafting scripts read this file and
 # never choose a marker themselves.
 seed: 13
-config_content_hash: 1907344906a543f914c5fe5980c2c7a0059f9ab0d557c886450247e185116409
+config_content_hash: 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94
 topic_bank_content_hash: 92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea
 allocation_content_hash: ba39dbcb24f53678fcaf1f4d43cc4a244ddd549adc94e547e8264391173a3658
 seed_allocation:

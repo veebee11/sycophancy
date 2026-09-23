@@ -221,6 +221,12 @@ class CallStore:
     #: frozen seed, and the seed's decisions are imported, never redrafted. Set
     #: by the caller that verified the seed; enforced on every send path below.
     refused_decisions: frozenset[str] = frozenset()
+    #: The kinds of call the researcher's authorisation covers — ``scenario``,
+    #: ``group``, ``repair``, ``scenario_redraft``. ``None`` means no scoped
+    #: authorisation applies (every pre-authorisation design). A kind outside
+    #: the set is refused on the send path, so an unauthorised paid call cannot
+    #: be made by any entry point, including a resumed run.
+    allowed_kinds: frozenset[str] | None = None
 
     def __post_init__(self) -> None:
         self.directory = Path(self.directory)
@@ -451,6 +457,10 @@ def _send_or_resume(store: CallStore, request: DraftRequest, backend, cfg: Exper
     A completed call is never sent again: its ``call_id`` is content-addressed,
     so the same request in a resumed run resolves to the same recorded result.
     """
+    if store.allowed_kinds is not None and request.kind not in store.allowed_kinds:
+        raise PipelineAbort(
+            f"a {request.kind!r} call is outside the recorded authorisation "
+            f"({sorted(store.allowed_kinds)} only); nothing was sent")
     if request.decision_id in store.refused_decisions:
         # Before recovery, before the backend: a seed decision is not looked up,
         # not sent and not logged. Every stage — scenario, group, repair and

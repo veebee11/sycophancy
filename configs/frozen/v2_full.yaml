@@ -1,5 +1,5 @@
-config_version: v2_full_draft
-status: draft
+config_version: v2_full
+status: frozen
 provenance:
   research_plan: Research_Plan_v6.md
   research_plan_sha256: a9ac477a10d6c4e285ae3f1e148c31de72f833a5a55d50d22a347d5f905601f0
@@ -172,17 +172,44 @@ corpus:
       same_marker: true
       different_variant: true
   generation_block:
-    blocked: true
-    reason: This configuration is a DRAFT of the full 60-decision corpus. All 60 decisions are curated
-      (2026-09-21), but full generation still requires the full marker allocation, a verified read-only
-      import of the v2 pilot corpus, completed orchestration tests and dry runs, and explicit authorisation
-      of the paid external-generation calls. Generation unblocks only when every requirement below is
-      met and the block is lifted deliberately in this file.
-    requires:
+    # LIFTED deliberately on 2026-09-23, by editing this file, after every
+    # requirement below was met and checked: the full marker allocation built
+    # and compared byte for byte, the frozen v2 pilot verified and imported
+    # read-only, and the offline orchestration tests and dry runs completed
+    # (recorded in docs/current_status.md). Lifting the block does not
+    # authorise any particular call; generation_authorization does, and it
+    # covers one stage only.
+    blocked: false
+    lifted_at: '2026-09-23'
+    lifted_by: Vidhi Bhutani
+    requirements_met:
     - data/full/marker_allocation_full_v2.yaml built and checked
     - the v2 pilot corpus verified and imported read-only
     - orchestration tests and dry runs completed
-    - explicit authorisation of paid external-generation calls
+    - explicit authorisation of paid external-generation calls, scoped below
+  # What the researcher has actually authorised to be paid for. This is
+  # narrower than the block: the scenario stage's initial drafts and nothing
+  # else. Every excluded stage is refused before a backend is built, and the
+  # scenario stage refuses to run if it would exceed max_paid_calls.
+  generation_authorization:
+    status: authorized
+    scope: scenario_stage_initial_only
+    authorized_by: Vidhi Bhutani
+    authorized_at: '2026-09-23'
+    max_paid_calls: 96
+    calls_per_scenario: 1
+    allowed_kinds:
+    - scenario
+    covers: One initial scenario call for each of the 96 new scenarios (the 48 decisions the
+      frozen pilot does not supply, two variants each).
+    excludes:
+    - scenario redrafts
+    - group drafting
+    - repairs
+    - behavioural evaluation
+    - mechanistic analysis
+    note: A further stage needs a further authorisation recorded here. Nothing in this file
+      authorises a second call for the same scenario.
 markers:
   inventory_version: v3_pairwise_pilot
   primary_families:

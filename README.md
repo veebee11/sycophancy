@@ -24,8 +24,9 @@ Where the work stands, in detail: [`docs/current_status.md`](docs/current_status
   [`docs/full_topics_v2_climate_coverage.md`](docs/full_topics_v2_climate_coverage.md).
 - **Next:** full marker allocation and the seed-aware orchestration audited in
   [`docs/full_corpus_orchestration_audit.md`](docs/full_corpus_orchestration_audit.md).
-  Full generation is blocked in `configs/experiment_v2_full.draft.yaml`, and no
-  full-corpus call has been made.
+  The final configuration is frozen at `configs/frozen/v2_full.yaml`; paid
+  calls are authorised for the initial 96-scenario stage only, and no
+  full-corpus call has been made yet.
 
 **What is authoritative.** YAML, JSONL and manifests are the data and its
 provenance. Committed Markdown records design and status. **`review/` contains

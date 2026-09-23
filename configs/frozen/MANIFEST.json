@@ -1,0 +1,12 @@
+{
+  "configs": {
+    "v2_full.yaml": {
+      "config_version": "v2_full",
+      "content_hash": "7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94",
+      "file_sha256": "5d34bad7fc3b81d122fc0feb62fb502097f2b220200544027e42a70c94abe819",
+      "frozen_at": "2026-09-23",
+      "purpose": "Full 60-decision v2 corpus. Generation block lifted 2026-09-23; paid calls authorised for the initial scenario stage only (96 calls, one per new scenario)."
+    }
+  },
+  "note": "Frozen configurations and their hashes. A frozen config never changes; tests verify each file against the hashes here."
+}

@@ -606,6 +606,21 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
     print(f"config       {cfg.config_version} {cfg.content_hash[:12]}")
     print(f"out          {store.directory}")
 
+    planned = expected_scenarios if kind == "scenarios" else expected_groups * budget
+    refusals = paid_call_problems(cfg, "scenario" if kind == "scenarios" else "group",
+                                      planned)
+    if refusals:
+        print("\nrefusing; nothing was sent, no credential was read and no backend was built:",
+              file=sys.stderr)
+        for refusal in refusals:
+            print(f"  - {refusal}", file=sys.stderr)
+        return 1
+    auth = authorization(cfg)
+    if auth:
+        print(f"authorised   {auth['scope']}: at most {auth['max_paid_calls']} paid call(s), "
+              f"{auth['calls_per_scenario']} per scenario, recorded by {auth['authorized_by']} "
+              f"on {auth['authorized_at']}")
+
     problems = live_problems(args.send, cfg)
     if problems:
         print("\nnothing was sent:")
@@ -680,6 +695,12 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
 
 
 def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
+    # A redraft is a paid call like any other, and the current authorisation
+    # covers initial scenario drafts only.
+    refusals = paid_call_problems(cfg, "scenario_redraft")
+    if refusals:
+        print("refusing; nothing was sent: " + "; ".join(refusals), file=sys.stderr)
+        return 1
     """Redraft exactly the scenarios the curator marked ``redraft``.
 
     The set comes from the approvals file, never from ``--only``: which
@@ -1134,6 +1155,42 @@ def _allocation_check(cfg, bank, allocation, seed, plan, path) -> list[str]:
     return problems
 
 
+def authorization(cfg) -> dict[str, Any]:
+    """The recorded authorisation for paid calls, or an empty mapping."""
+    return (cfg.raw["corpus"].get("generation_authorization") or {}) if cfg is not None else {}
+
+
+def paid_call_problems(cfg, kind: str, planned_calls: int | None = None) -> list[str]:
+    """Why this stage is not covered by the researcher's recorded authorisation.
+
+    Lifting the generation block says the design is ready. It does not say what
+    may be paid for: that is recorded per stage in the configuration, and
+    checked here before any backend is built or credential read. A stage the
+    authorisation does not name is refused however many keys are set.
+    """
+    auth = authorization(cfg)
+    if not auth:
+        # A design that records no scoped authorisation is governed by its own
+        # gates — the generation block, --send and the two environment keys —
+        # exactly as before. This check narrows those; it never replaces them.
+        return []
+    problems = []
+    if auth.get("status") != "authorized":
+        problems.append(f"the recorded authorisation is {auth.get('status')!r}, not 'authorized'")
+    allowed = list(auth.get("allowed_kinds") or ())
+    if kind not in allowed:
+        problems.append(
+            f"a {kind!r} call is outside the recorded authorisation. It covers "
+            f"{auth.get('scope')!r} ({allowed}); excluded: "
+            f"{', '.join(auth.get('excludes') or [])}. A further stage needs a further "
+            f"authorisation recorded in the configuration.")
+    ceiling = auth.get("max_paid_calls")
+    if planned_calls is not None and ceiling is not None and planned_calls > ceiling:
+        problems.append(f"this stage would make {planned_calls} call(s); the authorisation "
+                        f"covers at most {ceiling}")
+    return problems
+
+
 def offline_dry_run(cfg, bank, allocation, topics, plan) -> tuple[dict[str, int], list[str]]:
     """Render every request a full run would send, in memory. Writes nothing.
 
@@ -1189,8 +1246,12 @@ def _preflight(args, cfg, bank, allocation, seed, plan) -> int:
     dry, dry_problems = offline_dry_run(cfg, bank, allocation, new_topics, plan)
     problems += dry_problems
     block = cfg.raw["corpus"].get("generation_block") or {}
-    if not block.get("blocked"):
-        problems.append("the generation block is NOT active")
+    auth = authorization(cfg)
+    scenario_refusals = paid_call_problems(cfg, "scenario", len(plan.new_scenario_ids))
+    problems += scenario_refusals
+    if not paid_call_problems(cfg, "group", len(plan.new_groups)):
+        problems.append("group drafting is authorised; this preflight expects the scenario "
+                        "stage only")
     if not seed.provenance["pinned"]:
         problems.append("the seed declaration carries no pins")
     budget = call_budget(cfg, plan)
@@ -1217,15 +1278,36 @@ def _preflight(args, cfg, bank, allocation, seed, plan) -> int:
     print(f"groups            {budget['groups']} would be requested "
           f"({dry['groups']} rendered in this dry run, nothing written)")
     print(f"new texts         {plan.new_texts}")
+    print(f"whole corpus      the figures below are for the eventual full corpus and are "
+          f"NOT authorised; only the {len(plan.new_scenario_ids)} scenario calls above are")
     print(f"calls expected    about {budget['expected']} (at the pilot's rates: "
           f"{PILOT_REDRAFT_RATE[0]} of {PILOT_REDRAFT_RATE[1]} scenarios redrafted, every group "
           f"accepted first time)")
     print(f"ceiling, primary  {budget['primary_ceiling']} (scenarios + {budget['groups']} "
           f"groups x {cfg.raw['corpus']['repair']['max_calls_per_group']})")
     print(f"ceiling, absolute {budget['absolute_ceiling']} (every scenario also redrafted once)")
-    print(f"outputs           {profile_paths(cfg)['out']} (nothing under data/pilot/)")
-    print(f"generation block  {'ACTIVE' if block.get('blocked') else 'NOT ACTIVE'}: "
-          f"{' ; '.join(block.get('requires') or [])}")
+    generator = cfg.raw["models"]["generator"]
+    decoding, openai = generator["decoding"], generator["openai"]
+    print(f"endpoint          {openai['endpoint']}")
+    print(f"model             {generator['model']['id']} (exact id; aliases refused: "
+          f"{', '.join(generator['model']['refused_aliases'])})")
+    print(f"decoding          temperature {decoding['temperature']}, top_p "
+          f"{decoding['top_p'] if decoding['top_p'] is not None else 'provider default (not sent)'}, "
+          f"max_output_tokens {decoding['max_output_tokens']}, reasoning effort "
+          f"{decoding['reasoning']['effort']}, n {decoding['n']}, seed "
+          f"{decoding['seed'] if decoding['seed'] is not None else 'not sent'}")
+    print(f"request state     store {openai['store']}, background {openai['background']}, tools "
+          f"{openai['tools']}, conversations {openai['conversations']}, previous_response_state "
+          f"{openai['previous_response_state']}, automatic_retries "
+          f"{openai['automatic_retries']}")
+    print(f"authorised        {auth.get('scope')}: {len(plan.new_scenario_ids)} scenario "
+          f"call(s), {auth.get('calls_per_scenario')} per scenario, ceiling "
+          f"{auth.get('max_paid_calls')} (recorded by {auth.get('authorized_by')} on "
+          f"{auth.get('authorized_at')})")
+    print(f"group calls       0 authorised ({', '.join(auth.get('excludes') or [])} are "
+          f"excluded and refused before a backend is built)")
+    print(f"outputs           {profile_paths(cfg)['out']} (gitignored; nothing under data/pilot/)")
+    print(f"generation block  {'ACTIVE' if block.get('blocked') else 'lifted ' + str(block.get('lifted_at')) + ' by ' + str(block.get('lifted_by'))}")
     print("network           no credential was read, no backend was built and no connection "
           "was made")
     if problems:
@@ -1233,7 +1315,10 @@ def _preflight(args, cfg, bank, allocation, seed, plan) -> int:
         for problem in problems:
             print(f"  - {problem}", file=sys.stderr)
         return 1
-    print("\npreflight passed. Nothing was sent, and generation stays blocked.")
+    auth_line = (f"{auth.get('max_paid_calls')} initial scenario call(s)" if auth
+                 else "nothing")
+    print(f"\npreflight passed. Nothing was sent. Authorised for {auth_line}; every other "
+          f"stage is refused.")
     return 0
 
 
@@ -1277,7 +1362,20 @@ def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
     new_topics = [t for t in bank.topics
                   if t.status == "curated" and t.decision_id in set(plan.new_decisions)]
     dry, dry_problems = offline_dry_run(cfg, bank, allocation, new_topics, plan)
-    if block.get("blocked"):
+    auth = authorization(cfg)
+    if not block.get("blocked"):
+        print(f"  generation block     lifted {block.get('lifted_at')} by "
+              f"{block.get('lifted_by')}; every requirement was met and checked")
+        print(f"  paid calls           {auth.get('scope')}: at most "
+              f"{auth.get('max_paid_calls')} scenario call(s); group drafting, redrafts and "
+              f"repairs are NOT authorised")
+        print(f"  next gate            scenario review of the {len(plan.new_scenario_ids)} "
+              f"drafted scenarios")
+        print(f"  allocation           {'checked byte for byte' if allocation_ok else 'NOT MET'}")
+        print(f"  offline dry run      {dry['scenarios']} scenario and {dry['groups']} group "
+              f"requests rendered in this run"
+              + ("" if not dry_problems else f" — PROBLEM: {dry_problems[0]}"))
+    elif block.get("blocked"):
         print("  generation block     ACTIVE — lifted only by a deliberate edit to the config")
         for item in block.get("requires") or []:
             if "allocation" in item:
@@ -1383,7 +1481,9 @@ def main(argv: list[str] | None = None) -> int:
     store = CallStore(out, cfg,
                       topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
                       allocation_content_hash=allocation.content_hash,
-                      refused_decisions=frozenset(plan.seed_decisions) if plan else frozenset())
+                      refused_decisions=frozenset(plan.seed_decisions) if plan else frozenset(),
+                      allowed_kinds=(frozenset(authorization(cfg)["allowed_kinds"])
+                                     if authorization(cfg).get("allowed_kinds") else None))
     if args.command == "preflight":
         return _preflight(args, cfg, bank, allocation, seed, plan)
     if args.command == "status" and seed is not None:

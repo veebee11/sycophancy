@@ -861,7 +861,7 @@ two retained lexical-overlap warnings.
 
 **Still outstanding.** The full marker allocation
 (`data/full/marker_allocation_full_v2.yaml`) is not built, and no full scenario
-or group has been generated; `configs/experiment_v2_full.draft.yaml` keeps
+or group has been generated; `configs/frozen/v2_full.yaml` keeps
 generation blocked until the allocation, the verified seed import, tested
 orchestration with dry runs, and explicit authorisation of the paid calls are
 all in place (`docs/full_corpus_orchestration_audit.md`).

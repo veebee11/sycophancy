@@ -407,7 +407,7 @@ _FULL_HEADER = """\
 # Marker allocation for the full v2 corpus. GENERATED — do not edit by hand.
 #
 # Rebuild with:
-#   uv run python scripts/allocate_markers.py --config configs/experiment_v2_full.draft.yaml \\
+#   uv run python scripts/allocate_markers.py --config configs/frozen/v2_full.yaml \\
 #       --topics data/topics/full_topics_v2.yaml \\
 #       --seed-allocation data/pilot/marker_allocation_v2.yaml \\
 #       --out data/full/marker_allocation_full_v2.yaml

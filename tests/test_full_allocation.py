@@ -25,7 +25,7 @@ from reasonstyle.generation.allocation import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-FULL = ROOT / "configs/experiment_v2_full.draft.yaml"
+FULL = ROOT / "configs/frozen/v2_full.yaml"
 BANK_PATH = ROOT / "data/topics/full_topics_v2.yaml"
 SEED_PATH = "data/pilot/marker_allocation_v2.yaml"
 STORED = ROOT / "data/full/marker_allocation_full_v2.yaml"

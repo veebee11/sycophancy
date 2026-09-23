@@ -26,7 +26,7 @@ from reasonstyle.generation.pipeline import (
 from reasonstyle.generation.requests import scenario_request
 
 ROOT = Path(__file__).resolve().parents[1]
-FULL = ROOT / "configs/experiment_v2_full.draft.yaml"
+FULL = ROOT / "configs/frozen/v2_full.yaml"
 BANK = load_topic_bank(ROOT / "data/topics/full_topics_v2.yaml")
 
 
@@ -58,16 +58,59 @@ def never(request):                                     # pragma: no cover - mus
 # --- the seed guard -----------------------------------------------------------------
 
 
-def test_the_full_configuration_keeps_generation_blocked(cfg):
-    assert cfg.raw["corpus"]["generation_block"]["blocked"] is True
+def test_the_frozen_configuration_is_frozen_and_deliberately_unblocked(cfg):
+    assert cfg.config_version == "v2_full" and cfg.parsed.status == "frozen"
+    block = cfg.raw["corpus"]["generation_block"]
+    assert block["blocked"] is False
+    assert block["lifted_by"] and block["lifted_at"] == "2026-09-23"
 
 
-def test_live_problems_refuse_even_with_every_key(cfg):
+def test_the_authorisation_covers_the_scenario_stage_only(cfg):
+    auth = cfg.raw["corpus"]["generation_authorization"]
+    assert auth["status"] == "authorized"
+    assert auth["allowed_kinds"] == ["scenario"]
+    assert auth["max_paid_calls"] == 96 and auth["calls_per_scenario"] == 1
+    for excluded in ("scenario redrafts", "group drafting", "repairs"):
+        assert excluded in auth["excludes"]
+
+
+def test_an_unauthorised_stage_is_refused_with_every_key_set(cfg):
     pilot = _load_pilot_script()
-    env = {"REASONSTYLE_ALLOW_OPENAI_GENERATION": "1",
-           "REASONSTYLE_ALLOW_PILOT_GENERATION": "1"}
-    problems = pilot.live_problems(True, cfg, env=env)
-    assert problems and "generation is blocked" in problems[0]
+    assert pilot.paid_call_problems(cfg, "scenario", 96) == []
+    for kind in ("group", "repair", "scenario_redraft"):
+        problems = pilot.paid_call_problems(cfg, kind)
+        assert problems and "outside the recorded authorisation" in problems[0]
+    over = pilot.paid_call_problems(cfg, "scenario", 97)
+    assert over and "covers at most 96" in over[0]
+
+
+def test_an_unauthorised_kind_cannot_be_sent(cfg, plan, tmp_path):
+    """The send path itself refuses, so no entry point can make the call."""
+    from reasonstyle.generation.requests import group_request
+    allocation = load_allocation(ROOT / "data/full/marker_allocation_full_v2.yaml")
+    topic = topics(["climate_06"])[0]
+    group = allocation.for_group("climate_06_v1", "opt_1")
+    store = CallStore(tmp_path / "run", cfg, allowed_kinds=frozenset({"scenario"}))
+    backend = FakeBackend(never)
+    request = group_request(topic, 1, topic.decision_framing, group, cfg)
+    with pytest.raises(PipelineAbort, match="outside the recorded authorisation"):
+        _send_or_resume(store, request, backend, cfg, allow_live=False)
+    assert backend.calls == [] and not (tmp_path / "run").exists()
+
+
+def test_the_group_stage_is_refused_by_the_runner(capsys):
+    pilot = _load_pilot_script()
+    assert pilot.main(["groups", "--config", str(FULL)]) == 1
+    err = capsys.readouterr().err
+    assert "outside the recorded authorisation" in err
+    assert "no credential was read and no backend was built" in err
+    assert not (ROOT / "data/full/run_v2").exists()
+
+
+def test_the_redraft_stage_is_refused(capsys):
+    pilot = _load_pilot_script()
+    assert pilot.main(["redraft-scenarios", "--config", str(FULL)]) == 1
+    assert "outside the recorded authorisation" in capsys.readouterr().err
 
 
 def test_a_scenario_request_for_a_seed_decision_is_impossible(cfg, plan, tmp_path):
@@ -121,11 +164,14 @@ def test_the_call_budget(cfg, plan):
                       "primary_ceiling": 672, "absolute_ceiling": 768}
 
 
-def test_a_dry_group_stage_plans_only_new_groups_and_sends_nothing(capsys):
+def test_the_scenario_stage_reports_its_authorised_ceiling(capsys):
     pilot = _load_pilot_script()
-    assert pilot.main(["groups", "--config", str(FULL)]) == 0
+    assert pilot.main(["scenarios", "--config", str(FULL)]) == 0
     out = capsys.readouterr().out
-    assert "192 drafts" in out and "nothing was sent" in out
+    assert "scenarios: 96 calls at most" in out
+    assert "at most 96 paid call(s), 1 per scenario" in out
+    # Without --send and the two keys, a stage reports and sends nothing.
+    assert "nothing was sent" in out
     assert not (ROOT / "data/full/run_v2").exists()
 
 
@@ -140,7 +186,8 @@ def test_outputs_under_data_pilot_are_refused(tmp_path):
     text = FULL.read_text(encoding="utf-8").replace("  run: data/full/run_v2\n",
                                                     "  run: data/pilot/run_full\n", 1)
     assert "data/pilot/run_full" in text
-    path = tmp_path / "full.yaml"
+    path = tmp_path / "frozen" / "v2_full.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     problems = pilot.seed_output_problems(load_config(path))
     assert any("under data/pilot/" in p for p in problems)
@@ -167,12 +214,12 @@ def test_the_offline_dry_run_refuses_a_seed_decision(cfg, plan):
     assert any("seed decision" in p for p in problems)
 
 
-def test_a_scenario_stage_dry_run_plans_96_and_sends_nothing(capsys):
+def test_a_scenario_stage_dry_run_names_every_authorisation_key(capsys):
     pilot = _load_pilot_script()
     assert pilot.main(["scenarios", "--config", str(FULL)]) == 0
     out = capsys.readouterr().out
-    assert "scenarios: 96 calls at most" in out and "nothing was sent" in out
-    assert "generation is blocked" in out
+    assert "REASONSTYLE_ALLOW_OPENAI_GENERATION" in out
+    assert "REASONSTYLE_ALLOW_PILOT_GENERATION" in out
     assert not (ROOT / "data/full/run_v2").exists()
 
 
@@ -221,8 +268,10 @@ def test_the_preflight_reads_no_credential_and_opens_no_connection(monkeypatch, 
                      "skipped (seed)    12", "to generate       48", "96 would be requested",
                      "192 would be requested", "new texts         768", "about 304",
                      "96 rendered in this dry run", "192 rendered in this dry run",
-                     "ceiling, primary  672", "ceiling, absolute 768", "generation block  ACTIVE",
-                     "no credential was read"):
+                     "gpt-5.6-sol", "https://api.openai.com/v1/responses", "store False",
+                     "group calls       0 authorised", "scenario_stage_initial_only",
+                     "ceiling, primary  672", "ceiling, absolute 768",
+                     "generation block  lifted", "no credential was read"):
         assert expected in out, expected
     assert not (ROOT / "data/full/run_v2").exists()
 
@@ -234,7 +283,8 @@ def test_the_preflight_fails_before_networking_on_a_mismatch(monkeypatch, tmp_pa
     text = FULL.read_text(encoding="utf-8").replace(
         "corpus_sha256: 7e0dae8415abe0499321bffb19742b031dea8eede08fca1fca20340373e625d8",
         "corpus_sha256: '" + "0" * 64 + "'", 1)
-    path = tmp_path / "full.yaml"
+    path = tmp_path / "frozen" / "v2_full.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     assert pilot.main(["preflight", "--config", str(path)]) == 1
     assert "not the pinned" in capsys.readouterr().err
@@ -265,16 +315,17 @@ def test_status_separates_seed_new_total_and_blockers(capsys):
     for section in ("IMPORTED SEED", "NEW MATERIAL (not generated)", "TOTAL EVENTUAL CORPUS",
                     "CURRENT BLOCKERS"):
         assert section in out
+    assert "lifted 2026-09-23" in out
+    assert "at most 96 scenario call(s)" in out
+    assert "group drafting, redrafts and repairs are NOT authorised" in out
+    assert "next gate            scenario review" in out
     assert "0 of 96 generated" in out and "0 of 192 generated" in out
     assert "groups               240 allocated (48 imported + 192 new)" in out
     assert "texts                960" in out
-    # Derived live, in this run: the allocation is rebuilt and compared, the
-    # seed verified, and the dry run actually performed. Only the paid-call
-    # authorisation is outstanding.
-    assert "[met: rebuilt and compared byte for byte]" in out
-    assert "[met: verified read-only in this run]" in out
-    assert "96 scenario and 192 group requests rendered offline in this run" in out
-    assert "explicit authorisation of paid external-generation calls  [OUTSTANDING" in out
+    # Derived live, in this run: the allocation is rebuilt and compared and the
+    # dry run actually performed.
+    assert "allocation           checked byte for byte" in out
+    assert "96 scenario and 192 group requests rendered in this run" in out
 
 
 def test_pilot_status_is_unchanged(capsys):

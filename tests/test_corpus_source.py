@@ -29,7 +29,7 @@ from reasonstyle.generation.corpus_source import (
 from reasonstyle.hashing import sha256_of
 
 ROOT = Path(__file__).resolve().parents[1]
-FULL = ROOT / "configs" / "experiment_v2_full.draft.yaml"
+FULL = ROOT / "configs/frozen/v2_full.yaml"
 BANK = load_topic_bank(ROOT / "data" / "topics" / "full_topics_v2.yaml")
 SEED_FILES = [
     "configs/experiment_v2_pilot.yaml",
@@ -71,7 +71,9 @@ def full_cfg(tmp_path, *, pins: bool = True, edit=None):
         assert "pins:" not in text
     if edit:
         text = edit(text)
-    path = tmp_path / "configs" / "full.yaml"
+    # A frozen configuration must live in configs/frozen/ under its version
+    # name; a copy of one is no exception.
+    path = tmp_path / "configs" / "frozen" / "v2_full.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return load_config(path)

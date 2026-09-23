@@ -1,7 +1,7 @@
 """Check the full topic bank as a whole, against the pilot it grew from.
 
     uv run python scripts/check_full_topic_bank.py \
-        --config configs/experiment_v2_full.draft.yaml \
+        --config configs/frozen/v2_full.yaml \
         --pilot-topics data/topics/pilot_topics.yaml \
         --registry data/sources/registry.yaml --source-texts data/sources/raw
 

@@ -8,7 +8,7 @@
 Full-corpus mode imports a frozen allocation's rows exactly and allocates only
 the rest, so the whole corpus is balanced:
 
-    uv run python scripts/allocate_markers.py --config configs/experiment_v2_full.draft.yaml \
+    uv run python scripts/allocate_markers.py --config configs/frozen/v2_full.yaml \
         --topics data/topics/full_topics_v2.yaml \
         --seed-allocation data/pilot/marker_allocation_v2.yaml \
         --out data/full/marker_allocation_full_v2.yaml

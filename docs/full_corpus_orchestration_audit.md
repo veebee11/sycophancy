@@ -6,7 +6,7 @@ modules already provide it, and the smallest changes that close the gap.*
 
 **Completed foundation work (committed with this audit):**
 
-- the full configuration draft, `configs/experiment_v2_full.draft.yaml`
+- the full configuration draft, `configs/frozen/v2_full.yaml`
   (60/120/240/960, seed-corpus declaration, output paths under `data/full/`);
 - the curated topic bank, `data/topics/full_topics_v2.yaml` — 60 decisions,
   curated 2026-09-21;
@@ -66,8 +66,15 @@ readiness from checks performed in the run itself — the allocation rebuilt and
 compared, the seed verified, the dry run actually rendered — rather than from
 any stored claim.
 
-Still outstanding before generation: **explicit authorisation of the paid
-calls**, the only unmet requirement in the generation block.
+**Frozen, 2026-09-23.** The configuration became `configs/frozen/v2_full.yaml`
+(`v2_full`, content hash `7548650b42e7…`), its block lifted deliberately, with
+paid calls authorised for the **initial 96-scenario stage only**; every other
+stage is refused before a backend is built. The allocation was rebound to the
+frozen hash with its 240 assignments and content hash unchanged.
+
+Still outstanding: running that scenario stage, then **scenario review**. Group
+drafting, redrafts and repairs need their own authorisation recorded in the
+configuration.
 
 The full run is **not** a bigger pilot run. It is a pilot run plus an import:
 12 of the 60 decisions already exist as a completed, corrected, assembled
@@ -200,4 +207,4 @@ The researcher's recorded sequence:
   a verified import of the seed pilot corpus, dry-run validation of the
   orchestration, and **explicit authorisation of the paid calls**. Until all
   four are in place, the generation block in
-  `configs/experiment_v2_full.draft.yaml` stays on.
+  `configs/frozen/v2_full.yaml` stays on.

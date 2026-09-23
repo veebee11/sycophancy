@@ -20,7 +20,7 @@ from reasonstyle.corpus.sources import load_registry
 from reasonstyle.corpus.topics import TopicBank, load_topic_bank
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "configs" / "experiment_v2_full.draft.yaml"
+CONFIG = ROOT / "configs/frozen/v2_full.yaml"
 PILOT = ROOT / "data" / "topics" / "pilot_topics.yaml"
 BANK = ROOT / "data" / "topics" / "full_topics_v2.yaml"
 REGISTRY = ROOT / "data" / "sources" / "registry.yaml"
@@ -228,8 +228,12 @@ def test_generation_must_stay_blocked_while_decisions_are_proposed():
     assert "E_BANK_GENERATION_UNBLOCKED" in codes(check(text, blocked=False))
 
 
-def test_the_committed_full_config_keeps_generation_blocked():
-    assert CFG.raw["corpus"]["generation_block"]["blocked"] is True
+def test_the_committed_full_config_is_frozen_with_a_scoped_authorisation():
+    """The block is lifted deliberately; what may be paid for is narrower."""
+    assert CFG.parsed.status == "frozen" and CFG.config_version == "v2_full"
+    assert CFG.raw["corpus"]["generation_block"]["blocked"] is False
+    auth = CFG.raw["corpus"]["generation_authorization"]
+    assert auth["allowed_kinds"] == ["scenario"] and auth["max_paid_calls"] == 96
 
 
 # --- locators against synthetic sources -------------------------------------------
