@@ -20,15 +20,15 @@
 # A record whose status is not exactly 'authorized' authorises nothing.
 
 record_version: scenario_redraft_v1
-status: proposed
+status: authorized
 
 # Who proposed this record, and when it becomes operative. Both stay null
 # until the researcher records an actual decision -- never inferred, never
 # defaulted, never backfilled by a script.
 proposed_by: Vidhi Bhutani
 proposed_at: '2026-09-24'
-authorized_by: null
-authorized_at: null
+authorized_by: Vidhi Bhutani
+authorized_at: '2026-09-24'
 
 # The exact configuration this authorisation applies to. A configuration
 # that no longer matches both fields makes this record inert, however its
