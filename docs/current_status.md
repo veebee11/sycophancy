@@ -16,12 +16,12 @@ superseded wherever they say something has not yet run.*
 | frozen-pilot import and seed-aware planning | **implemented and tested**; Phase 2 committed as `39b1a2528ef8c0700f87f4905f6bc0b51e1f1f75`; all offline dry runs passed 2026-09-23 |
 | full marker allocation | **built and committed** (`data/full/marker_allocation_full_v2.yaml`, 240 groups) |
 | final full configuration | **frozen 2026-09-23** at `configs/frozen/v2_full.yaml` (`v2_full`, content hash `7548650b42e7…`); block lifted deliberately |
-| paid-call authorisation | **96 initial scenario calls only**, one per new scenario; redrafts, groups, repairs, evaluation and mechanistic analysis are excluded and refused |
+| paid-call authorisation (frozen configuration) | **96 initial scenario calls only**, one per new scenario; redrafts, groups, repairs, evaluation and mechanistic analysis are excluded from it. The 2 redrafts and the 192 initial group calls are covered by separate records (below); repairs, retries, evaluation and mechanistic analysis by nothing |
 | full scenario generation | **ran live 2026-09-23**: 96 of 96 scenario calls completed, all accepted and machine-valid, 0 errors; `data/full/run_v2/` (gitignored) |
 | full scenario review | **complete, 2026-09-24: 96 of 96 approved**, 0 pending, stale or machine-blocked, in `data/full/scenario_approvals_full_v2.yaml`. First pass (2026-09-23): 94 approved, 2 sent to redraft (`technology_08_v1`, `technology_13_v1`); both redrafted and approved since |
 | scenario-redraft authorisation | **authorised, run and complete, 2026-09-24**: `data/full/authorizations/scenario_redraft_v1.yaml`, `status: authorized`. Both authorised calls ran successfully, machine-valid, and both replacement texts were human-reviewed and approved. It never edited `configs/frozen/v2_full.yaml` — see `design_notes.md`, *Separate stage authorisations* |
-| group-stage authorisation | **proposed only, not authorised**: `data/full/authorizations/group_stage_v1.yaml`, `status: proposed`, `authorized_by`/`authorized_at` null. Would cover exactly 192 initial group calls (one per new `(scenario_id, supported_option)`, four cells RS/RP/NS/NP, 768 texts), no repairs or retries. Checked against the current scenario evidence (accepted call, text hash, approval, config and topic bank) before any backend is built; while proposed, `groups --stage-authorization` refuses |
-| full group generation | **not started; unauthorised. 0 group calls have occurred.** The scenario gate is complete (96/96 approved); group drafting, redrafts and repairs remain excluded from `generation_authorization` and need their own separate authorisation, refused before a backend is built |
+| group-stage authorisation | **authorised 2026-09-24 by Vidhi Bhutani, committed and valid**: `data/full/authorizations/group_stage_v1.yaml`, `status: authorized`, 0 validation problems against the real 192 targets. Covers exactly 192 initial group calls (one per new `(scenario_id, supported_option)`, four cells RS/RP/NS/NP, 768 texts). Checked against the current scenario evidence (accepted call, text hash, approval, config and topic bank) before any backend is built. Repairs, retries of transport-failed targets and every other stage remain unauthorised. It never edited `configs/frozen/v2_full.yaml` |
+| full group generation | **authorised but not run. 0 group calls have occurred.** The scenario gate is complete (96/96 approved). The frozen configuration's own `generation_authorization` still excludes groups; the separate record above is the only thing that covers them |
 
 ## Records and their authority
 
@@ -288,7 +288,8 @@ assembled; the scenario stage that changed that is recorded below, under
   needs its own recorded authorisation, distinct from the scenario-stage
   authorisation already spent; group drafting needs a further one still. Neither
   exists in `configs/frozen/v2_full.yaml`, and the runner refuses both before a
-  backend is built.
+  backend is built. *(Superseded 2026-09-24: both now have separate authorisation
+  records — see the table above.)*
 
 ## Scenario-redraft authorisation: proposed, authorised, run and approved (2026-09-24)
 
@@ -388,7 +389,9 @@ that block to cover redrafts — even only to add one kind to `allowed_kinds`
   `generation_authorization` still excludes `group` by name, and
   `data/full/authorizations/` holds no group-stage record. One would need its
   own proposal, its own review, and its own explicit authorisation, exactly
-  as the scenario-redraft record did.
+  as the scenario-redraft record did. *(Superseded 2026-09-24: that record,
+  `group_stage_v1.yaml`, was proposed, reviewed and explicitly authorised; the
+  group stage itself has not run.)*
 
 ## Full corpus: what does not exist yet
 
@@ -400,8 +403,9 @@ that block to cover redrafts — even only to add one kind to `allowed_kinds`
   been sent — 98 total, every one traceable to what authorised it.
 - `configs/frozen/v2_full.yaml` keeps the generation block **lifted**, but its
   `generation_authorization` still covers the initial scenario stage only;
-  every later stage — including the group stage next — needs its own
-  separately tracked authorisation record before it can run.
+  every later stage needs its own separately tracked authorisation record.
+  The 192 initial group calls now have one (`group_stage_v1.yaml`, authorised
+  2026-09-24); repairs, retries, evaluation and mechanistic analysis do not.
 - The Phase 1 work was committed as "Prepare curated full v2 topic bank"; the
   Phase 2 work above as "Add frozen pilot import and full marker allocation".
 
@@ -434,7 +438,7 @@ The order this implies (updated 2026-09-21):
 3. ~~Dry-run the full stages offline~~, ~~freeze the final configuration~~ and ~~lift the generation block~~ — done 2026-09-23.
 4. ~~Run the authorised 96-call scenario stage~~ and ~~record its human review~~ — done 2026-09-23: 94 approved, 2 sent to redraft.
 5. ~~Prepare, authorise and run the two redraft calls~~, ~~record their human review~~ — done 2026-09-24: both calls ran successfully and both replacements are approved. **All 96 new scenarios are now approved.**
-6. **Next: authorise the group stage.** It needs its own separately tracked authorisation record, on the same fail-closed mechanism — proposed, reviewed and explicitly authorised before any group call is sent. None exists yet, and none is authorised by anything above.
+6. ~~Authorise the group stage~~ — done 2026-09-24: `data/full/authorizations/group_stage_v1.yaml`, explicitly authorised by Vidhi Bhutani for exactly 192 initial group calls (768 texts). **Next: run it.** 0 group calls exist so far; repairs and retries remain unauthorised and need their own records.
 7. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
 
 ## Open, not resolved

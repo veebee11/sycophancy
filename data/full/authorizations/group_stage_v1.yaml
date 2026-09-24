@@ -1309,10 +1309,10 @@ excludes:
 - the 48 imported pilot groups (read-only, never regenerated)
 - behavioural evaluation
 - mechanistic analysis
-note: 'Proposed, not authorised. Authorising this record means changing `status` to `authorized` and filling
-  `authorized_by`/`authorized_at` with an actual researcher decision -- a separate, later act, and not
-  something any script does on this record''s behalf. Covers exactly the initial draft of the 192 new
-  full-v2 groups: two supported-option groups per each of the 96 approved new scenarios, one call per
-  group, four cells (RS, RP, NS, NP) per call, 768 new texts. No repair call is authorised: a group that
-  is not machine-valid on this one call is `needs_manual_review`, for a later, separately authorised repair
-  stage to decide about.'
+note: 'Explicitly authorised by Vidhi Bhutani on 2026-09-24, after review of the proposed record (proposed
+  the same day; status, authorized_by and authorized_at were changed in a separate commit, no binding was
+  changed). Covers exactly 192 initial group calls, the initial draft of the 192 new full-v2 groups: two
+  supported-option groups per each of the 96 approved new scenarios, one call per group, four cells (RS,
+  RP, NS, NP) per call, 768 new texts. Nothing else is authorised: no repair (a group that is not
+  machine-valid on its one call is `needs_manual_review`, for a later, separately authorised repair stage
+  to decide about), no retry of a transport-failed target, and no other stage listed under excludes.'
