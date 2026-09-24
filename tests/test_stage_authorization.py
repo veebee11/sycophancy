@@ -34,6 +34,7 @@ from reasonstyle.generation.corpus_source import load_seed_corpus, plan_full_cor
 from reasonstyle.generation.pipeline import CallStore, PipelineAbort, recorded_scenarios, run_scenario_stage
 from reasonstyle.generation.redraft import (
     STAGE_AUTHORIZATION_RECORD_VERSION,
+    current_scenarios,
     redraft_targets,
     run_redraft_stage,
     transport_blocked_targets,
@@ -783,45 +784,189 @@ def test_a_fully_completed_stage_never_calls_the_backend_again(
     assert entries_after_second == entries_after_first == 2
 
 
-# --- the shipped record, and hash invariance on the real committed files ----------
+def test_status_and_approvals_agree_once_both_redrafts_are_approved(
+        cfg_path, tmp_path, cfg, approvals_path, redraft_pair, store_with_96_scenarios, capsys):
+    """Regression test for a real defect this exact scenario exposed: `status`
+    computed a redrafted scenario's approval state from its *pre-redraft*
+    text (`recorded_scenarios`), so once the approvals file caught up with a
+    redraft — rebound to the new call and new text — `status` and `approvals`
+    disagreed about whether the gate was complete. `status` now resolves
+    supersession the same way `approvals` does (`current_scenarios`)."""
+    store = store_with_96_scenarios
+    store.allowed_kinds = frozenset({"scenario_redraft"})
+    record = load_stage_authorization(
+        _write_record(tmp_path, _baseline_record(cfg, approvals_path, redraft_pair)))
+    topics = _new_topics(plan_full_corpus(cfg, BANK, load_seed_corpus(cfg, bank=BANK, root=ROOT)))
+    from reasonstyle.generation.approvals import ScenarioApproval, load_approvals, save_approvals
+    approvals = load_approvals(approvals_path)
+    segmenter = segmenter_from_config(cfg)
+
+    responder = RedraftResponder()
+    run_redraft_stage(topics, approvals, cfg, segmenter, FakeBackend(responder), store,
+                      allow_live=True, stage_authorization=record)
+    assert sorted(responder.calls) == sorted(REDRAFT_IDS)
+
+    current = current_scenarios(store)
+    for scenario_id in REDRAFT_IDS:
+        rec = current[scenario_id]
+        old = approvals[scenario_id]
+        approvals[scenario_id] = ScenarioApproval(
+            scenario_id=scenario_id, scenario_text_sha256=sha256_of(rec["scenario_text"]),
+            call_id=rec["call_id"], config_content_hash=old.config_content_hash,
+            topic_bank_content_hash=old.topic_bank_content_hash, decision="approved",
+            judgements={name: True for name in REQUIRED_JUDGEMENTS},
+            decided_by="Vidhi Bhutani", decided_at=date(2026, 9, 24), reason=None)
+    save_approvals(approvals, approvals_path)
+
+    pilot = _load_pilot_script()
+    assert pilot.main(["status", "--config", str(cfg_path)]) == 0
+    status_out = capsys.readouterr().out
+    assert pilot.main(["approvals", "--config", str(cfg_path),
+                       "--only", *sorted({t.decision_id for t in redraft_pair})]) == 0
+    approvals_out = capsys.readouterr().out
+
+    # All 96 new scenarios: the 94 already approved plus the 2 just rebound
+    # to their redrafted call and text.
+    assert "scenario review      96 approved" in status_out
+    assert "next gate            group drafting authorisation (every scenario is approved)" \
+        in status_out
+    # `--only` expands to both variants of each named decision; technology_08_v2
+    # and technology_13_v2 were already approved, so all 4 read clear.
+    assert "0 of 4 expected scenario(s) not approved" in approvals_out
 
 
-def test_the_real_authorization_record_is_proposed_and_otherwise_valid():
-    """Read-only against the real committed files. The shipped record is not
-    operative for three separate, independent reasons — ``status`` is not
-    ``'authorized'``, ``authorized_by`` names no reviewer, and
-    ``authorized_at`` carries no date — while every scientific binding
-    (configuration, approvals file, targets, call ids, text hashes,
-    ``max_paid_calls`` against the target count, ``record_version``) already
-    matches reality and produces no separate refusal."""
+# --- the shipped record: history, not a live proposal any more --------------------
+#
+# The record was proposed 2026-09-24, then authorised the same day by Vidhi
+# Bhutani (commit "Authorize two full v2 scenario redrafts"), and the two
+# calls it authorised then ran live and were approved (commit "Approve two
+# full v2 scenario redrafts"). These tests read that history from the real,
+# committed files — never a live claim that the record is still operative
+# for a *new* call, which the last test in this section shows it is not.
+
+REAL_NEW_APPROVALS_SHA256 = "fbf4c7528afbc16822bbd249660435067e7191581b9057b0f43b1b5d2ded31bd"
+REAL_RUN_V2 = ROOT / "data/full/run_v2"
+
+#: The two calls the authorisation covered, and what they actually produced —
+#: independently confirmed against the real run evidence and the real
+#: approvals file when this was written; read-only from here on.
+REAL_DISPATCHES = {
+    "technology_08_v1": {
+        "decision_id": "technology_08",
+        "call_id": "9dc3b607703738fe6bec59e7a165e44315c87a90e88f569d9e281a898963e557",
+        "scenario_text_sha256": "d52a7ecf337798706a56680d97271aa730a2e1d4a990a1e64c1b03afa97c8d77",
+        "supersedes": "9b06829bdc91fde71ad906331260cf64b51f7e728da870c9db3b6c73c51541af",
+    },
+    "technology_13_v1": {
+        "decision_id": "technology_13",
+        "call_id": "842b455255a43ad4ca6adb135023fc6863bdeb24da577dd38548d8c20e9f0d45",
+        "scenario_text_sha256": "18b160537720ea1a0b805c522e1810b9070073359c9b376fcb5d1e185aeebf46",
+        "supersedes": "20ef0cb34d31fb4c1f80b00520c2210606e2a9d5fa533be9a2a4fa91509df672",
+    },
+}
+
+
+def test_the_real_authorization_record_was_validly_authorized():
+    """``status: authorized``, with a named reviewer and a valid date — the
+    three conditions that, before 2026-09-24, were unmet (see git history for
+    the record's earlier state); all three are satisfied now."""
+    record = load_stage_authorization(REAL_RECORD)
+    assert record["status"] == "authorized"
+    assert record["authorized_by"] == "Vidhi Bhutani"
+    assert record["authorized_at"] == "2026-09-24"
+    # Nothing else about the record's own content changed when it was
+    # authorised: the same two targets, the same ceiling, the same config
+    # binding as when it was only proposed.
+    assert record["max_paid_calls"] == 2
+    assert record["calls_per_target"] == 1
+    assert sorted(record["targets"]) == sorted(REDRAFT_IDS)
+
+
+def test_exactly_two_logged_dispatches_carry_the_real_authorization_hash():
+    """Read-only against the real, gitignored run directory. Exactly two
+    ``scenario_redraft`` log entries exist, both ``ok``/``accepted``, and
+    both carry the committed authorisation record's own file SHA-256 —
+    the traceability claim, checked against the actual evidence rather than
+    a synthetic run."""
+    record = load_stage_authorization(REAL_RECORD)
+    cfg = load_config(FULL)
+    store = CallStore(REAL_RUN_V2, cfg)
+    redraft_entries = [e for e in store.log.entries() if e["kind"] == "scenario_redraft"]
+    assert len(redraft_entries) == 2
+    for entry in redraft_entries:
+        assert entry["status"] == "ok" and entry["outcome"] == "accepted"
+        assert entry["extra"]["stage_authorization_sha256"] == record["_file_sha256"]
+        # Recorded exactly as passed on the command line at the time (the
+        # live run used the relative path); identity is what matters here,
+        # not a particular spelling.
+        assert Path(entry["extra"]["stage_authorization_path"]).resolve() == REAL_RECORD.resolve()
+
+
+def test_the_two_dispatches_targeted_only_the_authorized_scenarios():
+    cfg = load_config(FULL)
+    store = CallStore(REAL_RUN_V2, cfg)
+    redraft_entries = [e for e in store.log.entries() if e["kind"] == "scenario_redraft"]
+    targeted = {f"{e['decision_id']}_v{e['variant_id']}" for e in redraft_entries}
+    assert targeted == set(REDRAFT_IDS)
+    by_scenario = {f"{e['decision_id']}_v{e['variant_id']}": e for e in redraft_entries}
+    for scenario_id, expected in REAL_DISPATCHES.items():
+        entry = by_scenario[scenario_id]
+        assert entry["call_id"] == expected["call_id"]
+        assert entry["extra"]["supersedes_call_id"] == expected["supersedes"]
+
+
+def test_the_current_approvals_point_to_the_successful_replacement_calls():
+    """The approvals file, not the authorisation record, is where a redraft's
+    outcome is judged: both scenarios are now ``approved``, bound to the new
+    call and new text — never to the rejected originals the authorisation
+    record still names for provenance."""
+    from reasonstyle.generation.approvals import load_approvals
+    approvals = load_approvals(REAL_APPROVALS)
+    for scenario_id, expected in REAL_DISPATCHES.items():
+        approval = approvals[scenario_id]
+        assert approval.decision == "approved"
+        assert approval.call_id == expected["call_id"]
+        assert approval.scenario_text_sha256 == expected["scenario_text_sha256"]
+        assert approval.decided_by == "Vidhi Bhutani"
+        assert str(approval.decided_at) == "2026-09-24"
+        assert approval.reason is None
+        assert all(v is True for v in approval.judgements.values())
+
+
+def test_changing_the_approvals_file_made_the_old_binding_historical_not_a_live_grant():
+    """The record is validly ``authorized`` (checked above) — but authorised
+    *against the approvals file as it stood when granted*. That file has
+    since changed (both targets moved from ``redraft`` to ``approved``), so
+    the record's binding to it is now stale, and `stage_authorization_problems`
+    must say so on every count: the approvals-file hash no longer matches,
+    the target set is no longer marked redraft, and the ceiling no longer
+    matches the (now zero) live redraft targets. A valid authorisation from
+    the past does not become a live grant for a different, later state —
+    exactly what keeps it from being replayed to redraft something else, or
+    the same targets again, without a fresh, separately reviewed record."""
     cfg = load_config(FULL)
     assert cfg.content_hash == FROZEN_CONTENT_HASH
     from reasonstyle.generation.approvals import load_approvals
     approvals = load_approvals(REAL_APPROVALS)
-    store = CallStore(ROOT / "data/full/run_v2", cfg)
-    targets = redraft_targets(approvals, recorded_scenarios(store))
-    assert sorted(t.scenario_id for t in targets) == sorted(REDRAFT_IDS)
+    store = CallStore(REAL_RUN_V2, cfg)
+    live_targets = redraft_targets(approvals, recorded_scenarios(store))
+    assert live_targets == []            # nothing is marked redraft any more
 
     record = load_stage_authorization(REAL_RECORD)
-    assert record["status"] == "proposed"
-    assert record["authorized_by"] is None and record["authorized_at"] is None
     problems = stage_authorization_problems(record, cfg=cfg, kind="scenario_redraft",
-                                            record_version=RECORD_VERSION, targets=targets,
+                                            record_version=RECORD_VERSION, targets=live_targets,
                                             approvals_path=REAL_APPROVALS)
-    assert problems == [
-        "the stage authorisation is 'proposed', not 'authorized'",
-        "the stage authorisation names no reviewer: authorized_by must be a non-empty "
-        "string, naming who authorised it",
-        "the stage authorisation carries no valid authorisation date: authorized_at "
-        "must be a non-empty ISO-8601 date or timestamp",
-    ]
+    assert len(problems) == 3
+    assert any("approvals-file SHA-256 does not match" in p for p in problems)
+    assert any("exactly equal the 0 authorised target(s)" in p for p in problems)
+    assert any(REDRAFT_IDS[0] in p and REDRAFT_IDS[1] in p
+              and "does not currently mark redraft" in p for p in problems)
 
 
-def test_the_real_frozen_config_and_approvals_hashes_are_unchanged():
+def test_the_real_frozen_config_and_run_evidence_are_unchanged():
     assert file_sha256(FULL) == "5d34bad7fc3b81d122fc0feb62fb502097f2b220200544027e42a70c94abe819"
     assert load_config(FULL).content_hash == FROZEN_CONTENT_HASH
-    assert (file_sha256(REAL_APPROVALS)
-           == "fd80575cf762513df5f2070cc181a2dc0e46112dfa7cf308fb82dd7ea2659346")
+    assert file_sha256(REAL_APPROVALS) == REAL_NEW_APPROVALS_SHA256
 
 
 def test_using_the_mechanism_reads_but_never_writes_the_real_files():
@@ -832,7 +977,7 @@ def test_using_the_mechanism_reads_but_never_writes_the_real_files():
     cfg = load_config(FULL)
     from reasonstyle.generation.approvals import load_approvals
     approvals = load_approvals(REAL_APPROVALS)
-    store = CallStore(ROOT / "data/full/run_v2", cfg)
+    store = CallStore(REAL_RUN_V2, cfg)
     targets = redraft_targets(approvals, recorded_scenarios(store))
     record = load_stage_authorization(REAL_RECORD)
     stage_authorization_problems(record, cfg=cfg, kind="scenario_redraft",

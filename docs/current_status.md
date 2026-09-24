@@ -18,9 +18,9 @@ superseded wherever they say something has not yet run.*
 | final full configuration | **frozen 2026-09-23** at `configs/frozen/v2_full.yaml` (`v2_full`, content hash `7548650b42e7…`); block lifted deliberately |
 | paid-call authorisation | **96 initial scenario calls only**, one per new scenario; redrafts, groups, repairs, evaluation and mechanistic analysis are excluded and refused |
 | full scenario generation | **ran live 2026-09-23**: 96 of 96 scenario calls completed, all accepted and machine-valid, 0 errors; `data/full/run_v2/` (gitignored) |
-| full scenario review | **recorded 2026-09-23** in `data/full/scenario_approvals_full_v2.yaml`: 94 approved, 2 sent to redraft (`technology_08_v1`, `technology_13_v1`); 0 pending, stale or machine-blocked |
-| scenario-redraft authorisation | **prepared, not authorised, 2026-09-24**: a separate tracked record, `data/full/authorizations/scenario_redraft_v1.yaml`, `status: proposed`. It never edits `configs/frozen/v2_full.yaml` — see `design_notes.md`, *Separate stage authorisations* |
-| full group generation | **not started; unauthorised.** Redraft calls, group drafting and repairs remain excluded from `generation_authorization` and are refused before a backend is built |
+| full scenario review | **complete, 2026-09-24: 96 of 96 approved**, 0 pending, stale or machine-blocked, in `data/full/scenario_approvals_full_v2.yaml`. First pass (2026-09-23): 94 approved, 2 sent to redraft (`technology_08_v1`, `technology_13_v1`); both redrafted and approved since |
+| scenario-redraft authorisation | **authorised, run and complete, 2026-09-24**: `data/full/authorizations/scenario_redraft_v1.yaml`, `status: authorized`. Both authorised calls ran successfully, machine-valid, and both replacement texts were human-reviewed and approved. It never edited `configs/frozen/v2_full.yaml` — see `design_notes.md`, *Separate stage authorisations* |
+| full group generation | **not started; unauthorised.** The scenario gate is complete (96/96 approved); group drafting, redrafts and repairs remain excluded from `generation_authorization` and need their own separate authorisation, refused before a backend is built |
 
 ## Records and their authority
 
@@ -289,7 +289,7 @@ assembled; the scenario stage that changed that is recorded below, under
   exists in `configs/frozen/v2_full.yaml`, and the runner refuses both before a
   backend is built.
 
-## Scenario-redraft authorisation prepared, not granted (2026-09-24)
+## Scenario-redraft authorisation: proposed, authorised, run and approved (2026-09-24)
 
 **Why a separate record, not an edit to the frozen configuration.** The
 frozen configuration's own `corpus.generation_authorization` excludes
@@ -313,28 +313,25 @@ that block to cover redrafts — even only to add one kind to `allowed_kinds`
   Without `--stage-authorization`, `redraft-scenarios` behaves exactly as
   before this flag existed: refused by the configuration's own
   `generation_authorization`, which excludes the kind.
-- **The record**: `data/full/authorizations/scenario_redraft_v1.yaml`.
-  `status: proposed`, `authorized_by: null`, `authorized_at: null` — **not
-  operative**. It names exactly `technology_08_v1` and `technology_13_v1` —
-  the two, and only the two, the authoritative approval file marks
-  `redraft` — each bound to its rejected call id and rejected text SHA-256;
-  `max_paid_calls: 2` (exactly the number of authorised targets, no unused
-  headroom), `calls_per_target: 1`; and explicit exclusions for the original
-  96-call stage, any other scenario, a second call for either target, groups,
-  repairs, evaluation and mechanistic analysis.
-- **Checked, not run — and fails closed.** `redraft-scenarios --config
-  configs/frozen/v2_full.yaml --stage-authorization
-  data/full/authorizations/scenario_redraft_v1.yaml` currently refuses with
-  three separate reasons: `status` is `'proposed'`, not `'authorized'`;
-  `authorized_by` names no reviewer; `authorized_at` carries no valid date.
-  All three — not `status` alone — must be completed by an actual reviewer
-  decision before the record is operative. Every scientific binding in the
-  record — configuration hash, approvals-file hash, both targets' call ids
-  and text hashes, `max_paid_calls` matching the target count, `record_version`
-  — already matches reality and produces no separate refusal. Every check
-  runs, and reports every problem it finds, before any credential is read or
-  backend is built; a missing, null or wrongly typed field is refused
-  cleanly rather than raising.
+- **The record**: `data/full/authorizations/scenario_redraft_v1.yaml`. It
+  names exactly `technology_08_v1` and `technology_13_v1` — the two, and only
+  the two, the authoritative approval file marked `redraft` — each bound to
+  its rejected call id and rejected text SHA-256; `max_paid_calls: 2` (exactly
+  the number of authorised targets, no unused headroom), `calls_per_target: 1`;
+  and explicit exclusions for the original 96-call stage, any other scenario,
+  a second call for either target, groups, repairs, evaluation and
+  mechanistic analysis.
+- **Fails closed, and was checked before being trusted.** Proposed
+  `status: proposed`, `authorized_by: null`, `authorized_at: null`
+  (2026-09-24) — **not operative**: `redraft-scenarios --stage-authorization`
+  refused with three separate reasons (`status` not `'authorized'`;
+  `authorized_by` names no reviewer; `authorized_at` carries no valid date)
+  while every scientific binding already matched reality. **Authorised the
+  same day** by Vidhi Bhutani — only `status`, `authorized_by: Vidhi Bhutani`
+  and `authorized_at: '2026-09-24'` changed (committed separately,
+  `Authorize two full v2 scenario redrafts`); no target, hash, reason,
+  ceiling or exclusion was touched. `stage_authorization_problems` then
+  reported zero problems.
 - **A validated stage authorisation widens what may be sent, deliberately.**
   The frozen configuration's own authorisation excludes `scenario_redraft` by
   name; passing every check in a stage authorisation is exactly what lets the
@@ -362,21 +359,48 @@ that block to cover redrafts — even only to add one kind to `allowed_kinds`
   transport failure alike — so a request that incurred cost always traces
   back to the exact record that permitted it, whether or not it produced a
   usable response.
-- **Nothing here authorises or runs a redraft.** The frozen configuration's
-  content hash and file SHA-256 are unchanged; all 94 approval states in
-  `data/full/scenario_approvals_full_v2.yaml` are unchanged; no API call was
-  made and no credential was read.
+- **Both authorised calls ran successfully.** Live, via the OpenAI Responses
+  API, exactly the two calls the record authorised, exactly once each: new
+  call ids `9dc3b60770…` (`technology_08_v1`, supersedes `9b06829bdc91…`) and
+  `842b455255…` (`technology_13_v1`, supersedes `20ef0cb34d31…`), both `ok` /
+  `accepted`, both traced to the authorisation's own file SHA-256
+  (`0904c9e4ee72…`) in their log entries. `data/full/run_v2/` went from 96 to
+  98 recorded calls; no other call was made.
+- **Both replacement texts were human-reviewed and approved** by Vidhi
+  Bhutani on 2026-09-24 — `technology_08_v1` no longer generalises the
+  supplied fact into an "overall capability" claim; `technology_13_v1` no
+  longer implies an unstated officer-review safeguard. Recorded in
+  `data/full/scenario_approvals_full_v2.yaml`: both entries rebound to the
+  new call id and new text SHA-256, `decision: approved`, all seven
+  judgements true, `reason: null`. The redraft log and this authorisation
+  record keep the superseded calls and the original rejection reasons; the
+  approvals file does not restate them.
+- **All 96 new scenarios are now approved.** `pilot.py approvals` and
+  `pilot.py status` agree: 0 of 96 not approved; `status`'s next gate reads
+  "group drafting authorisation (every scenario is approved)". (Fixed the
+  same day: `status` previously judged a redrafted scenario by its
+  *pre-redraft* text, so it could disagree with `approvals` about a target
+  the approvals file had already caught up with — `_full_status` now reads
+  the supersession-resolved current text, exactly as `approvals` does.)
+- **The next gate is a separate group-stage authorisation.** No group call
+  has occurred, and none is authorised: `configs/frozen/v2_full.yaml`'s own
+  `generation_authorization` still excludes `group` by name, and
+  `data/full/authorizations/` holds no group-stage record. One would need its
+  own proposal, its own review, and its own explicit authorisation, exactly
+  as the scenario-redraft record did.
 
 ## Full corpus: what does not exist yet
 
 - **No full group** has been generated, and no full corpus has been assembled.
   `data/full/` holds the tracked allocation, the 96 recorded scenario calls
   (gitignored run directory) and the tracked scenario approvals above.
-- **No redraft, group, repair, evaluation or mechanistic-analysis call has been
-  made.** Only the 96 authorised scenario calls have been sent.
+- **No group, repair, evaluation or mechanistic-analysis call has been made.**
+  Only the 96 initial scenario calls plus the 2 authorised redraft calls have
+  been sent — 98 total, every one traceable to what authorised it.
 - `configs/frozen/v2_full.yaml` keeps the generation block **lifted**, but its
-  `generation_authorization` still covers the scenario stage only; every later
-  stage needs its own recorded authorisation before it can run.
+  `generation_authorization` still covers the initial scenario stage only;
+  every later stage — including the group stage next — needs its own
+  separately tracked authorisation record before it can run.
 - The Phase 1 work was committed as "Prepare curated full v2 topic bank"; the
   Phase 2 work above as "Add frozen pilot import and full marker allocation".
 
@@ -407,9 +431,10 @@ The order this implies (updated 2026-09-21):
 1. ~~Build the full marker allocation~~ — built in Phase 2, committed as `39b1a2528ef8c0700f87f4905f6bc0b51e1f1f75`.
 2. ~~Implement the orchestration~~ — importer, planning, seed guard and combined-assembly interface implemented and tested in Phase 2, committed in the same commit.
 3. ~~Dry-run the full stages offline~~, ~~freeze the final configuration~~ and ~~lift the generation block~~ — done 2026-09-23.
-4. ~~Run the authorised 96-call scenario stage~~ and ~~record its human review~~ — done 2026-09-23: 94 approved, 2 sent to redraft (`data/full/scenario_approvals_full_v2.yaml`).
-5. ~~Prepare a separate redraft-stage authorisation mechanism~~ — done 2026-09-24: `data/full/authorizations/scenario_redraft_v1.yaml`, `status: proposed`. **Next: the researcher decides whether to authorise it** — set `status: authorized` and record `authorized_by`/`authorized_at` — before the two redraft calls for `technology_08_v1` and `technology_13_v1` can be sent. Group drafting needs its own separate authorisation record too, and is refused until every one of the 96 scenarios is approved.
-6. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
+4. ~~Run the authorised 96-call scenario stage~~ and ~~record its human review~~ — done 2026-09-23: 94 approved, 2 sent to redraft.
+5. ~~Prepare, authorise and run the two redraft calls~~, ~~record their human review~~ — done 2026-09-24: both calls ran successfully and both replacements are approved. **All 96 new scenarios are now approved.**
+6. **Next: authorise the group stage.** It needs its own separately tracked authorisation record, on the same fail-closed mechanism — proposed, reviewed and explicitly authorised before any group call is sent. None exists yet, and none is authorised by anything above.
+7. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
 
 ## Open, not resolved
 

@@ -1491,7 +1491,12 @@ def _next_gate(made_scenarios: int, total_scenarios: int, made_groups: int, tota
 def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
     """Read-only: the seed, what is new, the eventual corpus, and what blocks it."""
     p = seed.provenance
-    scenarios = recorded_scenarios(store) if store.log.path.is_file() else {}
+    # Supersession-resolved: a scenario a redraft replaced must be judged by
+    # its current, accepted text and call, exactly as `approvals`/
+    # `scenario-review` already judge it (`_current_scenarios`) — otherwise
+    # this view and those disagree about a redraft the approvals file has
+    # since caught up with.
+    scenarios = current_scenarios(store) if store.log.path.is_file() else {}
     groups = recorded_groups(store) if store.log.path.is_file() else {}
     made_scenarios = sum(1 for sid in plan.new_scenario_ids
                          if (scenarios.get(sid) or {}).get("scenario_text"))

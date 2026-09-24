@@ -1155,24 +1155,21 @@ technology_07_v2:
   scenario_text_sha256: 22abdc1b0eb9634e17a0896d2a1d26d0d33a8c9da64447f58634841986054c04
   topic_bank_content_hash: 92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea
 technology_08_v1:
-  call_id: 9b06829bdc91fde71ad906331260cf64b51f7e728da870c9db3b6c73c51541af
+  call_id: 9dc3b607703738fe6bec59e7a165e44315c87a90e88f569d9e281a898963e557
   config_content_hash: 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94
-  decided_at: '2026-09-23'
+  decided_at: '2026-09-24'
   decided_by: Vidhi Bhutani
-  decision: redraft
+  decision: approved
   judgements:
     both_facts_stated: true
     length_without_filler: true
-    no_added_facts_or_quantities: false
+    no_added_facts_or_quantities: true
     no_letter_or_list_labels: true
     no_recommendation_or_hint: true
     options_neutral_and_equal_weight: true
     self_contained: true
-  reason: The draft says the smaller model has ‘less overall capability.’ The supplied
-    fact supports only the narrower claim that the most capable model makes fewer
-    mistakes on complex drafting and legal questions. The redraft must not generalize
-    this into a claim about overall capability.
-  scenario_text_sha256: d4b42279ce3a0dbc97b5ab3b106ee38cc61db595c12f8accf73802f823c3d74c
+  reason: null
+  scenario_text_sha256: d52a7ecf337798706a56680d97271aa730a2e1d4a990a1e64c1b03afa97c8d77
   topic_bank_content_hash: 92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea
 technology_08_v2:
   call_id: b8dce3994547ca0a634e547bd765e65c6373583b91fcf77d34746a470e712f84
@@ -1328,23 +1325,21 @@ technology_12_v2:
   scenario_text_sha256: 2180b8686b93d91b51b2432853624b9930425a12e5b2bb2ab55c8d187ec8d561
   topic_bank_content_hash: 92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea
 technology_13_v1:
-  call_id: 20ef0cb34d31fb4c1f80b00520c2210606e2a9d5fa533be9a2a4fa91509df672
+  call_id: 842b455255a43ad4ca6adb135023fc6863bdeb24da577dd38548d8c20e9f0d45
   config_content_hash: 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94
-  decided_at: '2026-09-23'
+  decided_at: '2026-09-24'
   decided_by: Vidhi Bhutani
-  decision: redraft
+  decision: approved
   judgements:
     both_facts_stated: true
     length_without_filler: true
-    no_added_facts_or_quantities: false
+    no_added_facts_or_quantities: true
     no_letter_or_list_labels: true
     no_recommendation_or_hint: true
     options_neutral_and_equal_weight: true
     self_contained: true
-  reason: The draft adds an unspecified safeguard by saying officers would still consider
-    the generated content. The brief does not establish an officer-review safeguard,
-    and adding one makes the AI option appear safer.
-  scenario_text_sha256: b2b201e48b2a23b3b3c86823367edc077a617cdcda11e02a93fcbae9e9b36e17
+  reason: null
+  scenario_text_sha256: 18b160537720ea1a0b805c522e1810b9070073359c9b376fcb5d1e185aeebf46
   topic_bank_content_hash: 92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea
 technology_13_v2:
   call_id: 0ed95a6d054236449230ea62e3acd9320b46197f2e996734b265bb164f77d65e
