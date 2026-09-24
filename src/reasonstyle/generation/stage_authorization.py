@@ -50,10 +50,12 @@ from typing import Any
 
 import yaml
 
+from ..corpus.schemas import CORE_CONDITIONS
 from ..hashing import file_sha256
 
 __all__ = [
     "StageAuthorizationError",
+    "group_stage_authorization_problems",
     "load_stage_authorization",
     "stage_authorization_problems",
 ]
@@ -114,24 +116,12 @@ def _is_iso_timestamp(value: Any) -> bool:
         return False
 
 
-def stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
-                                 record_version: str, targets: list[Any],
-                                 approvals_path: str | Path) -> list[str]:
-    """Every reason this record does not authorise this call, right now.
-
-    Checked before any credential is read or backend is built — the caller is
-    expected to refuse on a non-empty list before doing either. Every check is
-    independent and all that apply are reported together, so a record wrong
-    in several ways is not fixed one refusal at a time. Nothing here raises:
-    a missing, null or wrongly shaped value is reported as a problem, exactly
-    like an explicit mismatch, so a caller can rely on this function to
-    finish and return a list, never to throw.
-
-    ``targets`` is the *live* redraft-target list — ``RedraftTarget`` (or
-    anything with ``scenario_id``, ``original_call_id`` and
-    ``original_text_sha256``) — computed fresh from the current approvals
-    file, never taken from the record: the record is checked against what is
-    actually true now, not asked to vouch for itself.
+def _common_record_problems(record: dict[str, Any], *, cfg, kind: str, record_version: str,
+                            approvals_path: Path, target_count: int) -> list[str]:
+    """The checks that do not depend on what shape a target takes: identical
+    for a scenario-redraft record and a group-stage record alike. Kept in one
+    place so the two kinds of record are held to the same standard rather
+    than two independently-maintained copies drifting apart.
     """
     problems: list[str] = []
 
@@ -159,7 +149,6 @@ def stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
         problems.append(
             f"the stage authorisation's config field must be a mapping with "
             f"config_version and config_content_hash; it is {type(cfg_block).__name__}")
-        cfg_block = {}
     else:
         if cfg_block.get("config_version") != cfg.config_version:
             problems.append(
@@ -176,7 +165,6 @@ def stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
         problems.append(f"the stage authorisation covers kind {record.get('kind')!r}, "
                         f"not {kind!r}")
 
-    approvals_path = Path(approvals_path)
     recorded_approvals_path = record.get("approvals_file")
     # Resolved, not just compared as written: a caller may pass an absolute
     # path where the record names a relative one (or vice versa) and still
@@ -204,9 +192,9 @@ def stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
     if not _is_plain_int(ceiling) or ceiling <= 0:
         problems.append(
             f"max_paid_calls must be a required positive integer; it is {ceiling!r}")
-    elif ceiling != len(targets):
+    elif ceiling != target_count:
         problems.append(
-            f"max_paid_calls is {ceiling}; it must exactly equal the {len(targets)} "
+            f"max_paid_calls is {ceiling}; it must exactly equal the {target_count} "
             f"authorised target(s), with no unused authorisation headroom")
 
     per_target = record.get("calls_per_target")
@@ -214,6 +202,32 @@ def stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
         problems.append(
             f"calls_per_target must be a required integer equal to exactly 1; it is "
             f"{per_target!r}")
+
+    return problems
+
+
+def stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
+                                 record_version: str, targets: list[Any],
+                                 approvals_path: str | Path) -> list[str]:
+    """Every reason this record does not authorise this call, right now.
+
+    Checked before any credential is read or backend is built — the caller is
+    expected to refuse on a non-empty list before doing either. Every check is
+    independent and all that apply are reported together, so a record wrong
+    in several ways is not fixed one refusal at a time. Nothing here raises:
+    a missing, null or wrongly shaped value is reported as a problem, exactly
+    like an explicit mismatch, so a caller can rely on this function to
+    finish and return a list, never to throw.
+
+    ``targets`` is the *live* redraft-target list — ``RedraftTarget`` (or
+    anything with ``scenario_id``, ``original_call_id`` and
+    ``original_text_sha256``) — computed fresh from the current approvals
+    file, never taken from the record: the record is checked against what is
+    actually true now, not asked to vouch for itself.
+    """
+    approvals_path = Path(approvals_path)
+    problems = _common_record_problems(record, cfg=cfg, kind=kind, record_version=record_version,
+                                       approvals_path=approvals_path, target_count=len(targets))
 
     declared = record.get("targets")
     if not isinstance(declared, dict):
@@ -255,5 +269,125 @@ def stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
                 f"{target.scenario_id}: the stage authorisation's rejected-text SHA-256 does "
                 f"not match the text the approvals file currently holds for it — a stale "
                 f"binding")
+
+    return problems
+
+
+def group_stage_authorization_problems(record: dict[str, Any], *, cfg, kind: str,
+                                       record_version: str, targets: list[Any],
+                                       approvals_path: str | Path,
+                                       allocation_path: str | Path,
+                                       allocation_content_hash: str) -> list[str]:
+    """The group-stage counterpart of :func:`stage_authorization_problems`.
+
+    Shares every kind-agnostic check with the redraft record (via
+    :func:`_common_record_problems`) and adds what a redraft record never
+    needed: ``cells_per_call`` fixed to exactly the four experimental cells
+    (``CORE_CONDITIONS``), a binding to the frozen marker allocation (by path and by
+    its own order-independent content hash — an edited or rebuilt allocation
+    stales every target this record names, the same way an edited approvals
+    file does), and a per-target binding keyed by
+    ``(scenario_id, supported_option)`` naming the exact approved scenario
+    call and text a group was drafted from *and* the exact frozen-allocation
+    marker family, marker string and realization id — nothing here ever lets
+    a group's marker assignment differ from the allocation the corpus design
+    fixed before any drafting began.
+
+    ``targets`` is the *live* group-target list — anything with
+    ``scenario_id``, ``supported_option``, ``scenario_call_id``,
+    ``scenario_text_sha256``, ``marker_family``, ``marker_string`` and
+    ``marker_realization_id`` — built fresh from the current approvals file
+    and the frozen allocation, never taken from the record.
+    """
+    approvals_path = Path(approvals_path)
+    allocation_path = Path(allocation_path)
+    problems = _common_record_problems(record, cfg=cfg, kind=kind, record_version=record_version,
+                                       approvals_path=approvals_path, target_count=len(targets))
+
+    recorded_allocation_path = record.get("allocation_file")
+    same_allocation_file = (_is_nonempty_str(recorded_allocation_path)
+                            and Path(recorded_allocation_path).resolve()
+                            == allocation_path.resolve())
+    if not same_allocation_file:
+        problems.append(
+            f"the stage authorisation is bound to allocation file "
+            f"{recorded_allocation_path!r}, not {str(allocation_path)!r}")
+    elif record.get("allocation_content_hash") != allocation_content_hash:
+        problems.append(
+            "the stage authorisation's allocation content hash does not match the current "
+            "frozen allocation — either has changed since the authorisation was granted, so "
+            "the marker bindings it names can no longer be trusted")
+
+    # Exactly the four experimental cells, once each, in their canonical
+    # order: a record naming any other set cannot be the one reviewed.
+    cells = record.get("cells_per_call")
+    if not (isinstance(cells, list) and cells == list(CORE_CONDITIONS)):
+        problems.append(
+            f"cells_per_call must be exactly {list(CORE_CONDITIONS)}; it is {cells!r}")
+
+    declared = record.get("targets")
+    if not isinstance(declared, dict):
+        problems.append(
+            f"the stage authorisation's targets field must be a mapping of scenario id to "
+            f"per-option target entries; it is {type(declared).__name__}")
+        declared = {}
+
+    def _target_key(t) -> tuple[str, str]:
+        return (t.scenario_id, t.supported_option)
+
+    live_keys = {_target_key(t) for t in targets}
+    declared_keys: set[tuple[str, str]] = set()
+    malformed_scenarios: list[str] = []
+    for scenario_id, per_option in declared.items():
+        if not isinstance(per_option, dict):
+            malformed_scenarios.append(scenario_id)
+            continue
+        for option in per_option:
+            declared_keys.add((scenario_id, option))
+    if malformed_scenarios:
+        problems.append(
+            f"{sorted(malformed_scenarios)}: each scenario's entry in targets must itself be "
+            f"a mapping of supported_option to a target entry")
+
+    missing = sorted(live_keys - declared_keys)
+    if missing:
+        problems.append(
+            f"the plan names {missing} as new groups, but the stage authorisation does not "
+            f"name {'them' if len(missing) > 1 else 'it'}")
+    extra = sorted(declared_keys - live_keys)
+    if extra:
+        problems.append(
+            f"the stage authorisation names {extra}, which is not among the plan's new groups")
+
+    for target in targets:
+        scenario_id, option = _target_key(target)
+        per_option = declared.get(scenario_id)
+        if not isinstance(per_option, dict):
+            continue                       # already reported above
+        entry = per_option.get(option)
+        if entry is None:
+            continue                       # already reported above, as missing
+        if not isinstance(entry, dict):
+            problems.append(
+                f"{scenario_id}/{option}: its target entry must be a mapping with "
+                f"scenario_call_id, scenario_text_sha256, marker_family, marker_string and "
+                f"marker_realization_id; it is {type(entry).__name__}")
+            continue
+        if entry.get("scenario_call_id") != target.scenario_call_id:
+            problems.append(
+                f"{scenario_id}/{option}: the stage authorisation names scenario call "
+                f"{str(entry.get('scenario_call_id'))[:12]}, but the approved scenario call is "
+                f"now {target.scenario_call_id[:12]} — a stale binding")
+        if entry.get("scenario_text_sha256") != target.scenario_text_sha256:
+            problems.append(
+                f"{scenario_id}/{option}: the stage authorisation's scenario-text SHA-256 does "
+                f"not match the approved text currently on record — a stale binding")
+        for field in ("marker_family", "marker_string", "marker_realization_id"):
+            if entry.get(field) != getattr(target, field):
+                problems.append(
+                    f"{scenario_id}/{option}: the stage authorisation's {field} "
+                    f"({entry.get(field)!r}) does not match the frozen allocation's "
+                    f"({getattr(target, field)!r}) — a group's marker assignment is fixed by "
+                    f"the allocation, never by this record")
 
     return problems

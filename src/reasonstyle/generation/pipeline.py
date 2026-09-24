@@ -42,6 +42,7 @@ from ..corpus.schemas import CORE_CONDITIONS, Cell, DirectionBlock
 from ..corpus.segmentation import Segmenter
 from ..corpus.validate import endorsement_text, validate_group
 from ..corpus.validate import validate_scenario_text
+from ..hashing import sha256_of
 from .allocation import GroupAllocation
 from .approvals import APPROVED as APPROVAL_GRANTED
 from .approvals import approval_status
@@ -50,7 +51,14 @@ from .backends import request_payload
 from .environment import CachedModel, describe_run, generator_endpoint
 from .environment import generator_model_id
 from .log import GenerationLog, LogEntry, utc_now
-from .requests import DraftRequest, ResponseRejected, group_request, parse_response, repair_request
+from .requests import (
+    DraftRequest,
+    RequestError,
+    ResponseRejected,
+    group_request,
+    parse_response,
+    repair_request,
+)
 from .requests import scenario_request
 
 __all__ = [
@@ -58,11 +66,17 @@ __all__ = [
     "ACCEPTED",
     "Attempt",
     "CallStore",
+    "GROUP_STAGE_AUTHORIZATION_RECORD_VERSION",
+    "GROUP_STAGE_KIND",
+    "GroupStageTarget",
     "NEEDS_MANUAL_REVIEW",
     "PipelineAbort",
     "REFUSED",
     "TRANSPORT_ERROR",
     "StageResult",
+    "group_stage_targets",
+    "run_initial_group_stage",
+    "transport_blocked_group_targets",
     "group_diagnostics",
     "draft_group",
     "draft_scenario",
@@ -648,14 +662,31 @@ def draft_scenario(topic, variant_id: int, cfg: ExperimentConfig, segmenter: Seg
 
 def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAllocation,
                 cfg: ExperimentConfig, segmenter: Segmenter, backend, store: CallStore,
-                *, allow_live: bool = False) -> StageResult:
+                *, allow_live: bool = False, max_calls_per_group: int | None = None,
+                stage_authorization: dict[str, Any] | None = None) -> StageResult:
     """One group: a draft, then validator-driven repairs until the budget ends.
 
     Stops the moment the group is machine-valid, and after
-    ``corpus.repair.max_calls_per_group`` calls at the latest. A group that is
-    still failing is ``needs_manual_review`` and stops there.
+    ``corpus.repair.max_calls_per_group`` calls at the latest (or
+    ``max_calls_per_group``, when a caller overrides it — an initial-only
+    group stage passes ``1``, so this same loop, unmodified, makes exactly
+    one draft call and never repairs: on that one call, anything short of
+    machine-valid is immediately ``needs_manual_review``, for a person or a
+    later, separately authorised repair stage to decide about). A group that
+    is still failing at the ceiling is ``needs_manual_review`` and stops there.
+
+    ``stage_authorization`` is the loaded, already-validated record that
+    permitted this call, when one applies (never the frozen configuration's
+    own authorisation for a kind it excludes). Its file SHA-256 is recorded
+    on every resulting log entry, successful, rejected *or*
+    transport-failed, exactly as for a redraft
+    (:mod:`reasonstyle.generation.stage_authorization`).
     """
-    budget = cfg.raw["corpus"]["repair"]["max_calls_per_group"]
+    budget = (max_calls_per_group if max_calls_per_group is not None
+             else cfg.raw["corpus"]["repair"]["max_calls_per_group"])
+    stage_auth_extra = ({"stage_authorization_path": str(stage_authorization["_path"]),
+                        "stage_authorization_sha256": stage_authorization["_file_sha256"]}
+                        if stage_authorization is not None else {})
     option = allocation.supported_option
     loc = {"decision_id": topic.decision_id,
            "scenario_id": f"{topic.decision_id}_v{variant_id}"}
@@ -698,7 +729,8 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
             store, request, backend, cfg, allow_live=allow_live)
 
         if status == "error":
-            store.record_transport_failure(request, error or "transport failure")
+            store.record_transport_failure(request, error or "transport failure",
+                                           extra=stage_auth_extra)
             raise PipelineAbort(f"{topic.decision_id} v{variant_id} {option}: {error}")
         if status == "refused":
             attempts.append(Attempt(request.call_id, request.kind, attempt_no, status, REFUSED,
@@ -737,7 +769,7 @@ def draft_group(topic, variant_id: int, scenario_text: str, allocation: GroupAll
         store.record(request, status=status, outcome=outcome, fields=fields, error=error,
                      error_codes=errors, warning_codes=warnings, response=response,
                      meta=_stored_meta(store, request) if reused else None,
-                     no_progress=no_progress)
+                     no_progress=no_progress, extra=dict(stage_auth_extra) or None)
         attempts.append(Attempt(request.call_id, request.kind, attempt_no, status, outcome,
                                 request.prompt_sha256, errors, warnings, error, reused,
                                 no_progress=no_progress))
@@ -935,6 +967,196 @@ def gate_problems_for(topics, store: CallStore, cfg: ExperimentConfig, *,
                 detail = "; ".join(r for r in reasons if r)
                 problems.append(f"{scenario_id}: {state}" + (f" ({detail})" if detail else ""))
     return problems
+
+
+#: The ``record_version`` an initial-group-stage authorisation record must
+#: declare (``stage_authorization.group_stage_authorization_problems``).
+#: Versioned independently of the redraft record's own version: a schema
+#: change to one authorisation kind is not a schema change to the other.
+GROUP_STAGE_AUTHORIZATION_RECORD_VERSION = "group_stage_v1"
+#: The ``kind`` an initial-group-stage authorisation record must declare —
+#: distinct from the plain ``"group"`` the frozen configuration's own
+#: (never-granted) authorisation names, so a record for one can never be
+#: mistaken for, or reused as, a record for the other.
+GROUP_STAGE_KIND = "group_stage_initial"
+
+
+@dataclass(frozen=True, slots=True)
+class GroupStageTarget:
+    """One ``(scenario, supported option)`` group an initial group-stage
+    authorisation may cover, bound to the approved scenario it draws from and
+    the frozen allocation entry that fixes its marker."""
+
+    scenario_id: str
+    decision_id: str
+    variant_id: int
+    supported_option: str
+    scenario_call_id: str
+    scenario_text_sha256: str
+    marker_family: str
+    marker_string: str
+    marker_realization_id: str
+
+
+def group_stage_targets(new_groups: tuple[tuple[str, str], ...], approvals: dict,
+                        allocation, *, config_content_hash: str, topic_bank_content_hash: str,
+                        scenarios: dict[str, dict[str, Any]]) -> list["GroupStageTarget"]:
+    """The live group-stage targets, one per ``(scenario_id, supported_option)``
+    a plan names as new, each bound to the *current* scenario evidence — the
+    call and text in ``scenarios``, the snapshot the group prompts will
+    actually be built from — and to the frozen allocation's marker for it.
+
+    Every scenario must have usable current text from an accepted call with
+    no machine error, and :func:`approval_status` must find it approved
+    against that exact call id, that exact text's SHA-256, this
+    configuration and this topic bank — the same check the curator gate
+    makes. The target's call id and text hash are then taken from the
+    snapshot itself, never copied from the approval record, so evidence that
+    has drifted from what was approved cannot pass as approved.
+
+    Never taken from a stage-authorisation record — a record is checked
+    against what this function reports as true now, not the other way
+    round. Any failing scenario refuses the whole set: an initial group
+    stage is all-or-nothing over its targets, the same as the curator gate it
+    stands in for. Every failure is reported together.
+    """
+    problems: list[str] = []
+    verified: dict[str, dict[str, Any]] = {}
+    for scenario_id in sorted({scenario_id for scenario_id, _ in new_groups}):
+        record = scenarios.get(scenario_id) or {}
+        text = record.get("scenario_text")
+        if not isinstance(text, str) or not text:
+            problems.append(f"{scenario_id}: no usable current scenario text")
+            continue
+        if record.get("outcome") != ACCEPTED or record.get("error_codes"):
+            problems.append(f"{scenario_id}: the current scenario is {record.get('outcome')!r} "
+                            f"with {len(record.get('error_codes') or [])} machine error(s)")
+            continue
+        state, reasons = approval_status(
+            scenario_id, text, record.get("call_id") or "", approvals,
+            config_content_hash=config_content_hash,
+            topic_bank_content_hash=topic_bank_content_hash)
+        if state != APPROVAL_GRANTED:
+            detail = "; ".join(r for r in reasons if r)
+            problems.append(f"{scenario_id}: not approved against its current evidence: {state}"
+                            + (f" ({detail})" if detail else ""))
+            continue
+        verified[scenario_id] = {"call_id": record["call_id"], "text_sha256": sha256_of(text)}
+    if problems:
+        raise RequestError("no group-stage target can be built: " + "; ".join(problems))
+
+    targets = []
+    for scenario_id, option in sorted(new_groups):
+        decision_id, _, variant = scenario_id.rpartition("_v")
+        alloc_entry = allocation.for_group(scenario_id, option)
+        targets.append(GroupStageTarget(
+            scenario_id=scenario_id, decision_id=decision_id, variant_id=int(variant),
+            supported_option=option, scenario_call_id=verified[scenario_id]["call_id"],
+            scenario_text_sha256=verified[scenario_id]["text_sha256"],
+            marker_family=alloc_entry.marker_family, marker_string=alloc_entry.marker_string,
+            marker_realization_id=alloc_entry.marker_realization_id))
+    return targets
+
+
+def transport_blocked_group_targets(store: CallStore, targets: list["GroupStageTarget"],
+                                    stage_authorization_sha256: str) -> list["GroupStageTarget"]:
+    """Group targets whose one call under *this exact* stage authorisation
+    already ended in a transport failure — the group-stage counterpart of
+    :func:`reasonstyle.generation.redraft.transport_blocked_targets`; see
+    that function's docstring for why the ordinary "a transport failure
+    recovers as nothing happened, and may be retried next run" pipeline rule
+    is deliberately overridden here.
+    """
+    blocked = []
+    for target in targets:
+        for entry in store.log.entries():
+            if (entry.get("kind") == "group"
+                    and entry.get("decision_id") == target.decision_id
+                    and entry.get("variant_id") == target.variant_id
+                    and entry.get("supported_option") == target.supported_option
+                    and entry.get("status") == "error"
+                    and (entry.get("extra") or {}).get("stage_authorization_sha256")
+                        == stage_authorization_sha256):
+                blocked.append(target)
+                break
+    return blocked
+
+
+def run_initial_group_stage(topics, targets: list["GroupStageTarget"], allocation_groups,
+                            cfg: ExperimentConfig, segmenter: Segmenter, backend,
+                            store: CallStore, *, scenarios: dict[str, dict[str, Any]],
+                            allow_live: bool = False, variants: tuple[int, ...] = (1, 2),
+                            stage_authorization: dict[str, Any] | None = None
+                            ) -> list[StageResult]:
+    """The initial group stage, alone: exactly one call per
+    ``(scenario, supported option)`` group this run's topics name — never a
+    repair, never a second attempt for the same target. Reuses
+    :func:`draft_group` with ``max_calls_per_group=1``, so the one
+    repair-loop code path every group stage already runs through is what
+    runs here too, simply stopped after its first iteration.
+
+    Makes no scenario call, and drafts nothing outside its own topics — the
+    same seed guard as :func:`run_group_stage`. ``targets`` (built by
+    :func:`group_stage_targets`) stands in for the curator-gate check
+    :func:`run_group_stage` would otherwise make: the caller is expected to
+    have validated it against a stage authorisation (or otherwise) before
+    calling this. When ``stage_authorization`` is given, a target already
+    blocked by :func:`transport_blocked_group_targets` under this exact
+    authorisation aborts the stage before any dispatch is attempted for it.
+
+    ``scenarios`` must be the same current-scenario snapshot ``targets`` was
+    built from. Before anything is dispatched, every group this run would
+    draft must be exactly one of ``targets``, and the scenario it would be
+    drafted from must be accepted, free of machine errors, and carry that
+    target's call id and text SHA-256; any
+    mismatch aborts the whole stage with nothing sent.
+    """
+    _refuse_seed_topics(topics, store)
+    planned = {(f"{topic.decision_id}_v{variant_id}", option)
+               for topic in topics for variant_id in variants for option in ("opt_1", "opt_2")}
+    by_target = {(t.scenario_id, t.supported_option): t for t in targets}
+    if planned != set(by_target):
+        raise PipelineAbort(
+            f"the groups this run would draft do not match its targets exactly (unauthorised: "
+            f"{sorted(planned - set(by_target))}; not planned: "
+            f"{sorted(set(by_target) - planned)}); nothing was dispatched")
+    for (scenario_id, option), target in sorted(by_target.items()):
+        record = scenarios.get(scenario_id) or {}
+        text = record.get("scenario_text")
+        if (record.get("call_id") != target.scenario_call_id or not isinstance(text, str)
+                or sha256_of(text) != target.scenario_text_sha256
+                or record.get("outcome") != ACCEPTED or record.get("error_codes")):
+            raise PipelineAbort(
+                f"{scenario_id}/{option}: the scenario this run would draft from is not the "
+                f"verified, accepted, error-free call and text its target is bound to; nothing "
+                f"was dispatched")
+    if stage_authorization is not None:
+        blocked = transport_blocked_group_targets(
+            store, targets, stage_authorization["_file_sha256"])
+        if blocked:
+            names = ", ".join(f"{t.scenario_id}/{t.supported_option}" for t in blocked)
+            raise PipelineAbort(
+                f"{names}: a transport failure already spent this target's one authorised "
+                f"call under stage authorisation {stage_authorization['_path']} "
+                f"({stage_authorization['_file_sha256'][:12]}); nothing was dispatched. A "
+                f"new, explicit retry authorisation record is required before this target "
+                f"can be dispatched again")
+
+    by_group = {(g.decision_id, g.variant_id, g.supported_option): g for g in allocation_groups}
+    results = []
+    for topic in sorted(topics, key=lambda t: t.decision_id):
+        for variant_id in variants:
+            scenario_id = f"{topic.decision_id}_v{variant_id}"
+            text = scenarios[scenario_id]["scenario_text"]
+            for option in ("opt_1", "opt_2"):
+                group = by_group.get((topic.decision_id, variant_id, option))
+                if group is None:
+                    raise PipelineAbort(f"no marker allocation for {scenario_id} {option}")
+                results.append(draft_group(topic, variant_id, text, group, cfg, segmenter,
+                                           backend, store, allow_live=allow_live,
+                                           max_calls_per_group=1,
+                                           stage_authorization=stage_authorization))
+    return results
 
 
 def run_pilot(topics, allocation_groups, cfg: ExperimentConfig, segmenter: Segmenter,

@@ -102,13 +102,18 @@ from reasonstyle.generation.assemble import (
 )
 from reasonstyle.generation.pipeline import (
     ACCEPTED,
+    GROUP_STAGE_AUTHORIZATION_RECORD_VERSION,
+    GROUP_STAGE_KIND,
     NEEDS_MANUAL_REVIEW,
     PipelineAbort,
     gate_problems_for,
+    group_stage_targets,
     recorded_groups,
     recorded_scenarios,
     run_group_stage,
+    run_initial_group_stage,
     run_scenario_stage,
+    transport_blocked_group_targets,
 )
 from reasonstyle.generation.group_review import (
     MACHINE_VALID,
@@ -125,6 +130,7 @@ from reasonstyle.generation.redraft import (
 )
 from reasonstyle.generation.stage_authorization import (
     StageAuthorizationError,
+    group_stage_authorization_problems,
     load_stage_authorization,
     stage_authorization_problems,
 )
@@ -607,7 +613,32 @@ def reused_scenarios_problem(cfg, what: str) -> str | None:
 
 
 def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) -> int:
-    """One live stage: scenarios, or groups. Never both."""
+    """One live stage: scenarios, or groups. Never both.
+
+    A group stage can be covered by two mechanisms, exactly as a redraft can
+    (``_redraft``'s docstring): no ``--stage-authorization`` leaves it to the
+    frozen configuration's own ``generation_authorization`` (refused, for
+    ``configs/frozen/v2_full.yaml``, since it excludes ``group``); with one, a
+    separate, tracked, fail-closed record is checked instead
+    (``group_stage_authorization_problems``), and only a record whose every
+    check passes lets the send path accept a ``group`` call at all — for
+    exactly the initial draft of its named targets, never a repair.
+    ``--stage-authorization`` on the scenario stage is refused outright: that
+    stage is what the configuration's own authorisation already covers.
+    """
+    stage_group_auth_record = None
+    if kind == "groups" and args.stage_authorization:
+        try:
+            stage_group_auth_record = load_stage_authorization(args.stage_authorization)
+        except StageAuthorizationError as exc:
+            print(f"refusing; nothing was sent: {exc}", file=sys.stderr)
+            return 1
+    elif kind == "scenarios" and args.stage_authorization:
+        print("refusing; nothing was sent: --stage-authorization applies to the groups "
+              "stage only; the scenario stage is governed by the frozen configuration's own "
+              "generation_authorization", file=sys.stderr)
+        return 1
+
     if kind == "scenarios":
         refusal = reused_scenarios_problem(cfg, "the scenario stage")
         if refusal:
@@ -620,26 +651,72 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
     if kind == "scenarios":
         print(f"stage        scenarios: {expected_scenarios} calls at most, one per scenario, "
               f"no repair path")
+    elif stage_group_auth_record is not None:
+        print(f"stage        groups (initial only, no repair): {expected_groups} call(s) at "
+              f"most, one per group")
     else:
         print(f"stage        groups: {expected_groups} drafts, at most "
               f"{expected_groups * budget} calls including repairs")
     print(f"config       {cfg.config_version} {cfg.content_hash[:12]}")
     print(f"out          {store.directory}")
 
-    planned = expected_scenarios if kind == "scenarios" else expected_groups * budget
-    refusals = paid_call_problems(cfg, "scenario" if kind == "scenarios" else "group",
-                                      planned)
-    if refusals:
-        print("\nrefusing; nothing was sent, no credential was read and no backend was built:",
-              file=sys.stderr)
-        for refusal in refusals:
-            print(f"  - {refusal}", file=sys.stderr)
-        return 1
-    auth = authorization(cfg)
-    if auth:
-        print(f"authorised   {auth['scope']}: at most {auth['max_paid_calls']} paid call(s), "
-              f"{auth['calls_per_scenario']} per scenario, recorded by {auth['authorized_by']} "
-              f"on {auth['authorized_at']}")
+    group_targets = group_scenarios = None
+    if kind == "groups" and stage_group_auth_record is not None:
+        # ONE snapshot of the current scenario evidence: the targets are
+        # verified against it here, and the group prompts are built from this
+        # same snapshot below -- never re-read in between.
+        group_scenarios = _current_scenarios(args, cfg, store)
+        try:
+            group_targets = group_stage_targets(
+                tuple((f"{topic.decision_id}_v{variant_id}", option)
+                      for topic in topics for variant_id in variants
+                      for option in ("opt_1", "opt_2")),
+                _gate(args, cfg, store)[0], allocation, config_content_hash=cfg.content_hash,
+                topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
+                scenarios=group_scenarios)
+        except RequestError as exc:
+            print(f"refusing: {exc}", file=sys.stderr)
+            return 1
+        problems = group_stage_authorization_problems(
+            stage_group_auth_record, cfg=cfg, kind=GROUP_STAGE_KIND,
+            record_version=GROUP_STAGE_AUTHORIZATION_RECORD_VERSION, targets=group_targets,
+            approvals_path=args.approvals_file, allocation_path=args.allocation,
+            allocation_content_hash=allocation.content_hash)
+        if problems:
+            print("refusing; nothing was sent:", file=sys.stderr)
+            for problem in problems:
+                print(f"  - {problem}", file=sys.stderr)
+            return 1
+        blocked = transport_blocked_group_targets(
+            store, group_targets, stage_group_auth_record["_file_sha256"])
+        if blocked:
+            print("refusing; nothing was sent:", file=sys.stderr)
+            for target in blocked:
+                print(f"  - {target.scenario_id}/{target.supported_option}: a transport "
+                      f"failure already spent this target's one authorised call under this "
+                      f"exact stage authorisation; a new, explicit retry authorisation record "
+                      f"is required before it can be dispatched again", file=sys.stderr)
+            return 1
+        # Only a fully validated stage authorisation widens the send path,
+        # and only to the one kind it covers.
+        store.allowed_kinds = frozenset({"group"})
+        print(f"authorised by stage authorisation {stage_group_auth_record['_path']} "
+              f"{stage_group_auth_record['_file_sha256'][:12]}")
+    else:
+        planned = expected_scenarios if kind == "scenarios" else expected_groups * budget
+        refusals = paid_call_problems(cfg, "scenario" if kind == "scenarios" else "group",
+                                          planned)
+        if refusals:
+            print("\nrefusing; nothing was sent, no credential was read and no backend was "
+                  "built:", file=sys.stderr)
+            for refusal in refusals:
+                print(f"  - {refusal}", file=sys.stderr)
+            return 1
+        auth = authorization(cfg)
+        if auth:
+            print(f"authorised   {auth['scope']}: at most {auth['max_paid_calls']} paid "
+                  f"call(s), {auth['calls_per_scenario']} per scenario, recorded by "
+                  f"{auth['authorized_by']} on {auth['authorized_at']}")
 
     problems = live_problems(args.send, cfg)
     if problems:
@@ -686,6 +763,12 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
             results = run_scenario_stage(topics, cfg, segmenter, backend, store,
                                          allow_live=True, variants=variants)
             ceiling = expected_scenarios
+        elif stage_group_auth_record is not None:
+            results = run_initial_group_stage(
+                topics, group_targets, allocation.groups, cfg, segmenter, backend, store,
+                scenarios=group_scenarios, allow_live=True,
+                variants=variants, stage_authorization=stage_group_auth_record)
+            ceiling = len(group_targets)
         else:
             source = scenario_source_spec(cfg)
             results = run_group_stage(

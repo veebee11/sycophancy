@@ -97,12 +97,18 @@ from .pipeline import (
     ACCEPTED,
     Attempt,
     CallStore,
+    GROUP_STAGE_AUTHORIZATION_RECORD_VERSION,
+    GROUP_STAGE_KIND,
+    GroupStageTarget,
     NEEDS_MANUAL_REVIEW,
     PipelineAbort,
     StageResult,
     draft_group,
     draft_scenario,
+    group_stage_targets,
+    run_initial_group_stage,
     run_pilot,
+    transport_blocked_group_targets,
 )
 from .redraft import (
     STAGE_AUTHORIZATION_RECORD_VERSION,
@@ -123,6 +129,7 @@ from .scenario_corrections import (
 )
 from .stage_authorization import (
     StageAuthorizationError,
+    group_stage_authorization_problems,
     load_stage_authorization,
     stage_authorization_problems,
 )
@@ -177,9 +184,15 @@ __all__ = [
     "run_redraft_stage",
     "transport_blocked_targets",
     "StageResult",
+    "GROUP_STAGE_AUTHORIZATION_RECORD_VERSION",
+    "GROUP_STAGE_KIND",
+    "GroupStageTarget",
     "draft_group",
     "draft_scenario",
+    "group_stage_targets",
+    "run_initial_group_stage",
     "run_pilot",
+    "transport_blocked_group_targets",
     "BackendError",
     "BackendUnavailable",
     "CachedModel",
@@ -218,6 +231,7 @@ __all__ = [
     "vllm_payload",
     "write_request",
     "StageAuthorizationError",
+    "group_stage_authorization_problems",
     "load_stage_authorization",
     "stage_authorization_problems",
 ]
