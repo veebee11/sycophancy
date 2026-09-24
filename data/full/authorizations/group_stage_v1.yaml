@@ -32,11 +32,11 @@
 # evaluation and mechanistic analysis.
 
 record_version: group_stage_v1
-status: proposed
+status: authorized
 proposed_by: Vidhi Bhutani
 proposed_at: '2026-09-24'
-authorized_by: null
-authorized_at: null
+authorized_by: Vidhi Bhutani
+authorized_at: '2026-09-24'
 config:
   config_version: v2_full
   config_content_hash: 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94
