@@ -92,14 +92,22 @@ def test_every_added_decision_carries_the_recorded_approval():
         assert str(t.curation.curated_at) == "2026-09-21"
 
 
-def test_the_committed_bank_passes_without_sources():
-    findings = check()
+def test_the_committed_bank_passes_without_sources(tmp_path):
+    # `root=tmp_path` (empty): this checks the bank's own content — counts,
+    # uniqueness, pilot preservation, curation records — against an output
+    # root with nothing downstream in it, exactly like
+    # `test_nothing_generated_passes` below. The real `data/full/` now holds
+    # the authorised, reviewed scenario run, and checking against the real
+    # root would trip `E_BANK_DOWNSTREAM_EXISTS` correctly (see the dedicated
+    # tests for that guard) — a fact about the corpus lifecycle, not a defect
+    # in the bank text this test is meant to validate.
+    findings = check(root=tmp_path)
     assert codes(findings) == []
 
 
 @pytest.mark.skipif(not HAVE_SOURCES, reason="pinned source files not fetched")
-def test_every_committed_locator_points_at_something_real():
-    assert codes(check(raw_dir=RAW)) == []
+def test_every_committed_locator_points_at_something_real(tmp_path):
+    assert codes(check(raw_dir=RAW, root=tmp_path)) == []
 
 
 def test_every_pilot_record_is_carried_over_byte_for_byte():

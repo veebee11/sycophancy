@@ -80,7 +80,20 @@ from reasonstyle.generation import (
     server_settings_problems,
     write_request,
 )
-from reasonstyle.generation.approvals import approval_status, load_approvals
+from reasonstyle.generation.approvals import (
+    APPROVED,
+    BLOCKED,
+    PENDING,
+    REDRAFT,
+    STALE,
+    approval_status,
+    load_approvals,
+)
+# The approval gate's own "needs manual review" state, named explicitly and
+# distinctly from ``pipeline.NEEDS_MANUAL_REVIEW`` (the *group*-stage outcome,
+# imported below): the two happen to share a string today, but nothing here
+# should rely on that being true tomorrow.
+from reasonstyle.generation.approvals import NEEDS_MANUAL_REVIEW as SCENARIO_NEEDS_MANUAL_REVIEW
 from reasonstyle.generation.assemble import (
     AssemblyError,
     assemble_pilot,
@@ -1322,6 +1335,93 @@ def _preflight(args, cfg, bank, allocation, seed, plan) -> int:
     return 0
 
 
+def new_scenario_approval_counts(args, cfg, bank, plan, scenarios) -> tuple[dict[str, int], list[str]]:
+    """How the new scenarios' approval gate currently reads, one state per drafted scenario.
+
+    Counted live from the approvals file and this run's recorded scenario text
+    and machine findings — never from a stored claim. Only scenarios with
+    recorded text are counted; an undrafted scenario contributes nothing here
+    (``status`` already reports it separately as not yet generated).
+    """
+    approvals, gate_hash, _source = _gate(args, cfg, None)
+    bank_hash = content_hash(bank.model_dump(mode="json"))
+    counts: dict[str, int] = {}
+    redraft_ids: list[str] = []
+    for scenario_id in plan.new_scenario_ids:
+        record = scenarios.get(scenario_id) or {}
+        text = record.get("scenario_text")
+        if not text:
+            continue
+        state, _reasons = approval_status(
+            scenario_id, text, record.get("call_id"), approvals,
+            config_content_hash=gate_hash, topic_bank_content_hash=bank_hash,
+            machine_errors=len(record.get("error_codes") or []))
+        counts[state] = counts.get(state, 0) + 1
+        if state == REDRAFT:
+            redraft_ids.append(scenario_id)
+    return counts, sorted(redraft_ids)
+
+
+def _next_gate(made_scenarios: int, total_scenarios: int, made_groups: int, total_groups: int,
+              approval_counts: dict[str, int], redraft_ids: list[str]) -> str:
+    """The single next thing to do, derived from what is actually recorded now.
+
+    Priority, deliberately, is not the order ``approval_status`` happens to
+    check states in:
+
+    1. **Machine-blocked** scenarios outrank everything else. A human
+       approval can never override a machine error (``approvals.py``), so a
+       blocked scenario must never be silently outvoted by a pile of
+       redrafts, and "group drafting authorisation" must never appear while
+       one is outstanding.
+    2. **Unresolved human review** — ``pending``, ``stale`` or
+       ``needs_manual_review`` — comes next: these are simply not yet
+       decided, and nothing past them (a redraft authorisation, a group
+       authorisation) is meaningful until they are.
+    3. **Redraft** is the narrow, already-scoped next decision only once
+       nothing above it is outstanding.
+    4. **Group drafting authorisation** is offered only when the approved
+       count is *exactly* the complete expected total — never inferred by
+       elimination, so a count that does not add up (a bug, a state this
+       function does not yet know about) falls through to the last branch
+       instead of falsely claiming every scenario is approved.
+    """
+    if made_scenarios == 0:
+        return f"run the authorised scenario stage: 0 of {total_scenarios} scenario call(s) made"
+    if made_scenarios < total_scenarios:
+        return (f"finish the scenario stage: {made_scenarios} of {total_scenarios} scenario "
+                f"call(s) made")
+
+    blocked_n = approval_counts.get(BLOCKED, 0)
+    if blocked_n:
+        return (f"{blocked_n} scenario(s) blocked by machine errors need a redraft or "
+                f"correction before group drafting can be authorised")
+
+    needs_review_n = (approval_counts.get(PENDING, 0) + approval_counts.get(STALE, 0)
+                      + approval_counts.get(SCENARIO_NEEDS_MANUAL_REVIEW, 0))
+    if needs_review_n:
+        return (f"scenario review of the {total_scenarios} drafted scenarios "
+                f"({needs_review_n} still need a decision)")
+
+    redraft_n = approval_counts.get(REDRAFT, 0)
+    if redraft_n:
+        return (f"decide whether to authorise exactly the {redraft_n} redraft call(s): "
+                f"{', '.join(redraft_ids)}")
+
+    approved_n = approval_counts.get(APPROVED, 0)
+    if approved_n == total_scenarios:
+        if made_groups < total_groups:
+            return "group drafting authorisation (every scenario is approved)"
+        return "corpus assembly"
+    # Every scenario is drafted, and none is blocked, unreviewed or sent to
+    # redraft, yet the approved count still is not the complete total: the
+    # counts do not add up to a recognised, complete picture. Say so plainly
+    # rather than assume the gate is clear.
+    return (f"scenario approval counts do not add up to a clear gate: {approved_n} of "
+            f"{total_scenarios} approved, recorded states {dict(sorted(approval_counts.items()))} "
+            f"— read status by hand")
+
+
 def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
     """Read-only: the seed, what is new, the eventual corpus, and what blocks it."""
     p = seed.provenance
@@ -1332,6 +1432,7 @@ def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
     made_groups = sum(1 for key in plan.new_groups if key in groups)
     block = cfg.raw["corpus"].get("generation_block") or {}
     total_decisions = len(plan.expected_decisions)
+    approval_counts, redraft_ids = new_scenario_approval_counts(args, cfg, bank, plan, scenarios)
     print(f"config                 {cfg.config_version} {cfg.content_hash[:12]}")
     print("\nIMPORTED SEED (read-only, verified; never regenerated)")
     print(f"  decisions            {p['counts']['decisions']}")
@@ -1341,9 +1442,12 @@ def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
     print(f"  source               {p['corpus']} ({p['config_version']} "
           f"{p['config_content_hash'][:12]}), validation {p['validation_status']}, "
           f"{seed.manifest.get('outstanding_human_review')} human judgements outstanding")
-    print("\nNEW MATERIAL (not generated)")
+    print("\n" + ("NEW MATERIAL" if made_scenarios or made_groups else "NEW MATERIAL (not generated)"))
     print(f"  decisions            {len(plan.new_decisions)}")
     print(f"  scenarios            {made_scenarios} of {len(plan.new_scenario_ids)} generated")
+    if made_scenarios:
+        print(f"  scenario review      "
+              + ", ".join(f"{n} {state}" for state, n in sorted(approval_counts.items())))
     print(f"  groups               {made_groups} of {len(plan.new_groups)} generated")
     print(f"  texts                0 of {plan.new_texts} assembled")
     print(f"  run directory        {store.directory} "
@@ -1369,8 +1473,9 @@ def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
         print(f"  paid calls           {auth.get('scope')}: at most "
               f"{auth.get('max_paid_calls')} scenario call(s); group drafting, redrafts and "
               f"repairs are NOT authorised")
-        print(f"  next gate            scenario review of the {len(plan.new_scenario_ids)} "
-              f"drafted scenarios")
+        print(f"  next gate            "
+              + _next_gate(made_scenarios, len(plan.new_scenario_ids), made_groups,
+                           len(plan.new_groups), approval_counts, redraft_ids))
         print(f"  allocation           {'checked byte for byte' if allocation_ok else 'NOT MET'}")
         print(f"  offline dry run      {dry['scenarios']} scenario and {dry['groups']} group "
               f"requests rendered in this run"

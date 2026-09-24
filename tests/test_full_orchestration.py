@@ -55,6 +55,21 @@ def never(request):                                     # pragma: no cover - mus
     raise AssertionError(f"a request was made for {request.decision_id}")
 
 
+def _snapshot(path: Path) -> tuple[bool, tuple[tuple[str, str], ...]]:
+    """A cheap "nothing here changed" fingerprint for a directory: whether it
+    exists, and if so, every file's hash. Used to prove a refused or dry-run
+    command touched nothing at an explicitly named target, in place of
+    asserting the target doesn't exist — which stopped being true the moment
+    the authorised live scenario run populated ``data/full/run_v2``.
+    """
+    if not path.exists():
+        return False, ()
+    import hashlib
+    files = sorted(p.relative_to(path).as_posix() for p in path.rglob("*") if p.is_file())
+    hashes = tuple((f, hashlib.sha256((path / f).read_bytes()).hexdigest()) for f in files)
+    return True, hashes
+
+
 # --- the seed guard -----------------------------------------------------------------
 
 
@@ -98,13 +113,14 @@ def test_an_unauthorised_kind_cannot_be_sent(cfg, plan, tmp_path):
     assert backend.calls == [] and not (tmp_path / "run").exists()
 
 
-def test_the_group_stage_is_refused_by_the_runner(capsys):
+def test_the_group_stage_is_refused_by_the_runner(capsys, tmp_path):
     pilot = _load_pilot_script()
-    assert pilot.main(["groups", "--config", str(FULL)]) == 1
+    out_dir = tmp_path / "run_v2"
+    assert pilot.main(["groups", "--config", str(FULL), "--out", str(out_dir)]) == 1
     err = capsys.readouterr().err
     assert "outside the recorded authorisation" in err
     assert "no credential was read and no backend was built" in err
-    assert not (ROOT / "data/full/run_v2").exists()
+    assert not out_dir.exists()
 
 
 def test_the_redraft_stage_is_refused(capsys):
@@ -164,15 +180,16 @@ def test_the_call_budget(cfg, plan):
                       "primary_ceiling": 672, "absolute_ceiling": 768}
 
 
-def test_the_scenario_stage_reports_its_authorised_ceiling(capsys):
+def test_the_scenario_stage_reports_its_authorised_ceiling(capsys, tmp_path):
     pilot = _load_pilot_script()
-    assert pilot.main(["scenarios", "--config", str(FULL)]) == 0
+    out_dir = tmp_path / "run_v2"
+    assert pilot.main(["scenarios", "--config", str(FULL), "--out", str(out_dir)]) == 0
     out = capsys.readouterr().out
     assert "scenarios: 96 calls at most" in out
     assert "at most 96 paid call(s), 1 per scenario" in out
     # Without --send and the two keys, a stage reports and sends nothing.
     assert "nothing was sent" in out
-    assert not (ROOT / "data/full/run_v2").exists()
+    assert not out_dir.exists()
 
 
 def test_the_full_corpus_is_never_assembled_by_the_runner(capsys):
@@ -198,10 +215,15 @@ def test_the_offline_dry_run_renders_every_new_request_and_writes_nothing(cfg, p
     allocation = load_allocation(ROOT / "data/full/marker_allocation_full_v2.yaml")
     new = [t for t in BANK.topics
            if t.status == "curated" and t.decision_id in set(plan.new_decisions)]
+    # `offline_dry_run` takes no store and opens no file handle; the snapshot
+    # below is the explicit proof, in place of asserting the real run
+    # directory doesn't exist — it does, from the authorised live run.
+    real_run_dir = ROOT / "data/full/run_v2"
+    before = _snapshot(real_run_dir)
     counts, problems = pilot.offline_dry_run(cfg, BANK, allocation, new, plan)
     assert problems == []
     assert counts == {"scenarios": 96, "groups": 192}
-    assert not (ROOT / "data/full/run_v2").exists()
+    assert _snapshot(real_run_dir) == before
     assert list(tmp_path.iterdir()) == []
 
 
@@ -214,13 +236,14 @@ def test_the_offline_dry_run_refuses_a_seed_decision(cfg, plan):
     assert any("seed decision" in p for p in problems)
 
 
-def test_a_scenario_stage_dry_run_names_every_authorisation_key(capsys):
+def test_a_scenario_stage_dry_run_names_every_authorisation_key(capsys, tmp_path):
     pilot = _load_pilot_script()
-    assert pilot.main(["scenarios", "--config", str(FULL)]) == 0
+    out_dir = tmp_path / "run_v2"
+    assert pilot.main(["scenarios", "--config", str(FULL), "--out", str(out_dir)]) == 0
     out = capsys.readouterr().out
     assert "REASONSTYLE_ALLOW_OPENAI_GENERATION" in out
     assert "REASONSTYLE_ALLOW_PILOT_GENERATION" in out
-    assert not (ROOT / "data/full/run_v2").exists()
+    assert not out_dir.exists()
 
 
 # --- the preflight: read-only, no credential, no connection ---------------------------------
@@ -260,6 +283,13 @@ def test_the_preflight_reads_no_credential_and_opens_no_connection(monkeypatch, 
         monkeypatch.setattr(pilot, name, lambda *a, **k: (_ for _ in ()).throw(
             AssertionError("a backend was built")))
 
+    # `preflight` builds no CallStore and takes no `--out`; it is read-only by
+    # construction (`_preflight`'s own docstring). The snapshot is the
+    # explicit proof that it wrote nothing to the real run directory, in
+    # place of asserting that directory doesn't exist — it does, from the
+    # authorised live run.
+    real_run_dir = ROOT / "data/full/run_v2"
+    before = _snapshot(real_run_dir)
     assert pilot.main(["preflight", "--config", str(FULL)]) == 0
     out = capsys.readouterr().out
     assert "OPENAI_API_KEY" not in watched.read
@@ -273,7 +303,7 @@ def test_the_preflight_reads_no_credential_and_opens_no_connection(monkeypatch, 
                      "ceiling, primary  672", "ceiling, absolute 768",
                      "generation block  lifted", "no credential was read"):
         assert expected in out, expected
-    assert not (ROOT / "data/full/run_v2").exists()
+    assert _snapshot(real_run_dir) == before
 
 
 def test_the_preflight_fails_before_networking_on_a_mismatch(monkeypatch, tmp_path, capsys):
@@ -309,17 +339,21 @@ def test_the_preflight_refuses_a_configuration_without_a_seed(capsys):
 
 
 def test_status_separates_seed_new_total_and_blockers(capsys):
+    """Structural checks against whatever this checkout's real ``data/full/run_v2``
+    currently holds. The two full shapes — nothing generated yet, and a
+    completed, reviewed scenario stage — are covered in isolation, independent
+    of this checkout's live run directory, by ``tests/test_full_status_gate.py``.
+    """
     pilot = _load_pilot_script()
     assert pilot.main(["status", "--config", str(FULL)]) == 0
     out = capsys.readouterr().out
-    for section in ("IMPORTED SEED", "NEW MATERIAL (not generated)", "TOTAL EVENTUAL CORPUS",
+    for section in ("IMPORTED SEED", "NEW MATERIAL", "TOTAL EVENTUAL CORPUS",
                     "CURRENT BLOCKERS"):
         assert section in out
     assert "lifted 2026-09-23" in out
     assert "at most 96 scenario call(s)" in out
     assert "group drafting, redrafts and repairs are NOT authorised" in out
-    assert "next gate            scenario review" in out
-    assert "0 of 96 generated" in out and "0 of 192 generated" in out
+    assert "next gate            " in out
     assert "groups               240 allocated (48 imported + 192 new)" in out
     assert "texts                960" in out
     # Derived live, in this run: the allocation is rebuilt and compared and the

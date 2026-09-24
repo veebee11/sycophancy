@@ -1,6 +1,6 @@
 # Current status
 
-*Updated 2026-09-21. Kept short; history is in git, rules in `design_notes.md`.
+*Updated 2026-09-24. Kept short; history is in git, rules in `design_notes.md`.
 Sections under* Historical record (v1) *are kept as they were written and are
 superseded wherever they say something has not yet run.*
 
@@ -17,7 +17,9 @@ superseded wherever they say something has not yet run.*
 | full marker allocation | **built and committed** (`data/full/marker_allocation_full_v2.yaml`, 240 groups) |
 | final full configuration | **frozen 2026-09-23** at `configs/frozen/v2_full.yaml` (`v2_full`, content hash `7548650b42e7…`); block lifted deliberately |
 | paid-call authorisation | **96 initial scenario calls only**, one per new scenario; redrafts, groups, repairs, evaluation and mechanistic analysis are excluded and refused |
-| full scenario and group generation | not started; **no full-corpus API call has been made**; scenario review is the next gate |
+| full scenario generation | **ran live 2026-09-23**: 96 of 96 scenario calls completed, all accepted and machine-valid, 0 errors; `data/full/run_v2/` (gitignored) |
+| full scenario review | **recorded 2026-09-23** in `data/full/scenario_approvals_full_v2.yaml`: 94 approved, 2 sent to redraft (`technology_08_v1`, `technology_13_v1`); 0 pending, stale or machine-blocked |
+| full group generation | **not started; unauthorised.** Redraft calls, group drafting and repairs remain excluded from `generation_authorization` and are refused before a backend is built |
 
 ## Records and their authority
 
@@ -162,8 +164,12 @@ unverified candidate.
 
 ## Full corpus, Phase 2: seed import and full allocation (2026-09-21, offline)
 
-Implemented and tested; **not committed yet**. No request was sent, no key was
-read, no scenario or group was generated and no corpus was assembled.
+Implemented, tested and **committed as `39b1a2528ef8c0700f87f4905f6bc0b51e1f1f75`**
+("Add frozen pilot import and full marker allocation"). At the time this
+section was written (2026-09-21) no request had been sent, no key had been
+read, no scenario or group had been generated and no corpus had been
+assembled; the scenario stage that changed that is recorded below, under
+*Scenario stage and review (2026-09-23)*.
 
 - **Frozen-pilot importer** (`src/reasonstyle/generation/corpus_source.py`).
   Before returning a record it verifies the seed configuration hash against
@@ -184,9 +190,9 @@ read, no scenario or group was generated and no corpus was assembled.
   allocation hash `ba39dbcb24f5…`: the 48 pilot rows imported exactly and 192
   new rows allocated around them. Every marker has 60 groups — 20 per domain,
   30 per supported option, 30 per variant — and every family 120. A fresh
-  rebuild is byte-identical and `--check` rejects any edit. **It is a
-  committed-data candidate but is not committed yet.** The v1 and v2 pilot
-  allocations still rebuild byte for byte.
+  rebuild is byte-identical and `--check` rejects any edit. **Committed in the
+  same commit as the importer above.** The v1 and v2 pilot allocations still
+  rebuild byte for byte.
 - **Seed-aware planning.** Drafting commands on the full configuration run on
   the 48 new decisions only: 96 scenarios, 192 groups, 768 texts. Every send
   path refuses a seed decision before recovery or backend, and outputs under
@@ -236,17 +242,62 @@ read, no scenario or group was generated and no corpus was assembled.
 - **The allocation was rebound** to the frozen configuration's hash. Its 240
   assignments and its content hash `ba39dbcb24f5…` are unchanged, and all 48
   pilot rows remain identical.
-- **No full-corpus API call has been made.** The next gate after the scenario
-  stage is **scenario review**: the 96 drafted scenarios must be read and
-  approved before any group is drafted, and group drafting needs its own
-  authorisation recorded in the configuration.
+- **Superseded below.** The paragraph as written here said no full-corpus call
+  had yet been made and named scenario review as the next gate; both are now
+  true of the past tense only — see *Scenario stage and review (2026-09-23)*.
+
+## Scenario stage and review (2026-09-23)
+
+- **The authorised 96-call scenario stage ran live on 2026-09-23**, writing to
+  `data/full/run_v2/` (gitignored: `generation_log.jsonl`, `raw/`, `results/`).
+  96 of 96 calls completed — one call per new scenario, attempt 1, no retry —
+  under model `gpt-5.6-sol` (requested and returned, every call), configuration
+  hash `7548650b42e7…` and allocation hash `ba39dbcb24f5…`. Every call recorded
+  `store: false`, `background: false`, no tools, no conversation state and no
+  `previous_response_id`. **All 96 outcomes are `accepted`/machine-valid, 0
+  errors.** The 48 decision ids covered are exactly the full bank's 48 new
+  additions (`climate_06`–`21`, `energy_06`–`21`, `technology_06`–`21`); no
+  pilot decision was drafted. **0 group, repair or redraft calls occurred** —
+  the authorisation covers the scenario stage only, and nothing else was sent.
+- **Independent scenario review** read all 96 against their briefs and
+  recommended 94 approvals and 2 redrafts (`technology_08_v1`,
+  `technology_13_v1`, both failing `no_added_facts_or_quantities`: each draft
+  added a claim the supplied facts do not establish). Vidhi Bhutani reviewed
+  and accepted the recommendation on 2026-09-23.
+- **Recorded** in `data/full/scenario_approvals_full_v2.yaml` — the
+  authoritative *tracked* file (declared in `paths.approvals`), not a
+  gitignored `review/` export: 96 entries, one per new scenario, each bound to
+  its exact call id, scenario-text SHA-256, configuration hash and
+  topic-bank hash from the recorded run. **94 `approved`** (all seven
+  judgements true, decided by Vidhi Bhutani on 2026-09-23). **2 `redraft`**
+  (`no_added_facts_or_quantities: false`, the other six judgements true, each
+  with its reviewer reason bound to the exact call and text it concerns).
+- **Verified read-only** against the project's own gate tooling
+  (`pilot.py approvals`, filtered to the 48 new decision ids, and
+  `pilot.py status`): both now agree — **94 approved, 2 redraft, 0 pending,
+  stale, or machine-blocked** among the 96. `pilot.py status`'s next-gate
+  wording was stale until 2026-09-24 (it always read "scenario review of the
+  96 drafted scenarios" regardless of what the run and approvals file actually
+  held); it now derives the next gate live from the recorded scenarios and
+  approvals, the same way the rest of `status` already derived the allocation
+  and dry-run lines. The `data/full/run_v2/` evidence was hashed before and
+  after every review/export step and confirmed byte-identical throughout.
+- **Redraft calls and group generation remain unauthorised.** `redraft-scenarios`
+  needs its own recorded authorisation, distinct from the scenario-stage
+  authorisation already spent; group drafting needs a further one still. Neither
+  exists in `configs/frozen/v2_full.yaml`, and the runner refuses both before a
+  backend is built.
 
 ## Full corpus: what does not exist yet
 
-- **No full scenario or group** has been generated, and no full corpus has been
-  assembled. `data/full/` holds only the committed allocation.
-- **No full-corpus API call has been made.**
-- `configs/frozen/v2_full.yaml` keeps **generation blocked**.
+- **No full group** has been generated, and no full corpus has been assembled.
+  `data/full/` holds the tracked allocation, the 96 recorded scenario calls
+  (gitignored run directory) and the tracked scenario approvals above.
+- **No redraft, group, repair, evaluation or mechanistic-analysis call has been
+  made.** Only the 96 authorised scenario calls have been sent.
+- `configs/frozen/v2_full.yaml` keeps the generation block **lifted**, but its
+  `generation_authorization` still covers the scenario stage only; every later
+  stage needs its own recorded authorisation before it can run.
 - The Phase 1 work was committed as "Prepare curated full v2 topic bank"; the
   Phase 2 work above as "Add frozen pilot import and full marker allocation".
 
@@ -274,10 +325,10 @@ The order this implies (updated 2026-09-21):
 
 ## Next steps
 
-1. ~~Build the full marker allocation~~ — built in Phase 2, uncommitted.
-2. ~~Implement the orchestration~~ — importer, planning, seed guard and combined-assembly interface implemented and tested in Phase 2, uncommitted.
-3. ~~Dry-run the full stages offline~~ and ~~freeze the final configuration~~ — done 2026-09-23. **Next: run the authorised 96-call scenario stage**, then review those scenarios. Group drafting needs its own recorded authorisation.
-4. Only then lift the generation block in `configs/frozen/v2_full.yaml`, deliberately.
+1. ~~Build the full marker allocation~~ — built in Phase 2, committed as `39b1a2528ef8c0700f87f4905f6bc0b51e1f1f75`.
+2. ~~Implement the orchestration~~ — importer, planning, seed guard and combined-assembly interface implemented and tested in Phase 2, committed in the same commit.
+3. ~~Dry-run the full stages offline~~, ~~freeze the final configuration~~ and ~~lift the generation block~~ — done 2026-09-23.
+4. ~~Run the authorised 96-call scenario stage~~ and ~~record its human review~~ — done 2026-09-23: 94 approved, 2 sent to redraft (`data/full/scenario_approvals_full_v2.yaml`). **Next: decide on and, if wanted, separately authorise the redraft calls for `technology_08_v1` and `technology_13_v1`.** Group drafting needs its own recorded authorisation and is refused until every one of the 96 scenarios is approved.
 5. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
 
 ## Open, not resolved
