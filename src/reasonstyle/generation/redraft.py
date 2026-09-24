@@ -54,18 +54,26 @@ from .requests import DraftRequest, RequestError
 
 __all__ = [
     "REDRAFT_TEMPLATE",
+    "STAGE_AUTHORIZATION_RECORD_VERSION",
     "RedraftTarget",
     "current_scenarios",
     "redraft_request",
     "redraft_targets",
     "redraft_template_sha256",
     "run_redraft_stage",
+    "transport_blocked_targets",
 ]
 
 #: Versioned outside the experiment configuration, for the reason in the module
 #: docstring: the configured hash is what fifteen approvals are bound to.
 REDRAFT_TEMPLATE = Path("prompts/scenario_redraft_v1.txt")
 REDRAFT_TEMPLATE_NAME = "scenario_redraft_v1"
+
+#: The ``record_version`` a scenario-redraft stage-authorisation record must
+#: declare (``stage_authorization.stage_authorization_problems``). Versioned
+#: independently of the redraft template above: a schema change to the
+#: authorisation record is not a prompt change.
+STAGE_AUTHORIZATION_RECORD_VERSION = "scenario_redraft_v1"
 
 #: The response schema, identical in shape to a scenario draft's.
 REDRAFT_SCHEMA: dict[str, Any] = {
@@ -232,9 +240,46 @@ def current_scenarios(store: CallStore,
     return {**originals, **redrafts}
 
 
+def transport_blocked_targets(store: CallStore, targets: list[RedraftTarget],
+                              stage_authorization_sha256: str) -> list[RedraftTarget]:
+    """Targets whose one call under *this exact* stage authorisation already
+    ended in a transport failure.
+
+    A request that reached the backend can incur cost whether or not a usable
+    response ever came back, so under a stage authorisation a transport
+    failure still spends the one call the record grants that target: the
+    ordinary pipeline rule — a transport failure "recovers as nothing
+    happened" (``CallStore.recover``) and may be retried on the next run — is
+    deliberately overridden here. Retrying anyway needs a new, explicit
+    authorisation record with its own distinct SHA-256; this function is what
+    lets the caller detect that and refuse before dispatching again, rather
+    than silently spending a second paid attempt under the same authorisation.
+
+    Matched by ``(decision_id, variant_id)`` rather than ``call_id``: a
+    redraft's call id is deterministic from the brief, the original text and
+    the reviewer's reason, none of which changes between attempts under
+    different authorisation records, so call id alone cannot tell two
+    authorisations' attempts apart. The authorisation's own hash, recorded on
+    every dispatch (successful or not), is what does.
+    """
+    blocked = []
+    for target in targets:
+        for entry in store.log.entries():
+            if (entry.get("kind") == "scenario_redraft"
+                    and entry.get("decision_id") == target.decision_id
+                    and entry.get("variant_id") == target.variant_id
+                    and entry.get("status") == "error"
+                    and (entry.get("extra") or {}).get("stage_authorization_sha256")
+                        == stage_authorization_sha256):
+                blocked.append(target)
+                break
+    return blocked
+
+
 def run_redraft_stage(topics, approvals: dict[str, ScenarioApproval], cfg: ExperimentConfig,
                       segmenter: Segmenter, backend, store: CallStore, *,
-                      allow_live: bool = False) -> list[StageResult]:
+                      allow_live: bool = False,
+                      stage_authorization: dict[str, Any] | None = None) -> list[StageResult]:
     """One call for each scenario the curator marked ``redraft``. No more.
 
     No group is drafted here, no scenario outside that set is touched, and there
@@ -242,9 +287,32 @@ def run_redraft_stage(topics, approvals: dict[str, ScenarioApproval], cfg: Exper
     rejected leaves its scenario blocking the gate for a person to decide about.
     Every redraft, accepted or not, is a new call with its own id, recorded
     against the call it supersedes.
+
+    ``stage_authorization`` is the loaded, already-validated record (from
+    :mod:`stage_authorization`) that permitted this call — never the frozen
+    configuration's own authorisation, which excludes redrafts by name. When
+    given: its exact bytes' SHA-256 is recorded on every resulting log entry,
+    successful, rejected *or transport-failed*, so a paid call traces back to
+    the precise record that authorised it; and a target already blocked by
+    :func:`transport_blocked_targets` under this exact authorisation aborts
+    the stage before any dispatch is attempted for it, rather than spending a
+    second paid attempt automatically.
     """
     by_decision = {topic.decision_id: topic for topic in topics}
     targets = redraft_targets(approvals, recorded_scenarios(store))
+    stage_auth_extra = ({"stage_authorization_path": str(stage_authorization["_path"]),
+                        "stage_authorization_sha256": stage_authorization["_file_sha256"]}
+                        if stage_authorization is not None else {})
+    if stage_authorization is not None:
+        blocked = transport_blocked_targets(store, targets, stage_authorization["_file_sha256"])
+        if blocked:
+            names = ", ".join(t.scenario_id for t in blocked)
+            raise PipelineAbort(
+                f"{names}: a transport failure already spent this target's one authorised "
+                f"call under stage authorisation {stage_authorization['_path']} "
+                f"({stage_authorization['_file_sha256'][:12]}); nothing was dispatched. A "
+                f"new, explicit retry authorisation record is required before this target "
+                f"can be dispatched again")
     results: list[StageResult] = []
 
     for target in targets:
@@ -256,7 +324,8 @@ def run_redraft_stage(topics, approvals: dict[str, ScenarioApproval], cfg: Exper
             store, request, backend, cfg, allow_live=allow_live)
 
         if status == "error":
-            store.record_transport_failure(request, error or "transport failure")
+            store.record_transport_failure(request, error or "transport failure",
+                                           extra=stage_auth_extra)
             raise PipelineAbort(f"{target.scenario_id}: {error}")
         if status == "refused":
             results.append(StageResult("scenario_redraft", target.decision_id,
@@ -296,7 +365,8 @@ def run_redraft_stage(topics, approvals: dict[str, ScenarioApproval], cfg: Exper
                             "failed_judgements": list(target.failed_judgements),
                             "template_name": REDRAFT_TEMPLATE_NAME,
                             "template_sha256": request.template_sha256,
-                            "unchanged_from_original": unchanged})
+                            "unchanged_from_original": unchanged,
+                            **stage_auth_extra})
         results.append(StageResult(
             "scenario_redraft", target.decision_id, target.variant_id, None, outcome,
             (Attempt(request.call_id, request.kind, 2, status, outcome,

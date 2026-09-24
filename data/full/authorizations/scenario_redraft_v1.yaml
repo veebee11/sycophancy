@@ -1,0 +1,91 @@
+# A separate, additive paid-call authorisation for exactly one stage:
+# redrafting the two full-v2 scenarios the authoritative review sent back.
+#
+# This file is NOT part of configs/frozen/v2_full.yaml, and loading or
+# checking it never computes or edits that configuration's content hash.
+# The frozen configuration's own corpus.generation_authorization covers only
+# scope: scenario_stage_initial_only (the 96 initial scenario calls, already
+# made) and names "scenario redrafts" among its excludes. Recording a
+# redraft authorisation inside that block would edit the frozen file, change
+# its content hash 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94,
+# and stale every one of the 94 scenario approvals bound to that exact hash
+# (see docs/design_notes.md, "Separate stage authorisations"). This record
+# exists so that never has to happen: a later stage gets its own small,
+# separately reviewed record, named by kind, instead.
+#
+# `scripts/pilot.py redraft-scenarios --stage-authorization <this file>`
+# checks every field below against the CURRENT configuration and the CURRENT
+# approvals file before any credential is read or backend is built
+# (reasonstyle.generation.stage_authorization.stage_authorization_problems).
+# A record whose status is not exactly 'authorized' authorises nothing.
+
+record_version: scenario_redraft_v1
+status: proposed
+
+# Who proposed this record, and when it becomes operative. Both stay null
+# until the researcher records an actual decision -- never inferred, never
+# defaulted, never backfilled by a script.
+proposed_by: Vidhi Bhutani
+proposed_at: '2026-09-24'
+authorized_by: null
+authorized_at: null
+
+# The exact configuration this authorisation applies to. A configuration
+# that no longer matches both fields makes this record inert, however its
+# status reads.
+config:
+  config_version: v2_full
+  config_content_hash: 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94
+
+kind: scenario_redraft
+max_paid_calls: 2
+calls_per_target: 1
+
+# The authoritative approval file this record was proposed against, and its
+# exact bytes at that moment. A later edit to the approvals file -- even one
+# that leaves the two redraft decisions themselves untouched -- makes this
+# binding stale, and the record authorises nothing until re-proposed against
+# the edited file.
+approvals_file: data/full/scenario_approvals_full_v2.yaml
+approvals_file_sha256: fd80575cf762513df5f2070cc181a2dc0e46112dfa7cf308fb82dd7ea2659346
+
+# Exactly the two scenarios the authoritative approval file marks
+# `decision: redraft`, each bound to the rejected call and rejected text
+# currently on record for it. Neither more nor fewer targets, and no target
+# whose call or text has since changed, is ever covered.
+targets:
+  technology_08_v1:
+    call_id: 9b06829bdc91fde71ad906331260cf64b51f7e728da870c9db3b6c73c51541af
+    scenario_text_sha256: d4b42279ce3a0dbc97b5ab3b106ee38cc61db595c12f8accf73802f823c3d74c
+    reason: The draft says the smaller model has 'less overall capability.' The supplied
+      fact supports only the narrower claim that the most capable model makes fewer
+      mistakes on complex drafting and legal questions. The redraft must not generalize
+      this into a claim about overall capability.
+  technology_13_v1:
+    call_id: 20ef0cb34d31fb4c1f80b00520c2210606e2a9d5fa533be9a2a4fa91509df672
+    scenario_text_sha256: b2b201e48b2a23b3b3c86823367edc077a617cdcda11e02a93fcbae9e9b36e17
+    reason: The draft adds an unspecified safeguard by saying officers would still
+      consider the generated content. The brief does not establish an officer-review
+      safeguard, and adding one makes the AI option appear safer.
+
+# What this record does not cover, named explicitly so nothing is inferred
+# by omission. Each excluded stage needs its own separate record, proposed
+# and authorised on its own terms.
+excludes:
+- the original 96-call initial scenario stage (already made; covered by
+  configs/frozen/v2_full.yaml's own generation_authorization)
+- any scenario call outside the two named targets
+- a second call for either named target
+- group drafting
+- repairs
+- behavioural evaluation
+- mechanistic analysis
+
+note: >
+  Proposed, not authorised. Authorising this record means changing `status`
+  to `authorized` and filling `authorized_by`/`authorized_at` with an actual
+  researcher decision -- a separate, later act, and not something any script
+  does on this record's behalf. Until then, `redraft-scenarios
+  --stage-authorization data/full/authorizations/scenario_redraft_v1.yaml`
+  refuses before reading a credential or building a backend, for the same
+  reason a missing or malformed record would.

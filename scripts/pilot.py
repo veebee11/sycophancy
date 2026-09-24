@@ -116,10 +116,17 @@ from reasonstyle.generation.group_review import (
     build_group_review,
 )
 from reasonstyle.generation.redraft import (
+    STAGE_AUTHORIZATION_RECORD_VERSION,
     current_scenarios,
     redraft_targets,
     redraft_template_sha256,
     run_redraft_stage,
+    transport_blocked_targets,
+)
+from reasonstyle.generation.stage_authorization import (
+    StageAuthorizationError,
+    load_stage_authorization,
+    stage_authorization_problems,
 )
 from reasonstyle.generation.scenario_source import (
     ScenarioSourceError,
@@ -708,24 +715,55 @@ def _stage(args, cfg, bank, allocation, topics, store: CallStore, *, kind: str) 
 
 
 def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
-    # A redraft is a paid call like any other, and the current authorisation
-    # covers initial scenario drafts only.
-    refusals = paid_call_problems(cfg, "scenario_redraft")
-    if refusals:
-        print("refusing; nothing was sent: " + "; ".join(refusals), file=sys.stderr)
-        return 1
     """Redraft exactly the scenarios the curator marked ``redraft``.
 
     The set comes from the approvals file, never from ``--only``: which
     scenarios need drafting again is the reviewer's finding. One call each, no
     group call, and no automatic second attempt.
+
+    A redraft is a paid call like any other. Two mechanisms can cover it, and
+    exactly one applies on a given invocation:
+
+    - No ``--stage-authorization``: the frozen configuration's own
+      ``generation_authorization`` is checked, exactly as for every other
+      stage. For ``configs/frozen/v2_full.yaml`` this always refuses —
+      ``scenario_redraft`` is excluded from it by name — precisely as before
+      this flag existed.
+    - ``--stage-authorization PATH``: a separate, tracked record is checked
+      instead (:mod:`stage_authorization`). It deliberately *widens* what the
+      configuration alone would allow — a validated record is exactly what
+      lets ``scenario_redraft`` through at all, for two exact, named targets
+      — but it never touches the configuration file or its content hash; see
+      that module's docstring for why. Only once every one of its checks
+      passes (fails closed: a missing, null or wrongly typed field refuses
+      cleanly) does the send path (``CallStore.allowed_kinds``) accept a
+      ``scenario_redraft`` call. A transport failure still spends the target's
+      one authorised call under this exact record — retrying needs a new,
+      explicit retry authorisation, not another invocation of this one
+      (:func:`reasonstyle.generation.redraft.transport_blocked_targets`).
     """
+    stage_auth_record = None
+    if args.stage_authorization:
+        try:
+            stage_auth_record = load_stage_authorization(args.stage_authorization)
+        except StageAuthorizationError as exc:
+            print(f"refusing; nothing was sent: {exc}", file=sys.stderr)
+            return 1
+    else:
+        refusals = paid_call_problems(cfg, "scenario_redraft")
+        if refusals:
+            print("refusing; nothing was sent: " + "; ".join(refusals), file=sys.stderr)
+            return 1
+
     refusal = reused_scenarios_problem(cfg, "redraft-scenarios")
     if refusal:
         print(f"refusing: {refusal}", file=sys.stderr)
         return 1
     # The set is the curator's finding, so an operator narrowing it would be
-    # overruling the review rather than filtering a report.
+    # overruling the review rather than filtering a report. This holds
+    # whichever authorisation mechanism applies: a stage authorisation binds
+    # to the exact reviewed targets and can never be used to widen or
+    # redirect the set --only would have narrowed.
     if args.only or list(args.variants) != [1, 2]:
         print("refusing: redraft-scenarios runs on the complete pilot — the scenarios the "
               "curator marked redraft, and only those:", file=sys.stderr)
@@ -749,11 +787,38 @@ def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
         print("no scenario is marked redraft; nothing to do.")
         return 0
 
+    if stage_auth_record is not None:
+        problems = stage_authorization_problems(
+            stage_auth_record, cfg=cfg, kind="scenario_redraft",
+            record_version=STAGE_AUTHORIZATION_RECORD_VERSION, targets=targets,
+            approvals_path=args.approvals_file)
+        if problems:
+            print("refusing; nothing was sent:", file=sys.stderr)
+            for problem in problems:
+                print(f"  - {problem}", file=sys.stderr)
+            return 1
+        blocked = transport_blocked_targets(store, targets, stage_auth_record["_file_sha256"])
+        if blocked:
+            print("refusing; nothing was sent:", file=sys.stderr)
+            for target in blocked:
+                print(f"  - {target.scenario_id}: a transport failure already spent this "
+                      f"target's one authorised call under this exact stage authorisation; a "
+                      f"new, explicit retry authorisation record is required before it can be "
+                      f"dispatched again", file=sys.stderr)
+            return 1
+        # Only a fully validated stage authorisation widens the send path,
+        # and only to the one kind it covers: a redraft call, and nothing
+        # else this run could otherwise be asked to make.
+        store.allowed_kinds = frozenset({"scenario_redraft"})
+
     print(f"stage        redraft: {len(targets)} call(s), one per rejected scenario, no "
           f"second attempt")
     print(f"template     prompts/scenario_redraft_v1.txt "
           f"{redraft_template_sha256()[:12]} (hashed here, not in the experiment config)")
     print(f"config       {cfg.config_version} {cfg.content_hash[:12]} (unchanged)")
+    if stage_auth_record is not None:
+        print(f"authorised by stage authorisation {stage_auth_record['_path']} "
+              f"{stage_auth_record['_file_sha256'][:12]}")
     for target in targets:
         print(f"  {target.scenario_id:<20} supersedes {target.original_call_id[:12]}  "
               f"failed: {', '.join(target.failed_judgements)}")
@@ -778,7 +843,8 @@ def _redraft(args, cfg, bank, topics, store: CallStore) -> int:
     before = len(store.log.entries())
     try:
         results = run_redraft_stage(topics, approvals, cfg, segmenter_from_config(cfg),
-                                    _live_backend(cfg), store, allow_live=True)
+                                    _live_backend(cfg), store, allow_live=True,
+                                    stage_authorization=stage_auth_record)
     except PipelineAbort as exc:
         print(f"\nthe stage stopped: {exc}", file=sys.stderr)
         return 1
@@ -1540,6 +1606,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--server-runtime", default="data/pilot/server_runtime.json")
     ap.add_argument("--send", action="store_true",
                     help="make the calls of a stage; also needs both authorisation keys")
+    ap.add_argument("--stage-authorization", default=None,
+                    help="a separate, tracked authorisation record for a paid stage the "
+                         "frozen configuration's own generation_authorization excludes by "
+                         "name (e.g. redraft-scenarios). Never edits the configuration; a "
+                         "stage this flag does not name stays governed by the configuration "
+                         "alone, exactly as before.")
     args = ap.parse_args(argv)
 
     try:

@@ -19,6 +19,7 @@ superseded wherever they say something has not yet run.*
 | paid-call authorisation | **96 initial scenario calls only**, one per new scenario; redrafts, groups, repairs, evaluation and mechanistic analysis are excluded and refused |
 | full scenario generation | **ran live 2026-09-23**: 96 of 96 scenario calls completed, all accepted and machine-valid, 0 errors; `data/full/run_v2/` (gitignored) |
 | full scenario review | **recorded 2026-09-23** in `data/full/scenario_approvals_full_v2.yaml`: 94 approved, 2 sent to redraft (`technology_08_v1`, `technology_13_v1`); 0 pending, stale or machine-blocked |
+| scenario-redraft authorisation | **prepared, not authorised, 2026-09-24**: a separate tracked record, `data/full/authorizations/scenario_redraft_v1.yaml`, `status: proposed`. It never edits `configs/frozen/v2_full.yaml` — see `design_notes.md`, *Separate stage authorisations* |
 | full group generation | **not started; unauthorised.** Redraft calls, group drafting and repairs remain excluded from `generation_authorization` and are refused before a backend is built |
 
 ## Records and their authority
@@ -288,6 +289,84 @@ assembled; the scenario stage that changed that is recorded below, under
   exists in `configs/frozen/v2_full.yaml`, and the runner refuses both before a
   backend is built.
 
+## Scenario-redraft authorisation prepared, not granted (2026-09-24)
+
+**Why a separate record, not an edit to the frozen configuration.** The
+frozen configuration's own `corpus.generation_authorization` excludes
+scenario redrafts by name, and every one of the 94 scenario approvals is
+bound to the configuration's exact content hash
+(`7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94`). Editing
+that block to cover redrafts — even only to add one kind to `allowed_kinds`
+— would change the hash and stale all 94 approvals at once. Full reasoning:
+`design_notes.md`, *Separate stage authorisations*.
+
+- **The mechanism**: `reasonstyle.generation.stage_authorization`, plus a new
+  `redraft-scenarios --stage-authorization PATH` flag on `scripts/pilot.py`.
+  A record binds to the exact configuration (version and content hash), the
+  exact approvals file (path and its own SHA-256), and an exact, named set of
+  targets — each bound to the rejected call id and rejected text SHA-256 the
+  approvals file currently holds. Every field is checked
+  (`stage_authorization_problems`) before any credential is read or backend
+  is built, and only a record whose every check passes widens the send path
+  (`CallStore.allowed_kinds`) to accept a `scenario_redraft` call — nothing
+  else, and never by inference from the configuration's own authorisation.
+  Without `--stage-authorization`, `redraft-scenarios` behaves exactly as
+  before this flag existed: refused by the configuration's own
+  `generation_authorization`, which excludes the kind.
+- **The record**: `data/full/authorizations/scenario_redraft_v1.yaml`.
+  `status: proposed`, `authorized_by: null`, `authorized_at: null` — **not
+  operative**. It names exactly `technology_08_v1` and `technology_13_v1` —
+  the two, and only the two, the authoritative approval file marks
+  `redraft` — each bound to its rejected call id and rejected text SHA-256;
+  `max_paid_calls: 2` (exactly the number of authorised targets, no unused
+  headroom), `calls_per_target: 1`; and explicit exclusions for the original
+  96-call stage, any other scenario, a second call for either target, groups,
+  repairs, evaluation and mechanistic analysis.
+- **Checked, not run — and fails closed.** `redraft-scenarios --config
+  configs/frozen/v2_full.yaml --stage-authorization
+  data/full/authorizations/scenario_redraft_v1.yaml` currently refuses with
+  three separate reasons: `status` is `'proposed'`, not `'authorized'`;
+  `authorized_by` names no reviewer; `authorized_at` carries no valid date.
+  All three — not `status` alone — must be completed by an actual reviewer
+  decision before the record is operative. Every scientific binding in the
+  record — configuration hash, approvals-file hash, both targets' call ids
+  and text hashes, `max_paid_calls` matching the target count, `record_version`
+  — already matches reality and produces no separate refusal. Every check
+  runs, and reports every problem it finds, before any credential is read or
+  backend is built; a missing, null or wrongly typed field is refused
+  cleanly rather than raising.
+- **A validated stage authorisation widens what may be sent, deliberately.**
+  The frozen configuration's own authorisation excludes `scenario_redraft` by
+  name; passing every check in a stage authorisation is exactly what lets the
+  send path (`CallStore.allowed_kinds`) accept that kind at all, for the two
+  named targets only. This is not merely a narrowing of the configuration's
+  own authorisation — it grants a permission the configuration withholds.
+- **One call per target, enforced even across transport failures.** A
+  request that reaches the backend can incur cost whether or not a usable
+  response comes back, so a transport failure under a stage authorisation
+  still spends that target's one authorised call: the ordinary pipeline rule
+  that a transport failure "recovers as nothing happened" and may be retried
+  on the next run (`CallStore.recover`) is deliberately overridden here.
+  `transport_blocked_targets` refuses to dispatch a target again under the
+  *same* authorisation once a transport-failure entry carrying that
+  authorisation's own SHA-256 exists for it; retrying needs a new, explicit
+  retry authorisation record with a different hash. A target that completed
+  successfully still resumes from disk rather than being re-sent
+  (`CallStore.recover`), and `calls_per_target: 1` / `max_paid_calls: 2`
+  bound the stage's total regardless of how many times it is invoked — but
+  none of that makes a transport-failed attempt free to retry automatically.
+  Tested in `tests/test_stage_authorization.py`.
+- **Traceability, for every outcome.** Every dispatch this mechanism
+  authorises records the authorising record's own file SHA-256 (and path) in
+  its log entry's `extra` block — a successful call, a rejected one, *and* a
+  transport failure alike — so a request that incurred cost always traces
+  back to the exact record that permitted it, whether or not it produced a
+  usable response.
+- **Nothing here authorises or runs a redraft.** The frozen configuration's
+  content hash and file SHA-256 are unchanged; all 94 approval states in
+  `data/full/scenario_approvals_full_v2.yaml` are unchanged; no API call was
+  made and no credential was read.
+
 ## Full corpus: what does not exist yet
 
 - **No full group** has been generated, and no full corpus has been assembled.
@@ -328,8 +407,9 @@ The order this implies (updated 2026-09-21):
 1. ~~Build the full marker allocation~~ — built in Phase 2, committed as `39b1a2528ef8c0700f87f4905f6bc0b51e1f1f75`.
 2. ~~Implement the orchestration~~ — importer, planning, seed guard and combined-assembly interface implemented and tested in Phase 2, committed in the same commit.
 3. ~~Dry-run the full stages offline~~, ~~freeze the final configuration~~ and ~~lift the generation block~~ — done 2026-09-23.
-4. ~~Run the authorised 96-call scenario stage~~ and ~~record its human review~~ — done 2026-09-23: 94 approved, 2 sent to redraft (`data/full/scenario_approvals_full_v2.yaml`). **Next: decide on and, if wanted, separately authorise the redraft calls for `technology_08_v1` and `technology_13_v1`.** Group drafting needs its own recorded authorisation and is refused until every one of the 96 scenarios is approved.
-5. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
+4. ~~Run the authorised 96-call scenario stage~~ and ~~record its human review~~ — done 2026-09-23: 94 approved, 2 sent to redraft (`data/full/scenario_approvals_full_v2.yaml`).
+5. ~~Prepare a separate redraft-stage authorisation mechanism~~ — done 2026-09-24: `data/full/authorizations/scenario_redraft_v1.yaml`, `status: proposed`. **Next: the researcher decides whether to authorise it** — set `status: authorized` and record `authorized_by`/`authorized_at` — before the two redraft calls for `technology_08_v1` and `technology_13_v1` can be sent. Group drafting needs its own separate authorisation record too, and is refused until every one of the 96 scenarios is approved.
+6. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
 
 ## Open, not resolved
 

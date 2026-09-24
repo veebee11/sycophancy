@@ -105,12 +105,14 @@ from .pipeline import (
     run_pilot,
 )
 from .redraft import (
+    STAGE_AUTHORIZATION_RECORD_VERSION,
     RedraftTarget,
     current_scenarios,
     redraft_request,
     redraft_targets,
     redraft_template_sha256,
     run_redraft_stage,
+    transport_blocked_targets,
 )
 from .scenario_corrections import (
     ScenarioCorrection,
@@ -118,6 +120,11 @@ from .scenario_corrections import (
     apply_scenario_corrections,
     load_scenario_corrections,
     save_scenario_corrections,
+)
+from .stage_authorization import (
+    StageAuthorizationError,
+    load_stage_authorization,
+    stage_authorization_problems,
 )
 from .provenance import ProvenanceMismatch, check_request_provenance
 
@@ -162,11 +169,13 @@ __all__ = [
     "NEEDS_MANUAL_REVIEW",
     "PipelineAbort",
     "RedraftTarget",
+    "STAGE_AUTHORIZATION_RECORD_VERSION",
     "current_scenarios",
     "redraft_request",
     "redraft_targets",
     "redraft_template_sha256",
     "run_redraft_stage",
+    "transport_blocked_targets",
     "StageResult",
     "draft_group",
     "draft_scenario",
@@ -208,4 +217,7 @@ __all__ = [
     "scenario_request",
     "vllm_payload",
     "write_request",
+    "StageAuthorizationError",
+    "load_stage_authorization",
+    "stage_authorization_problems",
 ]

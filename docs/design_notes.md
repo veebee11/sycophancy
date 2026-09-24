@@ -429,6 +429,89 @@ reference nor a licence claim.
 validator or configured behaviour; `repo_id` and `revision` stay null until a
 tokenizer/template compatibility test settles them.
 
+## Separate stage authorisations — added 2026-09-24
+
+`configs/frozen/v2_full.yaml`'s own `corpus.generation_authorization` covers
+exactly one stage, deliberately: `scenario_stage_initial_only`, the 96 initial
+scenario calls, already made. It names every later stage — scenario redrafts,
+group drafting, repairs, evaluation, mechanistic analysis — in its `excludes`
+list, on purpose: authorising a stage is a separate decision each time, made
+after reading what the previous stage produced.
+
+**Why that authorisation cannot simply be edited to add a later stage.** A
+frozen configuration's content hash is computed over the whole file (plan
+§15.3; `hashing.content_hash`), and every one of the 94 approved scenario
+records in `data/full/scenario_approvals_full_v2.yaml` binds that exact hash
+(`ScenarioApproval.config_content_hash`). Editing `generation_authorization`
+in place — even only to add `scenario_redraft` to `allowed_kinds` — changes
+the file's content hash and makes all 94 approvals stale at once, for the
+sake of authorising two calls. The frozen configuration is frozen precisely so
+this cannot happen by accident.
+
+**The mechanism instead.** A later stage's authorisation is its own small,
+separately tracked record, `data/full/authorizations/<kind>_v1.yaml`
+(`reasonstyle.generation.stage_authorization`), never embedded in the
+configuration and never causing it to be rewritten. It binds explicitly to:
+
+- the exact configuration it applies to, by **both** version and content
+  hash — a configuration that no longer matches either makes the record
+  inert;
+- the exact approvals file it was proposed against, by path and by the
+  file's own SHA-256 — an edit to that file, even one that leaves the
+  reviewed decisions themselves untouched, stales the binding;
+- an exact, named set of targets, each bound to the rejected call id and
+  rejected text SHA-256 the approvals file currently holds for it — never
+  inferred, never a superset or subset the operator could construct with
+  `--only`;
+- one call kind, a maximum call count, and exactly one call per target.
+
+`status` starts `proposed`, with `authorized_by`/`authorized_at` both `null`.
+Only changing `status` to `authorized` and filling those two fields — a
+separate, later, human act — makes the record operative. Every field is
+checked (`stage_authorization_problems`) before any credential is read or
+backend is built, and only once every check passes does the send path
+(`CallStore.allowed_kinds`) accept a call of the kind the record covers —
+nothing wider, and never by inference from the configuration's own,
+unrelated authorisation.
+
+**What this preserves.** The frozen configuration's content hash, and every
+approval bound to it, are untouched by proposing, checking, authorising or
+using a stage authorisation. `git diff` on `configs/frozen/v2_full.yaml`
+across this whole mechanism's existence is empty by construction — the tests
+in `tests/test_stage_authorization.py` hash the real file and the real
+approvals file before and after exercising it and assert they are
+byte-identical.
+
+**Hardened 2026-09-24, before any record was authorised.** Two properties a
+first pass got wrong or left open:
+
+- **Fails closed, not merely correctly on well-formed input.**
+  `stage_authorization_problems` validates every field's *shape* before
+  reading its value — `max_paid_calls` a genuine positive `int` and never a
+  `bool`, `config`/`targets`/each target entry an actual mapping,
+  `authorized_at` a real ISO date or timestamp, `record_version` an exact
+  match — so a missing, null or wrongly typed field is one more reported
+  refusal, never an exception. `max_paid_calls` must equal the authorised
+  target count exactly: no unused headroom a later, unreviewed target could
+  be slipped into without changing the record.
+- **A transport failure still spends the target's one authorised call.** The
+  general pipeline rule — a transport failure "recovers as nothing happened"
+  and the next run may retry it (`CallStore.recover`) — exists because most
+  stages have no separate authorisation to make a retry a fresh decision. A
+  stage authorisation's whole point is that each call is individually
+  reviewed and counted, so redispatching a target automatically after a
+  transport failure, under the *same* authorisation, would spend a second
+  paid attempt the record never granted. `transport_blocked_targets`
+  (`reasonstyle.generation.redraft`) detects this — matching on the
+  authorisation's own recorded SHA-256, not on call id, since a redraft's
+  call id is identical across authorisation records — and the stage refuses
+  to dispatch a blocked target rather than doing so silently. A new,
+  explicit retry authorisation record (a different file, a different
+  SHA-256) is what makes another attempt possible, not another invocation of
+  the same one. Every dispatch this mechanism makes — successful, rejected
+  *or* transport-failed — records the authorising record's SHA-256, so the
+  claim that a paid call traces to its authorisation holds for all three.
+
 ## Corpus construction
 
 **Reference datasets are reference material only.** They are used to identify

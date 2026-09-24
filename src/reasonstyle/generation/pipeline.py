@@ -425,12 +425,18 @@ class CallStore:
         return {} if not self.scenario_source else {
             "scenario_source": self.scenario_source}
 
-    def record_transport_failure(self, request: DraftRequest, error: str) -> None:
+    def record_transport_failure(self, request: DraftRequest, error: str, *,
+                                 extra: dict[str, Any] | None = None) -> None:
         """Audit a transport failure WITHOUT completing the attempt.
 
         No result file is written, so the same attempt may contact the backend
-        again after a restart and does not lose one of its budget positions.
-        The log keeps the aborted transport event, so the failure stays visible.
+        again after a restart and does not lose one of its budget positions —
+        the ordinary rule, for a stage with no separate authorisation to say
+        otherwise. ``extra`` lets a caller attach its own provenance (a
+        redraft's stage-authorisation hash, say) to this line exactly as
+        :meth:`record` does for a completed one: a request that incurred cost
+        by reaching the backend traces to what authorised it whether or not a
+        response ever came back.
         """
         self.log.append(LogEntry(
             call_id=request.call_id, kind=request.kind, attempt=request.attempt,
@@ -446,7 +452,7 @@ class CallStore:
             status="error", error=error, generated_at=utc_now(),
             validation={"error_codes": [], "warning_codes": [], "machine_valid": False,
                         "consumed_budget": False},
-            extra=self._scenario_extra(),
+            extra={**dict(extra or {}), **self._scenario_extra()},
             outcome=TRANSPORT_ERROR))
 
 
