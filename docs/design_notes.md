@@ -385,10 +385,24 @@ the condition. The unblinding key lives in its own directory.
 
 **Sibling separation.** Two cells of one group differ only by a connective, so an
 annotator seeing them close together can infer the design. A minimum separation
-of 20 items is enforced in the item packet. When infeasible, the exporter reports
-it — in the packet, the manifest and on stdout — and it requires explicit
-approval to change. It is never silently relaxed. This cannot help in the pair
-packet, where both cells are shown together by design.
+of 20 items is enforced in the item packet: any two sampled items of one
+`(scenario_id, supported_option)` group sit at packet positions `i`, `j` with
+`|i - j| >= 20`: 20 positions apart, meaning at least 19 intervening
+items (not 20 intervening items). The ordering is a
+seeded randomized search followed, if that finds nothing, by an exact complete
+backtracking search (`review.solve_separation`), which either returns a
+compliant order — re-verified over every sibling pair — or proves none exists.
+The word *infeasible* is used only for a proof; a search that stops at its limit
+is reported as undetermined. When the requirement is not met, the exporter says
+so — in the packet, the manifest and on stdout — and it requires explicit
+approval to change. It is never silently relaxed. (2026-09-25: the full corpus's
+fixed 192-item sample was reported "infeasible" at 20 after 2,000 random orders
+reached only 13 and 15; the exact search meets 20 for both annotators, and the
+largest achievable minimum for that sample is 63.) This cannot help in the pair
+packet, where both cells are shown together by design. *Implementation detail:*
+the exporter nonetheless applies the same minimum to the pair packet's items
+(two pairs from one group are kept 20 positions apart). That is harmless — it is
+satisfied — but it is not additional blinding and nothing relies on it.
 
 ## Review export
 

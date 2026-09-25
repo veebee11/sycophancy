@@ -71,7 +71,9 @@ __all__ = [
     "SampleResult",
     "SeparationResult",
     "build_review_export",
+    "min_sibling_gap",
     "order_with_separation",
+    "solve_separation",
     "stratified_sample",
     "strip_highlighting",
 ]
@@ -97,26 +99,54 @@ _READ_ONLY = (
 )
 
 
+#: How an ordering's separation was established.
+SATISFIED = "satisfied"
+#: An exhaustive search, or a sound counting bound, shows no ordering exists.
+PROVED_INFEASIBLE = "proved_infeasible"
+#: The exact search stopped at its node limit: neither outcome is established.
+UNDETERMINED = "undetermined"
+
+
 @dataclass(frozen=True)
 class SeparationResult:
-    """Whether sibling cells could be held apart in a blinded packet."""
+    """Whether sibling cells could be held apart in a blinded packet.
+
+    Separation is the absolute distance between the packet positions of two
+    items sharing a sibling key, ``|i - j|``; ``requested`` is met when every
+    such distance is at least ``requested``: ``requested`` positions apart,
+    meaning at least ``requested - 1`` intervening items (never ``requested``
+    intervening items). ``achieved`` is the smallest such
+    distance in the returned order, independently re-measured.
+    """
 
     requested: int
     achieved: int | None            # None when the packet contains no sibling pair
     satisfied: bool
     n_sibling_pairs: int
+    status: str = SATISFIED
+    method: str = "randomized_search"
+    detail: str = ""
 
     def note(self) -> str:
         if self.n_sibling_pairs == 0:
             return (f"No two sampled items come from the same group, so the "
                     f"minimum sibling separation of {self.requested} is trivially met.")
         if self.satisfied:
-            return (f"Minimum sibling separation {self.requested} met "
-                    f"(achieved {self.achieved} across {self.n_sibling_pairs} sibling pair(s)).")
-        return (f"**Minimum sibling separation of {self.requested} is INFEASIBLE for this "
-                f"sample**: {self.n_sibling_pairs} sibling pair(s) among too few items. "
-                f"Best achievable separation is {self.achieved}. The constraint was reported, "
-                f"not relaxed — reduce it deliberately or enlarge the sample.")
+            return (f"Minimum sibling separation {self.requested} met: siblings are at least "
+                    f"{self.requested} positions apart, meaning at least {self.requested - 1} "
+                    f"intervening items (achieved {self.achieved} across "
+                    f"{self.n_sibling_pairs} sibling pair(s); "
+                    f"{self.method.replace('_', ' ')}).")
+        if self.status == PROVED_INFEASIBLE:
+            return (f"**Minimum sibling separation of {self.requested} is PROVED INFEASIBLE for "
+                    f"this sample** ({self.detail}). The order shown is the best found, with "
+                    f"separation {self.achieved}; it does not meet the requirement. The "
+                    f"constraint was reported, not relaxed — changing it or the sample needs "
+                    f"explicit approval.")
+        return (f"**No ordering meeting minimum sibling separation {self.requested} was found, "
+                f"and infeasibility was NOT established** ({self.detail}). The order shown has "
+                f"separation {self.achieved} and does not meet the requirement. The constraint "
+                f"was reported, not relaxed.")
 
 
 @dataclass(frozen=True)
@@ -619,13 +649,135 @@ def _stratified_sample(units: Sequence[tuple[Any, ...]], fraction: float,
     return stratified_sample(units, fraction, rng).chosen
 
 
-def order_with_separation(items: Sequence[Any], sibling_key, minimum: int,
-                           rng: random.Random, attempts: int = 2000
-                           ) -> tuple[list[Any], SeparationResult]:
-    """Shuffle so that items sharing a ``sibling_key`` stay ``minimum`` apart.
+def min_sibling_gap(order: Sequence[Any], sibling_key) -> int | None:
+    """The smallest ``|i - j|`` between positions of two items sharing a
+    ``sibling_key``; ``None`` when no two items share one."""
+    positions: defaultdict[Any, list[int]] = defaultdict(list)
+    for i, item in enumerate(order):
+        positions[sibling_key(item)].append(i)
+    gaps = [b - a for pos in positions.values() for a, b in zip(pos, pos[1:])]
+    return min(gaps) if gaps else None
 
-    If the constraint cannot be met, the best achievable arrangement is returned
-    together with a report saying so. It is never silently relaxed.
+
+def solve_separation(sizes: Sequence[int], minimum: int, rng: random.Random,
+                     node_limit: int = 2_000_000) -> tuple[str, list[int] | None, str]:
+    """Exact: an assignment of ``sum(sizes)`` positions to groups such that any
+    two positions of one group are at least ``minimum`` apart, or a proof that
+    none exists.
+
+    Complete backtracking over positions 0..n-1. At each position one group
+    with items left and no item in the previous ``minimum - 1`` positions is
+    placed. Groups are interchangeable except through (items left, positions
+    until eligible again), so branching is over those classes and every
+    failed state is remembered under that canonical key; exhausting the search
+    is therefore a proof of infeasibility. Pruning uses only a sound bound: a
+    group with ``r`` items left, first eligible at ``e``, needs
+    ``e + (r - 1) * minimum <= n - 1``. ``rng`` only orders the branches, so a
+    seed yields one deterministic compliant ordering among many.
+
+    Returns ``(status, groups_by_position, detail)``.
+    """
+    n = sum(sizes)
+    if minimum <= 1 or n == 0:
+        order = [g for g, k in enumerate(sizes) for _ in range(k)]
+        rng.shuffle(order)
+        return SATISFIED, order, "every ordering meets a separation of at most 1"
+    worst = max(sizes)
+    if (worst - 1) * minimum > n - 1:
+        return (PROVED_INFEASIBLE, None,
+                f"a group of {worst} needs a span of {(worst - 1) * minimum} positions, but "
+                f"the packet has only {n - 1}")
+
+    remaining = list(sizes)
+    ready_at = [0] * len(sizes)                 # first position each group may use
+    order: list[int] = []
+    failed: set[tuple] = set()
+    nodes = 0
+
+    class _Limit(Exception):
+        pass
+
+    def key(p: int) -> tuple:
+        return (p, tuple(sorted((remaining[g], max(0, ready_at[g] - p))
+                                for g in range(len(sizes)) if remaining[g])))
+
+    def search(p: int) -> bool:
+        nonlocal nodes
+        if p == n:
+            return True
+        nodes += 1
+        if nodes > node_limit:
+            raise _Limit
+        state = key(p)
+        if state in failed:
+            return False
+        for g in range(len(sizes)):
+            if remaining[g] and max(p, ready_at[g]) + (remaining[g] - 1) * minimum > n - 1:
+                failed.add(state)
+                return False
+        classes: dict[int, list[int]] = defaultdict(list)
+        for g in range(len(sizes)):
+            if remaining[g] and ready_at[g] <= p:
+                classes[remaining[g]].append(g)
+        # Every class is tried (completeness); the order is a seeded draw
+        # weighted by eligible items, so the first descent approximates a
+        # uniform shuffle rather than favouring multi-member groups.
+        pool = {r: r * len(gs) for r, gs in classes.items()}
+        choices = []
+        while pool:
+            pick = rng.uniform(0, sum(pool.values()))
+            for r in sorted(pool):
+                pick -= pool[r]
+                if pick <= 0:
+                    break
+            choices.append(r)
+            del pool[r]
+        # Urgent classes (less than one separation of slack) first; the stable
+        # sort keeps the seeded random order within each tier.
+        choices.sort(key=lambda r: p + (r - 1) * minimum <= n - 1 - minimum)
+        for r in choices:
+            g = rng.choice(classes[r])
+            saved = ready_at[g]
+            remaining[g] -= 1
+            ready_at[g] = p + minimum
+            order.append(g)
+            if search(p + 1):
+                return True
+            order.pop()
+            remaining[g] += 1
+            ready_at[g] = saved
+        failed.add(state)
+        return False
+
+    import sys
+    limit = sys.getrecursionlimit()
+    sys.setrecursionlimit(max(limit, n + 1000))
+    try:
+        found = search(0)
+    except _Limit:
+        return UNDETERMINED, None, f"exact search stopped at its limit of {node_limit} nodes"
+    finally:
+        sys.setrecursionlimit(limit)
+    if found:
+        return SATISFIED, list(order), f"exact backtracking, {nodes} node(s)"
+    return (PROVED_INFEASIBLE, None,
+            f"exhaustive exact backtracking over {nodes} node(s) found no ordering")
+
+
+def order_with_separation(items: Sequence[Any], sibling_key, minimum: int,
+                           rng: random.Random, attempts: int = 2000,
+                           node_limit: int = 2_000_000
+                           ) -> tuple[list[Any], SeparationResult]:
+    """Order ``items`` so that items sharing a ``sibling_key`` are at least
+    ``minimum`` positions apart (``|i - j| >= minimum``).
+
+    The randomized search runs first, unchanged, so any ordering it already
+    produced is reproduced exactly. If it finds none, the exact solver
+    (:func:`solve_separation`) either returns a compliant ordering or proves
+    that none exists; at its node limit it reports the question undetermined.
+    Every claimed success is re-measured independently. The constraint is
+    never silently relaxed: when it cannot be met, the best arrangement found
+    is returned with a result saying so.
     """
     groups: defaultdict[Any, list[int]] = defaultdict(list)
     for i, item in enumerate(items):
@@ -638,12 +790,8 @@ def order_with_separation(items: Sequence[Any], sibling_key, minimum: int,
         return order, SeparationResult(minimum, None, True, 0)
 
     def min_gap(order: Sequence[Any]) -> int:
-        positions: defaultdict[Any, list[int]] = defaultdict(list)
-        for i, item in enumerate(order):
-            positions[sibling_key(item)].append(i)
-        gaps = [b - a for pos in positions.values()
-                for a, b in zip(sorted(pos), sorted(pos)[1:])]
-        return min(gaps) if gaps else minimum
+        gap = min_sibling_gap(order, sibling_key)
+        return minimum if gap is None else gap
 
     best, best_gap = None, -1
     for _ in range(attempts):
@@ -654,8 +802,30 @@ def order_with_separation(items: Sequence[Any], sibling_key, minimum: int,
             best, best_gap = candidate, gap
         if gap >= minimum:
             return candidate, SeparationResult(minimum, gap, True, n_pairs)
-    assert best is not None
-    return best, SeparationResult(minimum, best_gap, False, n_pairs)
+    if best is None:                              # attempts=0: go straight to the solver
+        best = list(items)
+        best_gap = min_gap(best)
+
+    members = [groups[k] for k in sorted(groups, key=repr)]
+    status, by_position, detail = solve_separation([len(m) for m in members], minimum, rng,
+                                                   node_limit=node_limit)
+    if status == SATISFIED:
+        pools = [list(m) for m in members]
+        for pool in pools:
+            rng.shuffle(pool)
+        order = [items[pools[g].pop()] for g in by_position]
+        gap = min_sibling_gap(order, sibling_key)
+        # Independent re-check of EVERY sibling pair, not only neighbours.
+        keys = [sibling_key(item) for item in order]
+        every_pair = all(j - i >= minimum for i in range(len(keys))
+                         for j in range(i + 1, len(keys)) if keys[i] == keys[j])
+        if (sorted(map(repr, order)) != sorted(map(repr, items)) or gap is None
+                or gap < minimum or not every_pair):
+            raise AssertionError("the exact ordering failed independent verification")
+        return order, SeparationResult(minimum, gap, True, n_pairs, SATISFIED,
+                                       "exact_backtracking", detail)
+    return best, SeparationResult(minimum, best_gap, False, n_pairs, status,
+                                  "exact_backtracking", detail)
 
 
 def _blind_item_packet(records, cfg, corpus_hash, source, segmenter, annotator,
@@ -886,7 +1056,10 @@ def build_review_export(
         "outstanding_human_review": len(report.human_review),
         "sibling_separation": {
             k: {"requested": v.requested, "achieved": v.achieved,
-                "satisfied": v.satisfied, "sibling_pairs": v.n_sibling_pairs}
+                "satisfied": v.satisfied, "sibling_pairs": v.n_sibling_pairs,
+                "status": v.status, "method": v.method, "detail": v.detail,
+                "distance": (f"|i - j| >= {v.requested}: {v.requested} positions apart, "
+                             f"meaning at least {v.requested - 1} intervening items")}
             for k, v in sorted(separation.items())},
         "supported_option_balance": {k: v.as_dict() for k, v in sorted(balance.items())},
         "files": {name: sha256_of(text) for name, text in sorted(files.items())},
