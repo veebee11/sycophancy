@@ -1127,6 +1127,30 @@ Nothing detects this at assembly, which is why it is recorded here and in the
 correction's reason. The spent group-stage authorisation keeps its original
 bindings as history and is stale against the corrected state by design.
 
+**Seed-cell corrections are full-design overlays (2026-09-25).** The frozen pilot
+corpus, its manifest and its correction ledger are pinned by the full
+configuration and are never rewritten. A seed cell that needs correcting under
+the full design (first case: `energy_03_v1/opt_1`, an added quantity) is
+recorded in the full design's own ledger, bound to the seed group's recorded
+call id and exact seed text, validated under both the seed's and the full
+configuration, and applied only when the combined corpus is assembled. The
+record keeps the seed configuration hash. The manifest says so explicitly:
+`seed_integrity` counts the seed lines still byte-identical to the pinned pilot
+corpus (23 of 24) and names the overlaid ones, and `seed_overlays` gives each
+overlay's original and corrected line SHA-256 and its corrections. Every
+recorded correction must apply exactly once, or nothing is assembled.
+
+**A pinned reliability sample (2026-09-25).** The review export seeds the
+reliability sample, blind ids, P/Q labels, pair sides and packet orders from the
+corpus hash, so a changed corpus draws a new sample — deliberately. Once a
+sample is fixed, correcting text must not silently replace it, and it must not
+be reused silently either. `data/full/reliability_sample_full_v2.json` records
+the corpus hash the sample was drawn from and the SHA-256 of the item, pair and
+scenario key files; `export_for_review.py --reliability-sample` seeds from that
+hash and refuses, writing nothing, unless all three key files reproduce exactly.
+Sampling depends only on design facets (domain, condition, marker family,
+supported option), never on text, so a text-only correction keeps the sample.
+
 **Assembly and counterargument correction.** A record is assembled only from an approved
 scenario and machine-valid groups. A human correction is never an edit to what
 the model returned: it is a separate record naming the original call id and its

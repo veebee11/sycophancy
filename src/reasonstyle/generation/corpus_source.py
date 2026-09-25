@@ -53,6 +53,7 @@ __all__ = [
     "CorpusPlan",
     "SeedCorpus",
     "SeedCorpusError",
+    "apply_seed_overlays",
     "combine_corpus",
     "combined_corpus_problems",
     "load_seed_corpus",
@@ -508,13 +509,19 @@ def plan_full_corpus(cfg: ExperimentConfig, bank: TopicBank, seed: SeedCorpus) -
 
 
 def combine_corpus(seed: SeedCorpus, plan: CorpusPlan, new_records, new_manifest: dict[str, Any],
-                   *, cfg: ExperimentConfig) -> tuple[str, dict[str, Any]]:
+                   *, cfg: ExperimentConfig,
+                   seed_overlays: dict[str, ScenarioRecord] | None = None
+                   ) -> tuple[str, dict[str, Any]]:
     """The combined corpus body and its two-source manifest. Writes nothing.
 
     Seed records pass through **byte for byte**: their committed lines are
     reused, never re-serialised, and never restamped with the full design's
-    hash. New records must be exactly the planned scenarios, built under this
-    design. Order is deterministic: by scenario id.
+    hash. The one exception is ``seed_overlays`` (:func:`apply_seed_overlays`):
+    a seed record corrected by an approved full-design correction is written
+    as corrected, still under the seed's own configuration hash, and the
+    caller records that overlay in the manifest. New records must be exactly
+    the planned scenarios, built under this design. Order is deterministic: by
+    scenario id.
     """
     from ..corpus.store import dumps_record
 
@@ -533,7 +540,12 @@ def combine_corpus(seed: SeedCorpus, plan: CorpusPlan, new_records, new_manifest
     if problems:
         raise SeedCorpusError("the combined corpus is refused:\n  - " + "\n  - ".join(problems))
 
+    overlays = dict(seed_overlays or {})
+    stray = sorted(set(overlays) - set(seed.lines))
+    if stray:
+        raise SeedCorpusError(f"seed overlays for non-seed scenario(s) {stray}")
     lines = dict(seed.lines)
+    lines.update({sid: dumps_record(record) for sid, record in overlays.items()})
     lines.update({sid: dumps_record(record) for sid, record in new.items()})
     body = "".join(lines[sid] + "\n" for sid in sorted(lines))
     manifest = {
@@ -609,3 +621,63 @@ def combined_corpus_problems(seed: SeedCorpus, plan: CorpusPlan, body: str,
     if got != want:
         problems.append(f"the combined corpus has {got}; the plan requires {want}")
     return problems, report
+
+
+def apply_seed_overlays(seed: SeedCorpus, corrections, segmenter
+                        ) -> tuple[dict[str, ScenarioRecord], dict[str, Any]]:
+    """Approved full-design corrections to seed records, as overlays. Writes nothing.
+
+    The frozen pilot corpus, its manifest and its own correction ledger are
+    never touched: a seed cell is corrected only in the combined full corpus,
+    by a correction recorded in the full design's ledger. Each correction must
+    name the seed group's recorded call id and the exact seed cell text, and be
+    approved (``assemble.correction_problems``); the corrected record keeps the
+    seed configuration hash and must still validate under the seed's own
+    configuration. Returns the corrected records and their provenance
+    (original and corrected line SHA-256, and every applied correction).
+    """
+    from .assemble import AssemblyRefused, correction_problems
+
+    by_scenario: dict[str, list] = {}
+    for correction in corrections:
+        if correction.scenario_id in seed.lines:
+            by_scenario.setdefault(correction.scenario_id, []).append(correction)
+    if not by_scenario:
+        return {}, {}
+    seed_cfg = load_config(seed.provenance["config"])
+    records = {r.scenario_id: r for r in seed.records}
+    overlays: dict[str, ScenarioRecord] = {}
+    provenance: dict[str, Any] = {}
+    for scenario_id, mine in sorted(by_scenario.items()):
+        record = records[scenario_id]
+        call_ids = (seed.provenance["scenarios"].get(scenario_id) or {}).get("group_call_ids") or {}
+        blocks = dict(record.counterarguments)
+        problems: list[str] = []
+        for correction in mine:
+            block = blocks.get(correction.supported_option)
+            if block is None or correction.condition not in block.cells:
+                problems.append(f"{correction.key}: no such seed cell")
+                continue
+            cell = block.cells[correction.condition]
+            problems += correction_problems(correction, cell.body,
+                                            call_ids.get(correction.supported_option))
+            cells = dict(block.cells)
+            cells[correction.condition] = cell.model_copy(update={"body": correction.corrected_text})
+            blocks[correction.supported_option] = block.model_copy(update={"cells": cells})
+        if problems:
+            raise AssemblyRefused("; ".join(problems))
+        corrected = record.model_copy(update={"counterarguments": blocks})
+        report = validate_corpus([corrected], seed_cfg, segmenter, corpus_scope="pilot")
+        if report.errors:
+            raise AssemblyRefused(
+                f"{scenario_id}: the corrected seed record has machine errors under the seed's "
+                f"own configuration {sorted({f.code for f in report.errors})}")
+        from ..corpus.store import dumps_record
+        overlays[scenario_id] = corrected
+        provenance[scenario_id] = {
+            "original_line_sha256": sha256_of(seed.lines[scenario_id]),
+            "corrected_line_sha256": sha256_of(dumps_record(corrected)),
+            "seed_config_content_hash": corrected.config_content_hash,
+            "corrections": [c.as_dict() for c in mine],
+        }
+    return overlays, provenance

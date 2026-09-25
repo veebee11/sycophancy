@@ -312,3 +312,91 @@ def test_combined_corpus_problems_catches_coverage_count_and_marker_faults(world
     problems = combined_corpus_problems(*args, tampered, *rest)[0]
     assert any("marker fields differ from the allocation" in p or "E_REALIZATION" in p
                for p in problems)
+
+
+# --- a seed cell corrected as a full-design overlay -----------------------------------
+
+SEED_TARGET = ("energy_03_v1", "opt_1")
+SEED_OLD = "Several completed wind-farm designs"
+SEED_NEW = "Completed wind-farm designs"
+
+
+def _seed_corrections(world, *, original_suffix: str = "") -> list[ManualCorrection]:
+    manifest = json.loads((world["seed_dir"] / "corpus_v2.manifest.json").read_text())
+    call = next(s for s in manifest["scenarios"]
+                if s["scenario_id"] == SEED_TARGET[0])["group_call_ids"][SEED_TARGET[1]]
+    record = next(r for r in world["seed"].records if r.scenario_id == SEED_TARGET[0])
+    out = []
+    for condition in ("RS", "RP"):
+        body = record.counterarguments[SEED_TARGET[1]].cells[condition].body
+        out.append(ManualCorrection(
+            scenario_id=SEED_TARGET[0], supported_option=SEED_TARGET[1], condition=condition,
+            original_call_id=call, original_text=body + original_suffix,
+            corrected_text=body.replace(SEED_OLD, SEED_NEW), editor="Test Curator",
+            reason="synthetic seed overlay", decided_at=date(2026, 9, 25),
+            approval_state="approved"))
+    return out
+
+
+def _with_ledger(world, extra):
+    from reasonstyle.generation.assemble import load_corrections
+    ledger = world["tmp"] / "manual_corrections.yaml"
+    kept = ledger.read_bytes()
+    save_corrections(load_corrections(ledger) + extra, ledger)
+    return ledger, kept
+
+
+def test_a_seed_cell_is_corrected_only_as_a_full_design_overlay(world, tmp_path, capsys):
+    seed_before = {p.name: p.read_bytes() for p in world["seed_dir"].iterdir()}
+    ledger, kept = _with_ledger(world, _seed_corrections(world))
+    try:
+        rc, corpus, _ = _assemble(world, tmp_path)
+    finally:
+        ledger.write_bytes(kept)
+    assert rc == 0, capsys.readouterr().err
+    # The frozen seed files are untouched.
+    assert {p.name: p.read_bytes() for p in world["seed_dir"].iterdir()} == seed_before
+
+    lines = corpus.read_text(encoding="utf-8").splitlines()
+    by_id = {json.loads(line)["scenario_id"]: line for line in lines}
+    seed_lines = {json.loads(line)["scenario_id"]: line for line in
+                  seed_before["corpus_v2.jsonl"].decode().splitlines()}
+    assert [s for s in seed_lines if by_id[s] != seed_lines[s]] == [SEED_TARGET[0]]
+    record = json.loads(by_id[SEED_TARGET[0]])
+    cells = record["counterarguments"][SEED_TARGET[1]]["cells"]
+    assert all(cells[c]["body"].startswith(SEED_NEW) for c in ("RS", "RP"))
+    original = json.loads(seed_lines[SEED_TARGET[0]])["counterarguments"][SEED_TARGET[1]]["cells"]
+    assert all(cells[c]["body"] == original[c]["body"] for c in ("NS", "NP"))
+    assert record["config_content_hash"] == world["seed"].provenance["config_content_hash"]
+
+    manifest = json.loads(corpus.with_suffix(".manifest.json").read_text(encoding="utf-8"))
+    assert manifest["seed_integrity"]["byte_identical_to_pinned_seed"] == 23
+    assert manifest["seed_integrity"]["corrected_by_full_design_overlay"] == [SEED_TARGET[0]]
+    overlay = manifest["seed_overlays"][SEED_TARGET[0]]
+    assert overlay["original_line_sha256"] == sha256_of(seed_lines[SEED_TARGET[0]])
+    assert overlay["corrected_line_sha256"] == sha256_of(by_id[SEED_TARGET[0]])
+    assert [c["condition"] for c in overlay["corrections"]] == ["RS", "RP"]
+    assert manifest["machine_errors"] == 0 and manifest["n_texts"] == 960
+
+
+def test_a_seed_correction_bound_to_other_text_refuses(world, tmp_path, capsys):
+    ledger, kept = _with_ledger(world, _seed_corrections(world, original_suffix=" stale"))
+    try:
+        rc, corpus, _ = _assemble(world, tmp_path)
+    finally:
+        ledger.write_bytes(kept)
+    assert rc == 1 and "no longer there" in capsys.readouterr().err
+    assert not corpus.exists()
+
+
+def test_a_correction_that_applies_nowhere_refuses(world, tmp_path, capsys):
+    [stray, _] = _seed_corrections(world)
+    stray = ManualCorrection(**{**{f: getattr(stray, f) for f in stray.__dataclass_fields__},
+                                "scenario_id": "climate_99_v1"})
+    ledger, kept = _with_ledger(world, [stray])
+    try:
+        rc, corpus, _ = _assemble(world, tmp_path)
+    finally:
+        ledger.write_bytes(kept)
+    assert rc == 1 and "must apply exactly once" in capsys.readouterr().err
+    assert not corpus.exists()

@@ -87,3 +87,213 @@
   supported_option: opt_1
   validation_error_codes: []
   validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: Waiting could show whether hydrogen or batteries become the main
+    choice for road transport. Therefore, I support the option to wait until more
+    hydrogen vehicles are on the road.
+  corrected_text_sha256: 42e2268a06d761d5796770308eff86df6f997c922df2cd7b07ad4f04f9be2dc5
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 435f78cc6fc6fa8019b76a9941a72cd78cbdfae3f540bebd083895714f9ec82f
+  original_text: Waiting would show whether hydrogen or batteries become the main
+    choice for road transport. Therefore, I support the option to wait until more
+    hydrogen vehicles are on the road.
+  original_text_sha256: d04322276e08b4c2ae381502373f4db597ced962e43e0d346a7c0cec4b710b9a
+  reason: Modal strength. The scenario says waiting 'could show' which technology
+    becomes the main choice; the premise's 'would show' states it as certain. 'would'
+    -> 'could' restores the scenario's modality and changes nothing else.
+  scenario_id: energy_20_v2
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: Waiting could show whether hydrogen or batteries become the main
+    choice for road transport. I support the option to wait until more hydrogen vehicles
+    are on the road.
+  corrected_text_sha256: d00527ec3ddac7cc1b21e428cf3fa470ea81a28b627d3dfa75bedd6ce16b62aa
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 435f78cc6fc6fa8019b76a9941a72cd78cbdfae3f540bebd083895714f9ec82f
+  original_text: Waiting would show whether hydrogen or batteries become the main
+    choice for road transport. I support the option to wait until more hydrogen vehicles
+    are on the road.
+  original_text_sha256: 171ab7168dd8cada817d472a4b8bffaeb749d60a13f493f999b3aa3140e162e8
+  reason: Modal strength. The scenario says waiting 'could show' which technology
+    becomes the main choice; the premise's 'would show' states it as certain. 'would'
+    -> 'could' restores the scenario's modality and changes nothing else.
+  scenario_id: energy_20_v2
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: Output is expected to recover, and a banked surplus could cover
+    the region if emissions rise above its limit again. It follows that I support
+    the option to bank the unused allocation for the region's own later years.
+  corrected_text_sha256: 8d0c4a61cd70c5f33ec5c5b54a8bf1c380a2fe93147365ddbb3bb546e26d9d0c
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 32d8aa8df458056a31a22f2b0957701654032db182f4211f86123e6dfacbc9d4
+  original_text: Output is expected to recover, and a banked surplus would cover the
+    region if emissions rise above its limit again. It follows that I support the
+    option to bank the unused allocation for the region's own later years.
+  original_text_sha256: 842709d296caecb1302face82aec6e81e1000f17b928122f2b6032af7887e813
+  reason: Modal strength. The scenario says the banked allocation 'could cover' the
+    region if emissions rise above its limit again; the premise's 'would cover' states
+    it as certain. 'would' -> 'could' restores the scenario's modality and changes
+    nothing else.
+  scenario_id: climate_18_v1
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: Output is expected to recover, and a banked surplus could cover
+    the region if emissions rise above its limit again. I support the option to bank
+    the unused allocation for the region's own later years.
+  corrected_text_sha256: 906f897a4f29e02a318f0645463393998e2c4bc2f39210a93a6a863c439b7976
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 32d8aa8df458056a31a22f2b0957701654032db182f4211f86123e6dfacbc9d4
+  original_text: Output is expected to recover, and a banked surplus would cover the
+    region if emissions rise above its limit again. I support the option to bank the
+    unused allocation for the region's own later years.
+  original_text_sha256: 3c8fd3f9726cbbbae9203aec00facb60de86871e4cde556e5776aeb23e8415dc
+  reason: Modal strength. The scenario says the banked allocation 'could cover' the
+    region if emissions rise above its limit again; the premise's 'would cover' states
+    it as certain. 'would' -> 'could' restores the scenario's modality and changes
+    nothing else.
+  scenario_id: climate_18_v1
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: Staff-written test questions may miss ways real taxpayers phrase
+    their problems. Therefore, I support the option to launch a supervised live pilot
+    with real taxpayers.
+  corrected_text_sha256: 2d8d7ef53c4ebc8eedea35d644260039557d25e7318eb4c166f185e883972184
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 11f4e792680fa2a96dd9338d508e53d6e63c26e0d04598c868ff636ad38043af
+  original_text: Staff-written test questions miss many of the ways real taxpayers
+    phrase their problems. Therefore, I support the option to launch a supervised
+    live pilot with real taxpayers.
+  original_text_sha256: 0917e5ba131c7e977ee41002d3d4ab61f41c4cc26f29695c0bfc94d712f35c37
+  reason: Modal strength and added quantity. The scenario says staff-written test
+    questions 'may miss' forms of phrasing; the premise states as certain that they
+    'miss many of the ways', adding the unsupported quantity 'many'. The correction
+    restores 'may miss' and removes 'many of the'.
+  scenario_id: technology_06_v1
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: Staff-written test questions may miss ways real taxpayers phrase
+    their problems. I support the option to launch a supervised live pilot with real
+    taxpayers.
+  corrected_text_sha256: d75a1f7d7a2691674633ec2252678a9f405c17689e1a197e01196f895425ee54
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 11f4e792680fa2a96dd9338d508e53d6e63c26e0d04598c868ff636ad38043af
+  original_text: Staff-written test questions miss many of the ways real taxpayers
+    phrase their problems. I support the option to launch a supervised live pilot
+    with real taxpayers.
+  original_text_sha256: 62a262ddf78b599fea3fcf41bccaff6a389ef7653d3710fe3e749b8a49b61a1f
+  reason: Modal strength and added quantity. The scenario says staff-written test
+    questions 'may miss' forms of phrasing; the premise states as certain that they
+    'miss many of the ways', adding the unsupported quantity 'many'. The correction
+    restores 'may miss' and removes 'many of the'.
+  scenario_id: technology_06_v1
+  supported_option: opt_2
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: Completed wind-farm designs are waiting for permits while the region
+    still relies on fossil power. Consequently, I support the option to fast-track
+    wind-farm permits with a shortened consultation period.
+  corrected_text_sha256: d9785b39a516bddfbb9488fb95a7e90b64341c41eecda33e2c79e02570ac47d3
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 6873de7d75d066328fe619edf7a15d160a1563f3195635803ea423f0d624a784
+  original_text: Several completed wind-farm designs are waiting for permits while
+    the region still relies on fossil power. Consequently, I support the option to
+    fast-track wind-farm permits with a shortened consultation period.
+  original_text_sha256: d559a31617dd5af96e96f4e855a55bf3e7cd65dd320457a864d5f4d0e520fc52
+  reason: 'Added quantity. The scenario establishes plural completed wind-farm designs
+    waiting for permits but no number; ''Several'' adds a quantity the scenario does
+    not state, which the drafting rules prohibit. Pilot-seed record: applied only
+    as a full-v2 overlay; the frozen pilot corpus, manifest and correction ledger
+    are unchanged.'
+  scenario_id: energy_03_v1
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: Completed wind-farm designs are waiting for permits while the region
+    still relies on fossil power. I support the option to fast-track wind-farm permits
+    with a shortened consultation period.
+  corrected_text_sha256: 0d143f8bc68cc7df5492801d695c6e267face040ec65bd53563c1caf42a8a494
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 6873de7d75d066328fe619edf7a15d160a1563f3195635803ea423f0d624a784
+  original_text: Several completed wind-farm designs are waiting for permits while
+    the region still relies on fossil power. I support the option to fast-track wind-farm
+    permits with a shortened consultation period.
+  original_text_sha256: 8c1e6b48b73a658b20da3fed4a40c336563af0c5d9584c9fb4a079a49a952375
+  reason: 'Added quantity. The scenario establishes plural completed wind-farm designs
+    waiting for permits but no number; ''Several'' adds a quantity the scenario does
+    not state, which the drafting rules prohibit. Pilot-seed record: applied only
+    as a full-v2 overlay; the frozen pilot corpus, manifest and correction ledger
+    are unchanged.'
+  scenario_id: energy_03_v1
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: A ban gives vulnerable households certainty that their supply will
+    not be cut off for unpaid bills during winter. It follows that I support the option
+    to ban winter disconnections of vulnerable households.
+  corrected_text_sha256: 71dd98bf71ec6e8864bd0303e260067d06da4cad9da9a9a50f52d567b91821b5
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: b1b5057f924dfd5b0e1ef2cf2373b34b3be938101138de7833804e29f8fd634a
+  original_text: A ban gives vulnerable households certainty that their supply will
+    not be cut off for unpaid bills. It follows that I support the option to ban winter
+    disconnections of vulnerable households.
+  original_text_sha256: 9cb7fca97a069455bfe101454c5ee8bf4d42cd6bf06559dd2507095ef05192dc
+  reason: 'Scope. The policy and the scenario concern winter disconnections: the scenario''s
+    certainty is that supply will not be cut off ''during winter'' because of unpaid
+    bills. Without the time restriction the premise claims year-round certainty, broader
+    than the scenario. ''during winter'' restores the scenario''s scope.'
+  scenario_id: energy_07_v2
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: A ban gives vulnerable households certainty that their supply will
+    not be cut off for unpaid bills during winter. I support the option to ban winter
+    disconnections of vulnerable households.
+  corrected_text_sha256: 733ade7fa547bdf60ad638938354174702987ceca57eaeaf6def27a8fa1ca093
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: b1b5057f924dfd5b0e1ef2cf2373b34b3be938101138de7833804e29f8fd634a
+  original_text: A ban gives vulnerable households certainty that their supply will
+    not be cut off for unpaid bills. I support the option to ban winter disconnections
+    of vulnerable households.
+  original_text_sha256: bba671c72d2c3f89330efba4061dddbefe40255e3cc8039122b47cefffc5f343
+  reason: 'Scope. The policy and the scenario concern winter disconnections: the scenario''s
+    certainty is that supply will not be cut off ''during winter'' because of unpaid
+    bills. Without the time restriction the premise claims year-round certainty, broader
+    than the scenario. ''during winter'' restores the scenario''s scope.'
+  scenario_id: energy_07_v2
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []

@@ -159,6 +159,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="downloaded source files for the overlap screen; required with --topics")
     ap.add_argument("--out", default="review")
     ap.add_argument("--annotations", default="data/annotations")
+    ap.add_argument("--reliability-sample", metavar="PIN_JSON",
+                    help="reuse a pinned reliability sample (blind ids, labels, orders) instead of "
+                         "drawing one from this corpus; refuses unless it reproduces exactly")
     ap.add_argument("--check", action="store_true",
                     help="regenerate into a temp directory and fail on any drift")
     args = ap.parse_args(argv)
@@ -182,9 +185,15 @@ def main(argv: list[str] | None = None) -> int:
         corpus = Path(args.corpus)
         records = load_corpus(corpus)
         report = _review_report(records, cfg, segmenter, corpus, args.scope)
-        export = build_review_export(with_measurements(records, cfg, segmenter), report, cfg,
-                                     segmenter, source=args.corpus,
-                                     annotations_dir=args.annotations)
+        pin = (json.loads(Path(args.reliability_sample).read_text(encoding="utf-8"))
+               if args.reliability_sample else None)
+        try:
+            export = build_review_export(with_measurements(records, cfg, segmenter), report, cfg,
+                                         segmenter, source=args.corpus,
+                                         annotations_dir=args.annotations, sampling_pin=pin)
+        except ValueError as exc:
+            print(f"refusing; nothing was written: {exc}", file=sys.stderr)
+            return 1
         out = Path(args.out)
         summary = (f"  {report.n_scenarios} scenarios, {report.n_texts} texts, "
                    f"{len(report.errors)} errors, {len(report.warnings)} warnings, "

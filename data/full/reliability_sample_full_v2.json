@@ -1,0 +1,13 @@
+{
+  "config_content_hash": "7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94",
+  "description": "The full-v2 reliability sample, fixed. Drawn by scripts/export_for_review.py from the corpus below; later exports pass --reliability-sample to reuse it exactly (same items, blind ids, P/Q labels, pair sides and packet orders) and refuse if it cannot be reproduced.",
+  "drawn_from_corpus_content_hash": "346a00695ec1c718de477a629402e839e97ec0a8dcce7edcbb1f21445c619177",
+  "drawn_from_corpus_file": "data/full/corpus_full_v2.jsonl",
+  "drawn_from_corpus_file_sha256": "f19c464104047e45b9ef294d3e20ecd7b2eadafce7473a7303010d20646abd66",
+  "item_key_sha256": "105c96abdaadd13e993afa63ac5df95a3c5a7cf5caeb1ee0f686dac7e4f32973",
+  "item_sample_size": 192,
+  "pair_key_sha256": "5ae939eb011744b22c13f2e917f7894044948a0fc1d971dbe1f805c8c17d16d4",
+  "pair_sample_size": 96,
+  "scenario_key_sha256": "3cdb2ddb02c63c40fb32fcb0cf92627f1e66f27b222989600cedbcafa62af0a9",
+  "scenario_sample_size": 24
+}

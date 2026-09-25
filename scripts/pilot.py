@@ -141,6 +141,7 @@ from reasonstyle.generation.scenario_source import (
 )
 from reasonstyle.generation.corpus_source import (
     SeedCorpusError,
+    apply_seed_overlays,
     combine_corpus,
     combined_corpus_problems,
     load_seed_corpus,
@@ -1243,16 +1244,26 @@ def _assemble_full(args, cfg, bank, allocation, topics, store: CallStore, seed, 
     approvals, gate_hash, _ = _gate(args, cfg, store)
     bank_hash = content_hash(bank.model_dump(mode="json"))
     groups = recorded_groups(store)
+    corrections = load_corrections(args.corrections_file)
     try:
         records, new_manifest = assemble_pilot(
             topics=topics, allocation_groups=allocation.groups, approvals=approvals,
             approval_config_content_hash=gate_hash, scenario_source=None,
-            corrections=load_corrections(args.corrections_file),
+            corrections=[c for c in corrections if c.scenario_id not in seed.lines],
             scenarios=_current_scenarios(args, cfg, store), groups=groups, cfg=cfg,
             segmenter=segmenter, topic_bank_content_hash=bank_hash, variants=plan.variants)
         # Validated as a subset here; allocation checks run on the combined corpus.
         new_manifest = {**new_manifest, "corpus_scope": "new_material"}
-        body, manifest = combine_corpus(seed, plan, records, new_manifest, cfg=cfg)
+        # Seed cells corrected by this design's ledger: overlays in the combined
+        # corpus only; the frozen pilot corpus and its ledger are never touched.
+        seed_overlays, overlay_provenance = apply_seed_overlays(seed, corrections, segmenter)
+        applied = (sum(len(s["manual_corrections"]) for s in new_manifest["scenarios"])
+                   + sum(len(p["corrections"]) for p in overlay_provenance.values()))
+        if applied != len(corrections):
+            raise AssemblyError(f"{len(corrections)} correction(s) are recorded but {applied} "
+                                f"were applied; every recorded correction must apply exactly once")
+        body, manifest = combine_corpus(seed, plan, records, new_manifest, cfg=cfg,
+                                        seed_overlays=seed_overlays)
     except (AssemblyError, SeedCorpusError) as exc:
         print(f"\nnothing was assembled:\n{exc}", file=sys.stderr)
         return 1
@@ -1279,6 +1290,14 @@ def _assemble_full(args, cfg, bank, allocation, topics, store: CallStore, seed, 
         "machine_errors": seed_findings - len(seed.lines),
         "machine_warnings": len(report.warnings),
         "outstanding_human_review": len(report.human_review),
+        "seed_integrity": {
+            "byte_identical_to_pinned_seed": len(seed.lines) - len(seed_overlays),
+            "corrected_by_full_design_overlay": sorted(seed_overlays),
+            "note": ("every other seed line is the pinned pilot line byte for byte; an overlay "
+                     "line is that record with approved corrections from this design's own "
+                     "ledger applied, still under the seed configuration hash, and the frozen "
+                     "pilot corpus, manifest and ledger are unchanged")},
+        "seed_overlays": overlay_provenance,
         "seed_config_hash_findings": {
             "count": seed_findings,
             "note": ("E_CONFIG_HASH_MISMATCH on exactly the seed records, which keep the "

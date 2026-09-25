@@ -925,14 +925,29 @@ def build_review_export(
     segmenter: Segmenter,
     source: str | Path,
     annotations_dir: str | Path = "data/annotations",
+    sampling_pin: dict[str, Any] | None = None,
 ) -> ReviewExport:
-    """Build every review file in memory. Deterministic for a given corpus."""
+    """Build every review file in memory. Deterministic for a given corpus.
+
+    The reliability sample, its blind ids, P/Q labels, pair sides and packet
+    orders are seeded from the corpus hash, so a changed corpus draws a new
+    sample. ``sampling_pin`` makes reuse explicit instead: everything is seeded
+    from the pin's ``drawn_from_corpus_content_hash``, and the resulting item,
+    pair and scenario key files must hash to the pinned values under the same
+    configuration, or nothing is built (``ValueError``). Sampling depends only
+    on each unit's design facets, never on its text, so a text-only correction
+    can keep a pinned sample; any other change refuses.
+    """
     source = Path(source)
     # The canonical corpus hash, taken from the validation report, which was
     # computed on the records as stored. `records` here may carry derived
     # measurements; those must never change the corpus identity, or the hash
     # printed in the review would not match the JSONL that was reviewed.
     corpus_hash = report.corpus_content_hash
+    if sampling_pin is not None and sampling_pin.get("config_content_hash") != cfg.content_hash:
+        raise ValueError("the reliability-sample pin was drawn under a different configuration")
+    sample_hash = (sampling_pin["drawn_from_corpus_content_hash"] if sampling_pin is not None
+                   else corpus_hash)
     recorded = _recorded_counts(Path(annotations_dir), records)
 
     by_decision: defaultdict[str, list[ScenarioRecord]] = defaultdict(list)
@@ -959,10 +974,10 @@ def build_review_export(
 
     stratify_by, balance_by = sub["stratify_by"], sub["balance_marginally"]
     item_units = item_sampling_units(records, stratify_by, balance_by)
-    item_sample = stratified_sample(item_units, fraction, _rng(cfg, corpus_hash, "item-sample"))
+    item_sample = stratified_sample(item_units, fraction, _rng(cfg, sample_hash, "item-sample"))
     item_chosen = item_sample.chosen
     item_keys: list[BlindItemKey] = []
-    label_rng = _rng(cfg, corpus_hash, "item-labels")
+    label_rng = _rng(cfg, sample_hash, "item-labels")
     for i, (scenario_id, option, condition) in enumerate(sorted(item_chosen), start=1):
         options = list(SEMANTIC_OPTIONS)
         label_rng.shuffle(options)
@@ -977,13 +992,13 @@ def build_review_export(
                          for f in stratify_by),
                    tuple(_facets(r, o, None)[f] for f in balance_by))
                   for r in records for o in SEMANTIC_OPTIONS for _, _, pid in PAIRS]
-    pair_sample = stratified_sample(pair_units, fraction, _rng(cfg, corpus_hash, "pair-sample"))
+    pair_sample = stratified_sample(pair_units, fraction, _rng(cfg, sample_hash, "pair-sample"))
     pair_chosen = pair_sample.chosen
     balance = {name: result for name, result in (("item", item_sample.balance),
                                                   ("pair", pair_sample.balance))
                if result is not None}
     pair_keys: list[BlindPairKey] = []
-    side_rng = _rng(cfg, corpus_hash, "pair-sides")
+    side_rng = _rng(cfg, sample_hash, "pair-sides")
     for i, (scenario_id, option, pair_id) in enumerate(sorted(pair_chosen), start=1):
         conditions = [c for a, b, pid in PAIRS if pid == pair_id for c in (a, b)]
         side_rng.shuffle(conditions)
@@ -993,9 +1008,9 @@ def build_review_export(
 
     scenario_units = [(r.scenario_id, (r.domain,)) for r in records]
     scenario_chosen = stratified_sample(scenario_units, fraction,
-                                        _rng(cfg, corpus_hash, "scenario-sample")).chosen
+                                        _rng(cfg, sample_hash, "scenario-sample")).chosen
     scenario_keys: list[BlindScenarioKey] = []
-    scen_rng = _rng(cfg, corpus_hash, "scenario-labels")
+    scen_rng = _rng(cfg, sample_hash, "scenario-labels")
     for i, scenario_id in enumerate(sorted(scenario_chosen), start=1):
         options = list(SEMANTIC_OPTIONS)
         scen_rng.shuffle(options)
@@ -1009,13 +1024,13 @@ def build_review_export(
         # Same items for every annotator (kappa requires it); independent order.
         items, item_sep = order_with_separation(
             item_keys, lambda k: (k.scenario_id, k.supported_option), minimum,
-            _rng(cfg, corpus_hash, f"item-order-{annotator}"))
+            _rng(cfg, sample_hash, f"item-order-{annotator}"))
         pairs, pair_sep = order_with_separation(
             pair_keys, lambda k: (k.scenario_id, k.supported_option), minimum,
-            _rng(cfg, corpus_hash, f"pair-order-{annotator}"))
+            _rng(cfg, sample_hash, f"pair-order-{annotator}"))
         scenarios, _ = order_with_separation(
             scenario_keys, lambda k: k.scenario_id, 0,
-            _rng(cfg, corpus_hash, f"scenario-order-{annotator}"))
+            _rng(cfg, sample_hash, f"scenario-order-{annotator}"))
         separation[f"{annotator}/item"] = item_sep
         separation[f"{annotator}/pair"] = pair_sep
 
@@ -1029,6 +1044,13 @@ def build_review_export(
     for name, keys in (("item", item_keys), ("pair", pair_keys), ("scenario", scenario_keys)):
         files[f"blind_key/{name}_key.jsonl"] = "".join(
             canonical_json(k.model_dump(mode="json")) + "\n" for k in keys)
+    if sampling_pin is not None:
+        drift = [name for name in ("item", "pair", "scenario")
+                 if sha256_of(files[f"blind_key/{name}_key.jsonl"])
+                 != sampling_pin.get(f"{name}_key_sha256")]
+        if drift:
+            raise ValueError(f"the pinned reliability sample could not be reproduced for "
+                             f"{drift}; the corpus's sampling units have changed")
     files["blind_key/README.md"] = (
         "# Unblinding key — never share with an annotator\n\n"
         + _provenance_block(cfg, corpus_hash, source, segmenter) + "\n\n"
@@ -1062,6 +1084,11 @@ def build_review_export(
                              f"meaning at least {v.requested - 1} intervening items")}
             for k, v in sorted(separation.items())},
         "supported_option_balance": {k: v.as_dict() for k, v in sorted(balance.items())},
+        "reliability_sample": {
+            "pinned": sampling_pin is not None,
+            "drawn_from_corpus_content_hash": sample_hash,
+            "key_sha256": {name: sha256_of(files[f"blind_key/{name}_key.jsonl"])
+                           for name in ("item", "pair", "scenario")}},
         "files": {name: sha256_of(text) for name, text in sorted(files.items())},
     }
     return ReviewExport(files=files, manifest=manifest, separation=separation, balance=balance)

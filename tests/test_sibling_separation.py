@@ -34,6 +34,7 @@ from reasonstyle.corpus.review import (
 ROOT = Path(__file__).resolve().parents[1]
 FULL = ROOT / "configs/frozen/v2_full.yaml"
 CORPUS = ROOT / "data/full/corpus_full_v2.jsonl"
+PIN = ROOT / "data/full/reliability_sample_full_v2.json"
 
 
 def _all_pair_distances(order, key):
@@ -154,18 +155,22 @@ def real_export():
     segmenter = segmenter_from_config(cfg)
     records = load_corpus(CORPUS)
     report = module._review_report(records, cfg, segmenter, CORPUS, "full")
+    pin = json.loads(PIN.read_text(encoding="utf-8"))
     return build_review_export(with_measurements(records, cfg, segmenter), report, cfg,
-                               segmenter, source=str(CORPUS)), records
+                               segmenter, source=str(CORPUS), sampling_pin=pin), records
 
 
 def test_the_fixed_item_sample_is_unchanged(real_export):
     """The 192 sampled items are exactly those the export drew before the exact
-    ordering existed: the key file is pinned by hash."""
+    ordering existed, reproduced through the committed pin even though the
+    corpus text has since been corrected."""
     from reasonstyle.hashing import sha256_of
     export, _ = real_export
     keys = export.files["blind_key/item_key.jsonl"]
     assert len(keys.splitlines()) == 192
     assert sha256_of(keys) == ITEM_KEY_SHA256
+    assert json.loads(PIN.read_text(encoding="utf-8"))["item_key_sha256"] == ITEM_KEY_SHA256
+    assert export.manifest["reliability_sample"]["pinned"] is True
 
 
 def test_both_item_packets_meet_separation_20_and_match_the_key(real_export):
@@ -197,3 +202,68 @@ def test_both_item_packets_meet_separation_20_and_match_the_key(real_export):
 #: sha256 of ``blind_key/item_key.jsonl`` for the committed full corpus, as the
 #: export produced it before exact ordering was added (review/full_corpus_v2).
 ITEM_KEY_SHA256 = "105c96abdaadd13e993afa63ac5df95a3c5a7cf5caeb1ee0f686dac7e4f32973"
+
+
+# --- the reliability-sample pin -------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def pinned_inputs():
+    from reasonstyle.config import load_config
+    from reasonstyle.corpus import load_corpus, segmenter_from_config, validate_corpus
+    cfg = load_config(FULL)
+    segmenter = segmenter_from_config(cfg)
+    records = load_corpus(CORPUS)
+    return cfg, segmenter, records, validate_corpus, json.loads(PIN.read_text(encoding="utf-8"))
+
+
+def _build(cfg, segmenter, records, validate_corpus, pin):
+    from reasonstyle.corpus.review import build_review_export
+    report = validate_corpus(records, cfg, segmenter, corpus_scope="full")
+    return build_review_export(records, report, cfg, segmenter, source=str(CORPUS),
+                               sampling_pin=pin)
+
+
+def test_a_pinned_sample_survives_a_text_only_correction(pinned_inputs):
+    """Changing a cell's text changes the corpus hash; with the pin, the
+    sample, blind ids, labels and packet orders are all unchanged."""
+    cfg, segmenter, records, validate_corpus, pin = pinned_inputs
+    before = _build(cfg, segmenter, records, validate_corpus, pin)
+    edited = list(records)
+    record = edited[0]
+    block = record.counterarguments["opt_1"]
+    cells = dict(block.cells)
+    cells["RP"] = cells["RP"].model_copy(update={"body": cells["RP"].body + " "})
+    edited[0] = record.model_copy(update={"counterarguments": {
+        **record.counterarguments, "opt_1": block.model_copy(update={"cells": cells})}})
+    after = _build(cfg, segmenter, edited, validate_corpus, pin)
+    assert before.manifest["corpus_content_hash"] != after.manifest["corpus_content_hash"]
+    for name in ("item", "pair", "scenario"):
+        assert after.files[f"blind_key/{name}_key.jsonl"] == \
+            before.files[f"blind_key/{name}_key.jsonl"]
+    for annotator in ("annotator_1", "annotator_2"):
+        ids = [re.findall(r"^### Item `(i\d{4})`", export.files[
+            f"blind/{annotator}/item_packet.md"], re.M) for export in (before, after)]
+        assert ids[0] == ids[1]
+
+
+@pytest.mark.parametrize("field", ["item_key_sha256", "pair_key_sha256", "scenario_key_sha256",
+                                   "config_content_hash"])
+def test_a_pin_that_does_not_reproduce_refuses(pinned_inputs, field):
+    cfg, segmenter, records, validate_corpus, pin = pinned_inputs
+    with pytest.raises(ValueError):
+        _build(cfg, segmenter, records, validate_corpus, {**pin, field: "0" * 64})
+
+
+def test_the_cli_refuses_a_bad_pin_and_writes_nothing(tmp_path, capsys):
+    spec = importlib.util.spec_from_file_location("export_for_review_pin",
+                                                  ROOT / "scripts/export_for_review.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    bad = tmp_path / "pin.json"
+    bad.write_text(json.dumps({**json.loads(PIN.read_text()), "item_key_sha256": "0" * 64}))
+    out = tmp_path / "review"
+    rc = module.main(["--config", str(FULL), "--corpus", str(CORPUS), "--scope", "full",
+                      "--out", str(out), "--reliability-sample", str(bad)])
+    assert rc == 1 and "refusing; nothing was written" in capsys.readouterr().err
+    assert not out.exists()
