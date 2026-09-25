@@ -192,10 +192,20 @@ def test_the_scenario_stage_reports_its_authorised_ceiling(capsys, tmp_path):
     assert not out_dir.exists()
 
 
-def test_the_full_corpus_is_never_assembled_by_the_runner(capsys):
+def test_the_full_corpus_is_never_assembled_from_an_incomplete_run(capsys, tmp_path):
+    """Assembly needs every planned scenario and group; an empty run refuses
+    and writes nothing. Isolated: an empty run directory and a corpus path in
+    ``tmp_path``, so the real run and the real corpus paths are never touched
+    (the complete path is covered by ``tests/test_full_assembly.py``)."""
+    real = [ROOT / "data/full/corpus_full_v2.jsonl", ROOT / "data/full/corpus_full_v2.manifest.json"]
+    before = [p.read_bytes() if p.exists() else None for p in real]
     pilot = _load_pilot_script()
-    assert pilot.main(["assemble", "--config", str(FULL)]) == 1
-    assert "nothing is assembled" in capsys.readouterr().err
+    corpus = tmp_path / "corpus_full_v2.jsonl"
+    assert pilot.main(["assemble", "--config", str(FULL), "--out", str(tmp_path / "run_v2"),
+                       "--corpus", str(corpus)]) == 1
+    assert "refusing" in capsys.readouterr().err
+    assert not corpus.exists() and not corpus.with_suffix(".manifest.json").exists()
+    assert [p.read_bytes() if p.exists() else None for p in real] == before
 
 
 def test_outputs_under_data_pilot_are_refused(tmp_path):

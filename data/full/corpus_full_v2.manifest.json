@@ -1,0 +1,1605 @@
+{
+  "allocation_content_hash": "ba39dbcb24f53678fcaf1f4d43cc4a244ddd549adc94e547e8264391173a3658",
+  "config_content_hash": "7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94",
+  "config_version": "v2_full",
+  "corpus_file": "corpus_full_v2.jsonl",
+  "corpus_scope": "full",
+  "corpus_sha256": "f19c464104047e45b9ef294d3e20ecd7b2eadafce7473a7303010d20646abd66",
+  "counts_by_source": {
+    "full_run": {
+      "scenarios": 96,
+      "texts": 768
+    },
+    "seed": {
+      "scenarios": 24,
+      "texts": 192
+    }
+  },
+  "inputs": {
+    "allocation": {
+      "path": "data/full/marker_allocation_full_v2.yaml",
+      "sha256": "97464ae5877ce731f6bf041adedd9d2ecced128107a9f25d4a42f7696aaa4142"
+    },
+    "config": {
+      "path": "configs/frozen/v2_full.yaml",
+      "sha256": "5d34bad7fc3b81d122fc0feb62fb502097f2b220200544027e42a70c94abe819"
+    },
+    "manual_corrections": {
+      "path": "data/full/manual_corrections_full_v2.yaml",
+      "sha256": "eb59c1cd49353995c767b1c491113292ce2072999f389a805752ead4873a97a2"
+    },
+    "scenario_approvals": {
+      "path": "data/full/scenario_approvals_full_v2.yaml",
+      "sha256": "46b451f5af869d6e16de260bfacf42b4d2438c9d2a71375f9b0050765d856382"
+    },
+    "scenario_corrections": {
+      "path": "data/full/scenario_corrections_full_v2.yaml",
+      "sha256": "a34b706f56f043888ca984b38bfce190d6475683317b73c6cd096bf91c126681"
+    },
+    "topic_bank": {
+      "path": "data/topics/full_topics_v2.yaml",
+      "sha256": "7b25919bfd226332820f8b77b02bdedc1c3cffddcedb808b916c35afcc6a299b"
+    }
+  },
+  "machine_errors": 0,
+  "machine_warnings": 20,
+  "n_decisions": 60,
+  "n_groups": 240,
+  "n_scenarios": 120,
+  "n_texts": 960,
+  "note": "Draft. Machine-valid and scenario-approved; every item, pair and scenario judgement is still outstanding. A scenario correction whose groups were drafted from its original text is a recorded exception: see its reason and docs/design_notes.md, The curator-approval gate.",
+  "outstanding_human_review": 5160,
+  "scenario_corrections": [
+    {
+      "approval_state": "approved",
+      "corrected_text": "A regional emissions-trading scheme is extending carbon pricing to shipping for the first time and must decide how to treat voyages involving ports outside the region. It could cover the emissions of whole voyages to and from outside ports, reflecting that most emissions from ships calling at regional ports occur on long voyages to and from those ports. Alternatively, it could cover only the emissions of voyages within the region, reflecting that under whole-voyage coverage ships could add a stop at a nearby outside port so that only a short final leg falls under the charge. The decision is whether the scheme should apply carbon pricing to whole external voyages or limit its coverage to voyages within the region.",
+      "corrected_text_sha256": "ca9e766b9fe9af951e6c2a3a9fe1bedebede9a9be08797b2bbc44f371479fc19",
+      "decided_at": "2026-09-25",
+      "editor": "Vidhi Bhutani",
+      "groups": {
+        "opt_1": {
+          "call_id": "26385e27dea6a29b520788f9b952e4494ed1dcc25a8443478749a45898fa6999",
+          "drafted_from": "original"
+        },
+        "opt_2": {
+          "call_id": "d1af960a5dc4e0fe88447e422871e91544c09f70500498e56dd45586db1049ca",
+          "drafted_from": "original"
+        }
+      },
+      "original_call_id": "b9da78d173aab092f26abf03b7689054cd56ece1224f8453c1cc10117e4426e3",
+      "original_text": "A regional emissions-trading scheme is extending carbon pricing to shipping for the first time and must decide how to treat voyages involving ports outside the region. It could cover the emissions of whole voyages to and from outside ports, reflecting that most emissions from ships calling at regional ports occur on long voyages to and from those ports. Alternatively, it could cover only the emissions of voyages within the region, although ships could add a stop at a nearby outside port so that only a short final leg falls under the charge. The decision is whether the scheme should apply carbon pricing to whole external voyages or limit its coverage to voyages within the region.",
+      "original_text_sha256": "0c8eae9fadf309302cb127545d6d42ea50d945dac66ddade391d7d38738a2e1d",
+      "reason": "Support direction. The approved generated text attached the outside-port-stop fact to covering only voyages within the region with a concessive 'although', framing it as a drawback of opt_2; the curated brief assigns that fact to opt_2 (avoiding rerouting to escape the charge), and the mechanism only operates under whole-voyage coverage. 'although' is replaced by 'reflecting that under whole-voyage coverage', mirroring the opt_1 sentence; both option facts, both options, the decision sentence and the modality are unchanged. Recorded exception (path A1, decided 2026-09-25): both climate_10_v1 groups (calls 26385e27dea6a29b520788f9b952e4494ed1dcc25a8443478749a45898fa6999 opt_1, d1af960a5dc4e0fe88447e422871e91544c09f70500498e56dd45586db1049ca opt_2) were generated from the pre-correction wording (sha256 0c8eae9fadf309302cb127545d6d42ea50d945dac66ddade391d7d38738a2e1d), which their recorded prompts contain. The underlying option facts are unchanged, both groups are kept exactly as generated, and both validate against this corrected text with no machine error or warning.",
+      "scenario_id": "climate_10_v1",
+      "validation_error_codes": [],
+      "validation_warning_codes": []
+    }
+  ],
+  "scenario_sources": {
+    "climate_01_v1": "seed",
+    "climate_01_v2": "seed",
+    "climate_02_v1": "seed",
+    "climate_02_v2": "seed",
+    "climate_04_v1": "seed",
+    "climate_04_v2": "seed",
+    "climate_05_v1": "seed",
+    "climate_05_v2": "seed",
+    "climate_06_v1": "full_run",
+    "climate_06_v2": "full_run",
+    "climate_07_v1": "full_run",
+    "climate_07_v2": "full_run",
+    "climate_08_v1": "full_run",
+    "climate_08_v2": "full_run",
+    "climate_09_v1": "full_run",
+    "climate_09_v2": "full_run",
+    "climate_10_v1": "full_run",
+    "climate_10_v2": "full_run",
+    "climate_11_v1": "full_run",
+    "climate_11_v2": "full_run",
+    "climate_12_v1": "full_run",
+    "climate_12_v2": "full_run",
+    "climate_13_v1": "full_run",
+    "climate_13_v2": "full_run",
+    "climate_14_v1": "full_run",
+    "climate_14_v2": "full_run",
+    "climate_15_v1": "full_run",
+    "climate_15_v2": "full_run",
+    "climate_16_v1": "full_run",
+    "climate_16_v2": "full_run",
+    "climate_17_v1": "full_run",
+    "climate_17_v2": "full_run",
+    "climate_18_v1": "full_run",
+    "climate_18_v2": "full_run",
+    "climate_19_v1": "full_run",
+    "climate_19_v2": "full_run",
+    "climate_20_v1": "full_run",
+    "climate_20_v2": "full_run",
+    "climate_21_v1": "full_run",
+    "climate_21_v2": "full_run",
+    "energy_01_v1": "seed",
+    "energy_01_v2": "seed",
+    "energy_02_v1": "seed",
+    "energy_02_v2": "seed",
+    "energy_03_v1": "seed",
+    "energy_03_v2": "seed",
+    "energy_05_v1": "seed",
+    "energy_05_v2": "seed",
+    "energy_06_v1": "full_run",
+    "energy_06_v2": "full_run",
+    "energy_07_v1": "full_run",
+    "energy_07_v2": "full_run",
+    "energy_08_v1": "full_run",
+    "energy_08_v2": "full_run",
+    "energy_09_v1": "full_run",
+    "energy_09_v2": "full_run",
+    "energy_10_v1": "full_run",
+    "energy_10_v2": "full_run",
+    "energy_11_v1": "full_run",
+    "energy_11_v2": "full_run",
+    "energy_12_v1": "full_run",
+    "energy_12_v2": "full_run",
+    "energy_13_v1": "full_run",
+    "energy_13_v2": "full_run",
+    "energy_14_v1": "full_run",
+    "energy_14_v2": "full_run",
+    "energy_15_v1": "full_run",
+    "energy_15_v2": "full_run",
+    "energy_16_v1": "full_run",
+    "energy_16_v2": "full_run",
+    "energy_17_v1": "full_run",
+    "energy_17_v2": "full_run",
+    "energy_18_v1": "full_run",
+    "energy_18_v2": "full_run",
+    "energy_19_v1": "full_run",
+    "energy_19_v2": "full_run",
+    "energy_20_v1": "full_run",
+    "energy_20_v2": "full_run",
+    "energy_21_v1": "full_run",
+    "energy_21_v2": "full_run",
+    "technology_01_v1": "seed",
+    "technology_01_v2": "seed",
+    "technology_02_v1": "seed",
+    "technology_02_v2": "seed",
+    "technology_03_v1": "seed",
+    "technology_03_v2": "seed",
+    "technology_04_v1": "seed",
+    "technology_04_v2": "seed",
+    "technology_06_v1": "full_run",
+    "technology_06_v2": "full_run",
+    "technology_07_v1": "full_run",
+    "technology_07_v2": "full_run",
+    "technology_08_v1": "full_run",
+    "technology_08_v2": "full_run",
+    "technology_09_v1": "full_run",
+    "technology_09_v2": "full_run",
+    "technology_10_v1": "full_run",
+    "technology_10_v2": "full_run",
+    "technology_11_v1": "full_run",
+    "technology_11_v2": "full_run",
+    "technology_12_v1": "full_run",
+    "technology_12_v2": "full_run",
+    "technology_13_v1": "full_run",
+    "technology_13_v2": "full_run",
+    "technology_14_v1": "full_run",
+    "technology_14_v2": "full_run",
+    "technology_15_v1": "full_run",
+    "technology_15_v2": "full_run",
+    "technology_16_v1": "full_run",
+    "technology_16_v2": "full_run",
+    "technology_17_v1": "full_run",
+    "technology_17_v2": "full_run",
+    "technology_18_v1": "full_run",
+    "technology_18_v2": "full_run",
+    "technology_19_v1": "full_run",
+    "technology_19_v2": "full_run",
+    "technology_20_v1": "full_run",
+    "technology_20_v2": "full_run",
+    "technology_21_v1": "full_run",
+    "technology_21_v2": "full_run"
+  },
+  "seed_config_hash_findings": {
+    "count": 24,
+    "note": "E_CONFIG_HASH_MISMATCH on exactly the seed records, which keep the pilot configuration's verified hash by design; not a machine error"
+  },
+  "sources": [
+    {
+      "access": "read_only",
+      "allocation": "data/pilot/marker_allocation_v2.yaml",
+      "allocation_content_hash": "973ffb2ea6bfac1b09b00d628fea16c540d3031cd44f29acd0c06094771f02cc",
+      "config": "configs/experiment_v2_pilot.yaml",
+      "config_content_hash": "afa9abdba15f06510882b0b3b2401fd50adc851f346ba97b68a299a6f9c60f21",
+      "config_version": "v2_pilot_openai",
+      "corpus": "data/pilot/corpus_v2.jsonl",
+      "corpus_sha256": "7e0dae8415abe0499321bffb19742b031dea8eede08fca1fca20340373e625d8",
+      "corrections": "data/pilot/manual_corrections_v2.yaml",
+      "corrections_sha256": "3d3f56005eacbe5b379ef893bf274d6bc6e1327f0cb584fc25153431d1af441c",
+      "counts": {
+        "decisions": 12,
+        "groups": 48,
+        "scenarios": 24,
+        "texts": 192
+      },
+      "decisions": [
+        "climate_01",
+        "climate_02",
+        "climate_04",
+        "climate_05",
+        "energy_01",
+        "energy_02",
+        "energy_03",
+        "energy_05",
+        "technology_01",
+        "technology_02",
+        "technology_03",
+        "technology_04"
+      ],
+      "manifest": "data/pilot/corpus_v2.manifest.json",
+      "manifest_sha256": "44fab90e5c915d17ee5189feca7f8d1421aa27228a57a5d6ae9935de0e9b0974",
+      "manual_corrections": 8,
+      "mode": "reuse_frozen_v2_pilot",
+      "pinned": true,
+      "role": "seed",
+      "run": "data/pilot/run_v2",
+      "run_evidence": "checked read-only: 48 group calls accepted in data/pilot/run_v2",
+      "scenario_source": {
+        "approvals": "data/pilot/scenario_approvals_openai.yaml",
+        "config": "configs/experiment_openai_pilot.yaml",
+        "config_content_hash": "994a07826bcdc6672ba9bfb5b924dfabc2d96b9bbd9d9551027e7647259b390f",
+        "config_version": "openai_pilot_v1"
+      },
+      "scenarios": {
+        "climate_01_v1": {
+          "group_call_ids": {
+            "opt_1": "5eadf4e8751bc93dcc0c91acd8925cc3d2a4d229ef06c95c91d3fedb78db32bb",
+            "opt_2": "9e90af38efad2aa0152fea14dd79932c733cd9d81a758438e334f3acd8f1cd5b"
+          },
+          "scenario_call_id": "66cba6bbe17851df5a9e876f4b704801eb7ee523e6e6605d0d7ffdd4c8f7d82d",
+          "scenario_text_sha256": "165410fe76ec17be3bbb9e267bcb41f7d949d0a6c431c5132a5ae68b597c2b17"
+        },
+        "climate_01_v2": {
+          "group_call_ids": {
+            "opt_1": "4aa8a0fd75bb5800d36ae5870aabe8f1d79a50df1e130a72f4ddf69453711197",
+            "opt_2": "de9bbb5111b46041e03d17bb78bf4c30dd33facc343459d83fef693abb07814e"
+          },
+          "scenario_call_id": "95835137be50345d8e288fa8002675975961b8d0d87b379b7ef1baf7473cd065",
+          "scenario_text_sha256": "19f5677cbcb0a85c7f4d747a61039040a1dd46fceba58da6c9a2fa7893c7ed4e"
+        },
+        "climate_02_v1": {
+          "group_call_ids": {
+            "opt_1": "61a5e3bfaa6dc6bd5f86be1dbdd015a91fd5b731662d84b05298226c281573c9",
+            "opt_2": "81d44f3b707830510c3736625dfd340495e54d1905e37ecbd5e6c432cfd0643c"
+          },
+          "scenario_call_id": "93b8551317fff7648971099ddd8666d449b5e254fc6500b86852da99b251e330",
+          "scenario_text_sha256": "b0ad9d733e5809dd74f15c9626edc41e5e5ac343feeace08dbb98498bd6171cc"
+        },
+        "climate_02_v2": {
+          "group_call_ids": {
+            "opt_1": "f7356a58858d8422b3c950d020a28ba34b1f51de24382335cabac473e1bdab48",
+            "opt_2": "3f2b56d21d38ef1cc603d98fb68d38b2fddd312ec08652df84bbaf6171d1a9a6"
+          },
+          "scenario_call_id": "587532c52439b50e09fd8ca7a6502406432da0bb68b0462d1cc6bd3b607e9a7a",
+          "scenario_text_sha256": "96d04baec62fb6a3c2a016ba15b9259e437e619141b02c064b50d32d93b847e3"
+        },
+        "climate_04_v1": {
+          "group_call_ids": {
+            "opt_1": "6878da4261bc6ee81954a3480a327876c04b1c353c4a19f12ff04b2bb2d9642c",
+            "opt_2": "c322a691ce6ec98d578f2d06bae3f6e3b4573dbd8b60a50846c0af8188932a3a"
+          },
+          "scenario_call_id": "717a431f617dc5f0dbeb61990f31c0ce3a967d82647342cf6e8957d552d30a9e",
+          "scenario_text_sha256": "b7ced9f0bd79e923cf55e48057d2b8f9764124785812e45bf248ba24ff533add"
+        },
+        "climate_04_v2": {
+          "group_call_ids": {
+            "opt_1": "6b1c344356989a878f18fb3c49c1c412d92cb42c012dd6ca52ad6bc65026fd99",
+            "opt_2": "975f5d6af20e591356882acd646241347f898313a45056e07dcbd6f56797d0af"
+          },
+          "scenario_call_id": "fff5861c9b7783ec04f02759da7820e91683bd62d8974822e03b5f88d72d90cb",
+          "scenario_text_sha256": "4f6c456291dae7505ed3299037b5d23ff8c64cdc1c0966bbcb81f3bc5d1c404c"
+        },
+        "climate_05_v1": {
+          "group_call_ids": {
+            "opt_1": "abe3a5c6c195fd4fdbbe476bff3dd590ca694445ec749d3890534e3c0e0b5ffa",
+            "opt_2": "fe3543b30750fdfc2a95c32a6d6141aa14e77598a2af49363fadf7507a1de695"
+          },
+          "scenario_call_id": "b1baa3becd45bda28f17ee9d4cba9df8977f219a8b28bafe0d75250aeec1cda9",
+          "scenario_text_sha256": "2611b5ff978e02099b1fda5f69ee6792646c30049922a2d6903228a9e112fe79"
+        },
+        "climate_05_v2": {
+          "group_call_ids": {
+            "opt_1": "c2f707b1421f615aebaa3618a4fed88d256409b42695aeb940f0bad5d1b55149",
+            "opt_2": "c370cbbc1c09c1a0122977c33a0378f41cab2cc3929dec8e3690946fd9928ae4"
+          },
+          "scenario_call_id": "1363ec4ce7008e7edf794494677367d5058c3304586e6162a284022db17fabe1",
+          "scenario_text_sha256": "c41ed9e3a9bfe4f474fb3938baa91b9a8491a2ccac2211bf1734ef0393835dcb"
+        },
+        "energy_01_v1": {
+          "group_call_ids": {
+            "opt_1": "1032a52c07a9a6acdf459e3a2642b23b43dd39b94e50f63bd600fe6f7005ec6e",
+            "opt_2": "6e11071624d0929e117a96f7ed005c37d5afaa61a5e368689791a6336be8317a"
+          },
+          "scenario_call_id": "9eda55ea540da9679d0d54b16f974cd5cddf8f30d4db1062bed2d29c0d15f389",
+          "scenario_text_sha256": "50961801171ad85b96c6dbb6eeab29986ce5f1b87d29e8eebc1c88d40a1b9ef6"
+        },
+        "energy_01_v2": {
+          "group_call_ids": {
+            "opt_1": "18339e8bbd11dac4c90b530635b73916134f8b3d30e9759a0fbc19f44ffbfb99",
+            "opt_2": "155e8cc080c5da6c35b705baf7ca939d137df9584a2c6d54be202ac936418d76"
+          },
+          "scenario_call_id": "f3aaa2985245b4546695230077fd7b89ecc6bde4670cd7efbe2e19c7bf25ae5a",
+          "scenario_text_sha256": "e7b7980cd30cc71ad4a941f867ba662f4af5f377daee9fc9fce559b539e0f408"
+        },
+        "energy_02_v1": {
+          "group_call_ids": {
+            "opt_1": "c8571dff0fee7039432a35a6e6495e2cddc5359370bf29660ded5e0be42aac8a",
+            "opt_2": "5723ece876584b8898c4116498611fd5101f7af115b05f3d5b3b47287d289270"
+          },
+          "scenario_call_id": "f810f9f9a72ee719b3f1f52a0ba1d6e0def51c23fad5c7a5488a0cff88e3cdc4",
+          "scenario_text_sha256": "610d260a8c3762091d646bd9c11874c2e918f0a12d281a8ba769456e2dfc770f"
+        },
+        "energy_02_v2": {
+          "group_call_ids": {
+            "opt_1": "79114b5e5165dc099722b192457aaeaa158c6604cca41d689840b6a52e8fdb45",
+            "opt_2": "f1bf5458ae203de49475f2187b31a8fecf6d74df7bb55f64abe308233b4920cc"
+          },
+          "scenario_call_id": "10a70cd74c9dca510eeb1c0eaef1014ed73524d8c1ebb378ee89302979060266",
+          "scenario_text_sha256": "b3b734c127a9051c300109648ba190f5e5477a92d9430935da9b243e9bc6e47e"
+        },
+        "energy_03_v1": {
+          "group_call_ids": {
+            "opt_1": "6873de7d75d066328fe619edf7a15d160a1563f3195635803ea423f0d624a784",
+            "opt_2": "fc7925dd2ea2fe3cadf045e8252ec61190c07154877c2b7f140628c992232a0d"
+          },
+          "scenario_call_id": "8207e24a004ad1aeefc18599f5ea2cfc65b1d3a85897f16f32120d0147dbf056",
+          "scenario_text_sha256": "6bdd8e21ee0e170762593eb24ee193af6c06a59784277a7e55bf829551fffc9a"
+        },
+        "energy_03_v2": {
+          "group_call_ids": {
+            "opt_1": "162d30ff46ad2496c25988a384535828e5db6eae83de45768a10d0be00b43aa0",
+            "opt_2": "75353fccc3029165d8ec0b17f31f6cc93aaed760a0015afca336f4edd78ab480"
+          },
+          "scenario_call_id": "7645ff035dab85763c6d747ebc4d55b8ec82ffac8fba9a292e13a5d029fa2d7b",
+          "scenario_text_sha256": "f0e7c79c84dc839fb42372b97c4f4ee9721590704acaef452fd568ac5c86b454"
+        },
+        "energy_05_v1": {
+          "group_call_ids": {
+            "opt_1": "f934b17d5fa8041df96a2fbbd87378fcd971ff04a02aae8398d582cf6d9fe2c5",
+            "opt_2": "58f92dce7c0d832218d73d00ebcd42329ec837fca79e635f913877ad325a78b5"
+          },
+          "scenario_call_id": "922126770c42d15c8b2bdedfcb707976fd3f75be47d602b1c1af1de7fca38856",
+          "scenario_text_sha256": "31c2f57f81e3eb93c45cde7a953e9968adee78b9b37f7d449c80cf144c02e16f"
+        },
+        "energy_05_v2": {
+          "group_call_ids": {
+            "opt_1": "616d0319b502286d7cc2e5d237679e2651b30d8de297470ccb5ae08ff7e8f532",
+            "opt_2": "4519f3c76894a2a1d33ec6df137ffc5687a1efae7be94d5f034495dd8f07b365"
+          },
+          "scenario_call_id": "d15992345b36a8600e2d993503d06594be5e21f2ef0e6839a8032ac817a8ca9a",
+          "scenario_text_sha256": "2550dd91f39dce5a4db7dd7f71ba6293adfe9567cad537628d7423922b182369"
+        },
+        "technology_01_v1": {
+          "group_call_ids": {
+            "opt_1": "04348ca0c97a43bedd1ca494f9653dbce4d84efe1655de807a5933ccb447bb8a",
+            "opt_2": "0e669b685ac760acfdcb1efeae307d2c640ddf952209775a87e5927b3f96a8f0"
+          },
+          "scenario_call_id": "9dd95aa160986b490b812ba0be4ff71ad1cbf89298ed1d1b1d0c7588c848bcb2",
+          "scenario_text_sha256": "834c09802b73303d1c3e09f2ec94a6f71f90c09070877e99b2675a25d6da6e9c"
+        },
+        "technology_01_v2": {
+          "group_call_ids": {
+            "opt_1": "9622ece15a9c6cd7fa831fa275b93493ae88b88e5a5b7fed54346c9615e0cdcf",
+            "opt_2": "e4ec8f79fc0896ed8c06b59b18d9869775bd95f7730ff05028d72ab17d2970c2"
+          },
+          "scenario_call_id": "ee31c9bd8e1ccc6a0d54ed4f2ab8f43535040eeb35231c5c1c8a91cf577a7baf",
+          "scenario_text_sha256": "bb51f97665c1e72ba07bc21d7e2ae83d33b2de21f533627a4116c40c5bea5f9a"
+        },
+        "technology_02_v1": {
+          "group_call_ids": {
+            "opt_1": "2b1ed147675eac64a2404c23f3f302a21e392fe9f5b915fdeb88ee7ecda20de3",
+            "opt_2": "e758a3322ea1c7b1a6985794f25fe576f9117be674e70cd9a1ca3245688e8f12"
+          },
+          "scenario_call_id": "4c049315769e8406339e3be9f26a5610c28f9cfc4c4c67b005e21f368219b17a",
+          "scenario_text_sha256": "188a0c42eee87efaf53d278b57be24ca8cefd72fb8b5b4c4a739ab25c71ddc25"
+        },
+        "technology_02_v2": {
+          "group_call_ids": {
+            "opt_1": "550ee84e34ab7ed6d1554555dfa3912b4f333219955be92ca948198d87897647",
+            "opt_2": "a72442b30a5fc716a4c99b509c2a35c4594dd5b12700f0e4cc87a3ccac9b2377"
+          },
+          "scenario_call_id": "0acc1ea6db618efd8f145a1c399b0a26dbfb1f5796cb3b14c50baf0d771a284f",
+          "scenario_text_sha256": "34b288a8e438ec81631a6d921cc1da131fe8bb2969f458eafafa4f724c589666"
+        },
+        "technology_03_v1": {
+          "group_call_ids": {
+            "opt_1": "477e9ddbcdf683105a93b1ef4c9f31b2dfc0de88785760d75f3d434f7e465a38",
+            "opt_2": "40d5985f0395d87446e8b967f796e3300678d184872739e95405ae1b3e1836f7"
+          },
+          "scenario_call_id": "8deee06e8dc3efd1ff99f7842bed68a7f9ebe2fe709c68ee78e8f0da7875212b",
+          "scenario_text_sha256": "635017712c4b1e147a885a0a936085065f9560e312d7b482386e3751a488b243"
+        },
+        "technology_03_v2": {
+          "group_call_ids": {
+            "opt_1": "123833be21e58ebcc6460a6086a2f63e5fcfcf3159eaf0ff5389058834ae0247",
+            "opt_2": "bf6bdeba96e029429d6f3bc754acdfd2df0b879d330625bce1927074ec5c501d"
+          },
+          "scenario_call_id": "549a82bb802e3b058d7524198935cb554e8547a60c5dba08192f8a074a528988",
+          "scenario_text_sha256": "93b01e2184b41a5739ceae0b1212678660e8d78421a900c63595fd718f572766"
+        },
+        "technology_04_v1": {
+          "group_call_ids": {
+            "opt_1": "4927045c7418d3637a51eb1e17932d54db98b191f0d9de224ed1868500f7cb93",
+            "opt_2": "41501dd942ed58da0a884cf5ccda6ebe911e5c54916126cfd2acdb378c54655d"
+          },
+          "scenario_call_id": "7e550d437f7166d632b6660369c2fd411ba398edf3546abf7dcce29885316a16",
+          "scenario_text_sha256": "957453596cebcf41e7719339656ae219cefb0959bdd5a45100130df87458fa78"
+        },
+        "technology_04_v2": {
+          "group_call_ids": {
+            "opt_1": "85a3f631eec257d63f82fe3ead19e1e31b515e7f0e00f93bd128d920c4779bf4",
+            "opt_2": "6a4a77ac049f9acf906e325ad164180b7dc73450af70b2b66424528491a92e0d"
+          },
+          "scenario_call_id": "33f2c60a1c4024d566a8be6b081f8a8ff8e64b2a73d685aa7c1238a972018bc5",
+          "scenario_text_sha256": "3f46a16486868e0c80581e06b37fcf510c74702b9be997b497bbcfdfa3632e35"
+        }
+      },
+      "topic_bank": "data/topics/pilot_topics.yaml",
+      "topic_bank_content_hash": "47d23af33ed0df8d7bb56566b709a12471b4aba4f1b3977527f12c66761c2937",
+      "validation_status": "draft",
+      "verified": [
+        "config_content_hash",
+        "corpus_sha256",
+        "correction_provenance",
+        "group_call_id",
+        "manifest_sha256",
+        "marker_allocation",
+        "record_validation",
+        "scenario_approvals",
+        "scenario_text_sha256",
+        "seed_counts",
+        "topic_definitions",
+        "union_with_remainder"
+      ]
+    },
+    {
+      "approval_config_content_hash": "7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94",
+      "config_content_hash": "7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94",
+      "config_version": "v2_full",
+      "corpus_scope": "new_material",
+      "machine_errors": 0,
+      "machine_warnings": 16,
+      "n_scenarios": 96,
+      "n_texts": 768,
+      "note": "Machine-valid and scenario-approved. Every item, pair and scenario judgement is still outstanding, and every record stays draft until they are recorded.",
+      "outstanding_human_review": 4128,
+      "role": "full_run",
+      "scenario_source": null,
+      "scenarios": [
+        {
+          "group_call_ids": {
+            "opt_1": "cb1883b69caf77ff808d623cc5aa4c1e22aa0917a24fc0ddb0b53b352401fd16",
+            "opt_2": "49d3aed7c6f7334c8b4ca74d5d8d62053b49a9fec6aedf203506111b8b1180ce"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "00831601645952ded56650902d5cde77cb867020cec5ad98148722f499c1bed1",
+          "scenario_id": "climate_06_v1",
+          "scenario_text_sha256": "4894956eccd28e20c3d1924945c04d494cc5aeba35b0e14f1efe0adf6e183aae",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "05cd9789ae390e458158e83fd9b6bb8068434c60fce4bf03787066a0641f92c3",
+            "opt_2": "2e794671b9fcf39915387f9ac58bc5058800b7c0274f6f89254badea04a93727"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "3bb04c0921955bfbe52c3d43ee0774c4216c879f9116b2e4bb4a3c9609b199ce",
+          "scenario_id": "climate_06_v2",
+          "scenario_text_sha256": "cd9510041a13f6139ef5e5ddbdad3cb8a78ebc12ba5cfc644dd2698ed659ee23",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "394d53c70db3010b8d13e21635ed9b738c39fa6b118004988856463340e03fa4",
+            "opt_2": "3c909741c44b391cc69eb280786a81d66646c9ce405109f2eccc8a1d3212a810"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "ccb12f717f5696878f59fd137ab8162aef0e5d3bb901548a9ecddaec4eb281a8",
+          "scenario_id": "climate_07_v1",
+          "scenario_text_sha256": "10225f87731b4c0b3b0085a49b1ae613c96a789e7025fa469b9ef8859e6f3487",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "c352a786600b115c8243f4c3f06527bec56e938dac11c9eccac52b2d2757f07d",
+            "opt_2": "58ff3100d077156b0564d14141803014e62998d139cda1a521a1eb83308b2aab"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "7e3a864383765bf8d4459840236a7c680c0910f5e9cd7e858ca7a55c18d6a354",
+          "scenario_id": "climate_07_v2",
+          "scenario_text_sha256": "ce5ca9fa6cebfedd39613fd719965b0ce7bf0ea73a3fb4b00075675542b9e084",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "b91c80b1432af4fadbee2b17ddf3299aa89ac8f8666422f3643943c2f0905456",
+            "opt_2": "7a272f82bdf89ea055bad9f2c4e78b392c415e9125f2bd473a08ed687148233c"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "24fa6d22ebfdc4f54d727632db73242363a27b3cb8be88f479d73bc8675bd5b8",
+          "scenario_id": "climate_08_v1",
+          "scenario_text_sha256": "dd3f5ca18f392bc1024ed311a33241f5bd9cd6e10d5ef5a9202c511fcc096118",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "589391c8730c4fc51f0a1f0c447d2ae367f83c79cd4ffb9bbde43aeca91bb057",
+            "opt_2": "73bda1a42fc6df0dd2d4990366deccece683325dd084d008e3879db5c576b719"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "e029f8af29a6f001346e2c240291894e0a640d78a6ae1bac73d7b3a438d74b1f",
+          "scenario_id": "climate_08_v2",
+          "scenario_text_sha256": "8afb4517bd3b805092a4af0304ec1e7cd8484ae99e69b246f1ae4e2956f5cea0",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "1be775c56858d5c4d59e7f84195f5ec1b5aad686f5853a96db915d9f9202afa8",
+            "opt_2": "d4fde158e0d4f97bc445eae7cc148bdd7e328543802deb220771d184241240e2"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "7bb4b708116cf76bcb4f782be0e0ed291fcfebc7911d9f66471727e9e98975db",
+          "scenario_id": "climate_09_v1",
+          "scenario_text_sha256": "96a222b6ecb56354d540b055825d67b657ba32f2fb88404f5cf2a69dff828033",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "4208dbf07c3a022afb66bebea95b936b9fdf2ba813707b27a3bb38c3897b4625",
+            "opt_2": "ba971b623c4d3cd354ccbb90e52600afe8a851a5ca6d680a55f27fdf50e1ae47"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "f023cebc9817ade87a63ff67833af8f847b2245bcf503011f5e7af67b949d991",
+          "scenario_id": "climate_09_v2",
+          "scenario_text_sha256": "56023be7b55f137b255a77263c2ad0cb031af04c97c7cda61461dfbb597dc23d",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "26385e27dea6a29b520788f9b952e4494ed1dcc25a8443478749a45898fa6999",
+            "opt_2": "d1af960a5dc4e0fe88447e422871e91544c09f70500498e56dd45586db1049ca"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "b9da78d173aab092f26abf03b7689054cd56ece1224f8453c1cc10117e4426e3",
+          "scenario_id": "climate_10_v1",
+          "scenario_text_sha256": "ca9e766b9fe9af951e6c2a3a9fe1bedebede9a9be08797b2bbc44f371479fc19",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "1f698850e0534b228b634355c86a735adcb9971a95e905fbbf2e50116a7f87f4",
+            "opt_2": "1de874891023ae598aae5fa14f4e77891948dcedb8ca861ec8a364d0e2083c94"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "814ee3b718c83f544d4e3a0dd3a84eb145035cc6748598036a07daf9d0d52d38",
+          "scenario_id": "climate_10_v2",
+          "scenario_text_sha256": "1e55e0174999374231efdbde8458bac44437b8ef16d20b4722d8a4f56509dc0e",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "b8d28d13ca4b791d82e4b6de70301646e9328dbfd516d036a81076e4c6a3f71e",
+            "opt_2": "f3b72509cb8e526b40f373266f94b35e007746630fa82e86b20a1db4ce3bf80b"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "76be3a120d42cd1553ecd6d1103a2aa201d90e7f3da71a623fa7c34f9f5ca177",
+          "scenario_id": "climate_11_v1",
+          "scenario_text_sha256": "5c535397340658efd28cf5043b3049555858c32b9f56a70692379b37ef0c17da",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "68b009b6d2edebc918861977ef34a6388cb03294434e29e5a6d77bc12ee124ba",
+            "opt_2": "45acca180f1d162424040b661449b6575d0e0428776b16b1d6fd339d9f65cd6b"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "d6e29c8dcbecd374650589445862a566f3ba11aa453e8b15d057bb2da38b0fbd",
+          "scenario_id": "climate_11_v2",
+          "scenario_text_sha256": "1d6dff1339cd077d710346bc3a22653077fbaf4def1e3e0a66abc030302221cd",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "445f58b4cb5357b881b277f91e4fbe806aaa711dadd2cdbf3b9a1058ed134a48",
+            "opt_2": "69d81a5e863706b02dae816121d44a3a7dc24cfbbbbb5d58b9ca8fa4b77dca80"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "be006c26a0e5f5a943fbe5a0be0ca9250842a4b77d2d05eae20ad792350f0890",
+          "scenario_id": "climate_12_v1",
+          "scenario_text_sha256": "d7785b62938e5871341b431953e3dc1a216d70ebb5bb700e5719e5ed8805de98",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "e5c8c75b1a6f294cf69930f52a178198c54cc93b7ec259b419818f66beaaf814",
+            "opt_2": "38d7c9be91fae180437cfc6855c6ab0450fc7afb64f9c4f5e981dd5fc3694f0f"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "31513d2ed1b5a7280704fe86d01d2a8e6775dd8016ac1fbd42f893b67490dc2b",
+          "scenario_id": "climate_12_v2",
+          "scenario_text_sha256": "3837f3910cecfedb944ee39f45d8ba20972ea6e78ea9decdf22b241ed72c4c70",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "85aeae07768352d35f0bf8e3f6875a799a05ddf8a5c8069e380ff04017d0bad6",
+            "opt_2": "e8f01e07d212706ec6b23838f9e2d02cd0950be8f6005ad9be18a23621c79ba4"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "e39b9d8bf56af2a01aa4465e4160bacaa9ee76ac0c922b9b4b2dc73eccf3b44f",
+          "scenario_id": "climate_13_v1",
+          "scenario_text_sha256": "d77590ca07a04fe6f0ed6c9f65efd343411039c0233e7ae0cb5ecde6e2bd2d02",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "bc15b9ab164d0ee3911d4df7de04cce1f7d28a927495e3bc9e1ffa0f2bf2afca",
+            "opt_2": "fb44643eaea0645e99c62f46c19097ee4ff2c3040c03ea3c936fb6c59635dc96"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "55ca5933d900a219774994c7c5a060e3c68179ace4ec88c81034e2dccb4d1635",
+          "scenario_id": "climate_13_v2",
+          "scenario_text_sha256": "8ff5cbf0d3bea78f43b71f6f90d7f8ba74c2fd226502b39233bb4933d48e6155",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "298c7473eefa64f0a20c73dd1c924f3cf2f980182c60419d9b3c0274c713219f",
+            "opt_2": "83d69c3bfbf00f06576bbdb37e5279ee37d590a2c911b4f04353db53992fedbd"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "672294af00eb9a21536afb5d64a0d502c1a8ff321eec31661656690941afa2b8",
+          "scenario_id": "climate_14_v1",
+          "scenario_text_sha256": "d256d8c37216c010ab3b2ce9749bd449a28946f68ae3e800c00d5ec941fd1486",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "a542be5fc1a855206cca25b182533f7ea4b2092567855b3b9b53770549d034a9",
+            "opt_2": "3ca81f77affedf96ac271d301bfe8efe3f192ca23368d5d29401960bd0333885"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "f63824b6eda80f7fec81edbf815527b2d49b6785117585de6dc9c4033ead63f7",
+          "scenario_id": "climate_14_v2",
+          "scenario_text_sha256": "25614d186d08973038f027df7dda5065efbc75f9dec59b6878bb122f0fa72fdf",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "ff146aab1eb489c5ea9f1ecfece67d12eaa65e3da0e98e023583a5f66590c29e",
+            "opt_2": "7f78400563235af4c9f434eed589e53536eeea4e097c399ed498665f3f205e3d"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "1f34ca8ad8dd40766e35c6e0c43bec4396f3c25b86ac4a0957d9265e2c4e5def",
+          "scenario_id": "climate_15_v1",
+          "scenario_text_sha256": "793156e3161abe34cdf9ca0760cbce19aa090fee04d3da98c69382ea27f81fb2",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "bfb5eb0dd9c5ab18e782e5f7b10b04e432ae2b3d48bf5e41566e7537bb767e19",
+            "opt_2": "07760cf08e09997090a2852ba4002691bcd580d39af6f978dad0c74739822ad1"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "1433762ae73957a8a2246d8f89e6f36d5e49e7660f3f4038dafc728d8fb6b5ed",
+          "scenario_id": "climate_15_v2",
+          "scenario_text_sha256": "b587d6c777f88b6b50dc93d59a95a507de645d8ad086c7808755216d276e6faf",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "bad53e57d2d15992787e625c72bd36b160f77fa44ac06d12ce47a8cbdca17d7d",
+            "opt_2": "7a0f26f69b35d05948b31db44f8a41b60e1a02cb74755047392e7e68551d7fa8"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "bf5c272e36845a852bd89d1cb8a1b779a5ebc1f955670c3e488488d1f28c192a",
+          "scenario_id": "climate_16_v1",
+          "scenario_text_sha256": "fa4b34764f2d42e11055b2d63b7ec2fa1f640eee57b555d2bb32ba7037e77e60",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "def01b8a91811ae1d1fb3d3b951ca663d9213d0255828acd25e39789ca1b17e1",
+            "opt_2": "84c0c18d6c1af186b3ee7818a5cdf85c0b388a4f3d07aa98f596746feaae00be"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "a8348e17bc5463ff61aab21e4b52df4eb7d5b50e689b7380560ca9d6dee17bd8",
+          "scenario_id": "climate_16_v2",
+          "scenario_text_sha256": "52500c0b6def4be1ac48445be03b17c320f6a7cd37a16e3f2a91a3b1af3d70d3",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "8230658cceb2b0e9b3b5bf6d169832df3c75834cbc371ce9f464f05cb1ca439d",
+            "opt_2": "67effcf6d11fdee8ba71378de62ad47e8dce10bcb731884710e07cdddf5c7a5e"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "518e8209434c9606ef8d0cf742734cb48ea6296a130c246e1c36ba7f4cb71b9d",
+          "scenario_id": "climate_17_v1",
+          "scenario_text_sha256": "07f80d6a86354ba02f003d042997831f64e52e97cc72fa680b5ca8cb09d9042c",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "86b7bb2d7d4a90348b0c6b41ee74e664a0c88d69aa9c442ec919d21bcbc0ce14",
+            "opt_2": "cdcb17716d8deec96fbb0f7a8e7eac236367b84b642dc78ef599e2acc87e3872"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "118b7e980e7c72fc5deb18fd420557be17c4e531fc7527b404c1f828ab44b85a",
+          "scenario_id": "climate_17_v2",
+          "scenario_text_sha256": "4beb37d2567ca42eecc728b821671f9900c97c486bb5745aee8c83924a504648",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "d5ddb78e4d482b5479136b1f17d1afb8a9f4522950355aaac2cc85a74560af25",
+            "opt_2": "32d8aa8df458056a31a22f2b0957701654032db182f4211f86123e6dfacbc9d4"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "c4e303441d492e45cde745a0b7a0d063e5a721f9f2caf1659950f5dff5e353c4",
+          "scenario_id": "climate_18_v1",
+          "scenario_text_sha256": "1a6ff721839d692209a2f4656af23803e7d14a8b770f28ef786d0cbf716f434b",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "2800c0f354869a086f1d316ebb2a700c699b0a8e185b4da499a8b55cfd2825f0",
+            "opt_2": "27d150cb729594aef711fd04e1db8e261463837cb4007c75f08c678fbc2f269a"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "151f68cc715432f20e2d2380ebebc19dd876c1e1fd98c46ee22903faa50d16fe",
+          "scenario_id": "climate_18_v2",
+          "scenario_text_sha256": "1cda1b1d551afae0485ce412881d39dbe61200e76a1cdba852a0ed3c5af34f51",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "81f8daa3f3fd02d188f499193e041d3507a2255925bd60cd21d26e70d33cfc78",
+            "opt_2": "bab8773df460e5f57839c19ea16593f080b2c84b66cd3193fb370897d29dfe21"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "fda02450926a63f4b59a72b1b4d441d81c8b7b96a41bdaba1cde842eb8aae929",
+          "scenario_id": "climate_19_v1",
+          "scenario_text_sha256": "1fd739f469df3cfce91f744fc0808d18a0a9986dd6b55ca6a9f8817b688a8c26",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "5df70783e5a18e326e55fe4e276de228ca57e6dd3ce31874b6322f90a5f3f9d7",
+            "opt_2": "288d01cbd6e49ad3bade06ed3fa3ebeffae4f3b398afdf1da5b8e3406543ca63"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "c786d27a9cb708f948512512fa975ccb6443686a2556b73fe838b6a90a2cfa16",
+          "scenario_id": "climate_19_v2",
+          "scenario_text_sha256": "2e288b0d1c4d4e7f97a62d4bc32f58f3d9c28a3bb944ca92a971f21da5860226",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "a758106a124e7b22baf55c185cdf7bfaf71c8a1b9eff8b15c963ca2d5bc9f456",
+            "opt_2": "536e36728dc43f6f514c91ec40d0921e4eadb446935e53a5af6b3485a80ead1a"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "9de9652ca8c60301bd3c392d73fe7f7fc0d15d02dfca2224a0d6e1ad98d3eb59",
+          "scenario_id": "climate_20_v1",
+          "scenario_text_sha256": "dd973254411d8de62d6c727c1536f93d617c5c0788ccc36cbe66941f22dd55b4",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "9d2b43fa2e2d4547d2f104de278b252590b3665788c4011ff20835d61f2222fd",
+            "opt_2": "44aebf3c2b846bb654463ee3c952efe1ee6229cc462fea397696c978b817d135"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "1796797fed0285707cc2cb3add101f3cacc27faf31b92e78d41c2e9bbcb281f6",
+          "scenario_id": "climate_20_v2",
+          "scenario_text_sha256": "44eff52bc4cce6e07dead1024114479ba9c28d4ca0e809915a6eaa26a93df39f",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "c983e047b02f0fcf01ed456585aade9239b2b52bf4a39e9bfd3272afde0c40c8",
+            "opt_2": "d72cbe7482c2db703bc3dbc79a58fa11158f71f6f8019fce2c5edcb6cc394f0a"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "aa5a11dbe2b73b053a9c138580ffec327b3c8531e725a5b703fb0fdefa221d68",
+          "scenario_id": "climate_21_v1",
+          "scenario_text_sha256": "03dd1d147eef5f3b859ab591306707e8e9d6a5e783be47d5afe52657b0c00d2e",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "304b4779abbe09628568b1d39aeef8a656bd8b8582c3ad8c0f633c782cbd0305",
+            "opt_2": "700072da184c14e4e519448a74d2f76588c2ec21a9d0378c7909065a35dae314"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "15818d070e81da5ba377e099dd6d267c30e2bc1e94d7624df79b6605820976c4",
+          "scenario_id": "climate_21_v2",
+          "scenario_text_sha256": "5f7fb62301bf3468feed43d499497c7b694192da87c65dfcba8f73480391564b",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "442c81ead78d74be367f5c23af02715bfe325ba1dceab090e34087783af44870",
+            "opt_2": "a2d0df105276ca4c2a525d8a3cfe267a7d41b8bd7205fa95953120d8b546cc3a"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "e43e99d04fb3784857131a8da79608f2055b1ba6036165343c6114c922d2a8ca",
+          "scenario_id": "energy_06_v1",
+          "scenario_text_sha256": "852cf7a94a41ccfbb250404d2df6ab1e984639fff795ba53a86cbb908a9fef34",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "5e53926cb634ca88714ec60eb510331df6fdd1836bc572a631aa4469c8012f1b",
+            "opt_2": "dfc995925af8e7c1fe3e6b3391c9ae4c634f9a123a3966b35e374fa965b839a4"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "a945a8c835da5332d1d84bfd4be7250e5f68fa991480bfa913479bb8759ae716",
+          "scenario_id": "energy_06_v2",
+          "scenario_text_sha256": "7ab0af6427d526ba0810ee0a13c1df8f9e2acdbd6a74bc172151fa631f670a8c",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "8473b3e523dc39ef0947794d14071c127a8563bd83d4baeb776f38a1c417b175",
+            "opt_2": "c865918b642950899e1dbb12adca22e868260b062189281e407a8fa9de39f209"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "3601ecc7fb19edc360b107439ef7b86a3088879a8bba48d3b0187df3f879a4eb",
+          "scenario_id": "energy_07_v1",
+          "scenario_text_sha256": "2c57c27213ade376c570a73b948994505676ed3c61c3a8b1e3bf89a7e168d764",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "b1b5057f924dfd5b0e1ef2cf2373b34b3be938101138de7833804e29f8fd634a",
+            "opt_2": "4eff1e71ca05fa7e2b78932dba6c2fa2baa62e418ea906c255c62184bdc3c30a"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "d2064667aa8cab1156ac1ca18169957c462a0d59e622e7b9cf1f3cdf3c5b8596",
+          "scenario_id": "energy_07_v2",
+          "scenario_text_sha256": "c2db330fdf558b96b3ca1735f8492a3abe92f12fef126b77fd290940068725c3",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "a32cf6c5d0be29f73d61b332ee604277f22a2234090bdda84c543913265fc6f0",
+            "opt_2": "f4535fd48d09446bf72c337754545702e892c30bf5debc9ff43b6f16ad006abb"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "074f078cc247eb148005ae9130a90b64d5be653fa6934109183ebe36ac77b223",
+          "scenario_id": "energy_08_v1",
+          "scenario_text_sha256": "29345d78b54029825569d972a0d768da0ead128a7c1644d53bb14aa7638673f0",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "ebe224616d544f94f6ef4330937ef0d3be1eac94453eb4c2bdeeda11454c3851",
+            "opt_2": "2f5e7189d4f7438dca8ea318f9f467162c65b9abfb6e0e44b9acff86e12925c9"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "504aa00dc893d15ea536df81b30062efa81eb9c5137e19fde57d11869075b32d",
+          "scenario_id": "energy_08_v2",
+          "scenario_text_sha256": "43b081a3894a73ef558fbeb37d1c8d7793c11e75cd6402dc3cd487c73133e483",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "3cb67af082e6cf6fdcfe49d37abba1c723cd4c37412157b6f98c9c4058162107",
+            "opt_2": "4d02c6e18edc6c4b37c3e9007890743a8e2c91cf8c96b233a4d949226e588379"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "c188afc72a808327f20db7607c79a32bf5360c0b8c067ef82a47faa43a70ac15",
+          "scenario_id": "energy_09_v1",
+          "scenario_text_sha256": "06ff3cb403215a48f51d614061f180353b4b955810a5794eabefe17d4ff29f85",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "7e6057fad33902d9aee8bf70232585ff5e317e999a1059783fd929f7a0ce126b",
+            "opt_2": "05d425d93902b73a5150c74e7b42030bbb9db546015c9ca53a2a6a3d4d860023"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "af6d7f6d69788033c43094ab8790de8788d4222701daedff0c66c447f98655f7",
+          "scenario_id": "energy_09_v2",
+          "scenario_text_sha256": "16ea7273634d2557ec910932224784635f9083f2f852c639424cdcc08b21bc27",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "390e10924fc35b32a026b4f23da2f09bfcadbd657d2aa6db62b7fe545a39a578",
+            "opt_2": "7e350dd7daec5b63b76b75b509b5187d95f917b0d575e69b5ec2843d9d7d7d47"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "fcba03220474d288dec3e4bcc69cc69c87634b9905e794ca01f33f3de4dc925d",
+          "scenario_id": "energy_10_v1",
+          "scenario_text_sha256": "e38e89e6518c6eed3e3e568a5d51e45ea4477d29e14be6f2d8d3ee39c4c037eb",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "653ee422df182faeb2b3bc43e2bab75097fb1dfa499c9e8b833f3bc6342938d3",
+            "opt_2": "c4a67820d81dfd44824698c8fb4dc7fa0ffe3cf6d75060b8d82074817e13052e"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "d1d0dd5c3bade0f6a3f7e216839beee3cbec9e7a1ba3ccf3ffb992bd078b6717",
+          "scenario_id": "energy_10_v2",
+          "scenario_text_sha256": "fead4a6a3d1fddbfe28f73bcf42f4a5541de05cef22c92a5bbd8470f77a39994",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "f29fb9c5efc3b723dfffa048d1dda0b4f76de22b2a6e5424b014e32348806faf",
+            "opt_2": "656f1161513409e53c3513ac42ca06449d8818b73ce96011556a5dcc28b22a2d"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "9a71403ac711dc6551383cb90dd0f4e9bd8fb7381c5d7b37977340f026edfa31",
+          "scenario_id": "energy_11_v1",
+          "scenario_text_sha256": "d57a05694fb94ef511c28cc5ab5d4aa787de350d724872db7d0167cddc4a3e17",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "a5b26f2a3668e20a9103e2937db7a9d2f758015cdfd62243a79835b47df215e7",
+            "opt_2": "64f1d03ec620a703824f3da0bb3a3be40ca5cdf77f10b9fd67c51e7769ac5822"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "03f386065cd9bef47aedcde97968cc537bbd7559e6e799075ef6f903e0a9f63a",
+          "scenario_id": "energy_11_v2",
+          "scenario_text_sha256": "9e9064adb00573972dcc2afac7835d408bc87ffc3f82cffef00fee5650ca1905",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "83ff4b746e4bff789e7980095cf3f1b99cb03a6e4787662ae22591d18f9e582d",
+            "opt_2": "1534f9e0da20e7d911e2766ab54b882d3e88f5fa1ddcf20102f813714fb0a023"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "1a3451a1f9c10daed711616d68b11973afff6ef3dadd0e750b9bf9c24f0ba3ba",
+          "scenario_id": "energy_12_v1",
+          "scenario_text_sha256": "c2e4849907e8670910fd6d37ac5e3dfc56d3680eb8c978f64ef135c8db8072fd",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "5357b8539c634a44ae03fbbb175c39d773245aff073ed0d344b61d021ade32d0",
+            "opt_2": "fe90e970e5402b4bd97ea12efed7cd37f5acd649653451dfdb6024a7909c536f"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "ec474c2fc53f6ac341646964528d58b9aff52020ed7284f648beb3e51698348f",
+          "scenario_id": "energy_12_v2",
+          "scenario_text_sha256": "1776fb852e2c52ee5423b6219b3bf3b210066a908617524e9a288553a38522ff",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "4b8685260fede47f6856ff82189909b4c3cf0250a38d076b4ab873b179cf9268",
+            "opt_2": "8dcfb6259ecc155163163ef8170b231004ab8195a0ace07efb3dc0c6f7a784a8"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "9b5f458d854f5881f5fbf35287c0423e77bb3a3f85e9f259d7fc31af5e138cf6",
+          "scenario_id": "energy_13_v1",
+          "scenario_text_sha256": "27ae005594943e9f8c772d6030a20e36441fcbe50a118c2a8c7c5a0f124a30de",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "3c090fc6d8e82dec65e7731e2d27501789f4310e7ec2f831686ea2de157065d8",
+            "opt_2": "b9a35d4510dc7aa83ef4d353174f32399ebc4a73666e5a0e3cd595041665128d"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "1a480f9d3f04cca6eb08b49cf27941fa1e02bf05be71a980331ac39f37200ba0",
+          "scenario_id": "energy_13_v2",
+          "scenario_text_sha256": "d86a2dae4f6bfdccbf7cc6fe9923d08db8339d7b06ca4eb4c6c8e4427f30c492",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "004b40b9662758352029dc0efeece6943754258f26cc1d2c8b41b7019651b066",
+            "opt_2": "3d6044b4d92ff4ebdf115fb3845cc4f7180ddbbd7869bb39e73ab913f106b043"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "65d12a8de33a4a60811dbd3ee757bea36a75e2b4ec3f7c66a392945fb160fc39",
+          "scenario_id": "energy_14_v1",
+          "scenario_text_sha256": "fd3d533075fc5d540e5cf1fe612181f2de0e1c8b07b4e447d90334ab316f402d",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "4172efc8c3cc4aadc20f55f0daf8bae6e4fc612a671b02c747acb71bff87ae37",
+            "opt_2": "d78a94f942f56f76717ba5d98f865586be99bc17d7688b3189b83936bb38e0fc"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "bde5bbcbd3c959d027e7a01be312e0a5917aec6cb1c9ad712102860d5f92607d",
+          "scenario_id": "energy_14_v2",
+          "scenario_text_sha256": "17179bdea886460a888a085c217bbfc356a260634b67d912fff847ab63f9734e",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "6dfa0e8f2e8afa9c34f053c04a91f1482f518df5e3ee2cd830b2a25689397860",
+            "opt_2": "81d38880a6f11865a3b6db26e246e4533b4f0819720e92ce30ad4f6f95c315b6"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "56d74c2162f739c82859d53c0eb8a4d5d35b9f1dde63f70876495a697045f3c5",
+          "scenario_id": "energy_15_v1",
+          "scenario_text_sha256": "af7e48ee1eba5c4d99e1d4f5f0d1fdf3e9898a3dafb3ec11cd08d48617c0e6a8",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "2b8746d457e97ac102cc745a382eeda290a055c3f7761fdf6871f00955d5f3c0",
+            "opt_2": "b28b9b9f44b991af06aedfd1c12688fa251c0afa147d3e2c36d8114a85a26218"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "0f1f2b686372c4c1f11e45a017ea6912803a60e25786765772b42391e5a15c10",
+          "scenario_id": "energy_15_v2",
+          "scenario_text_sha256": "8a49200a65bced748bf884d97a7115bb1c82cf31137d01e105a091e59d67973a",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "06a551566d39f713701ca913571c19f17d1a554b6a4b539afd80dc09d1a82e8a",
+            "opt_2": "b80c0005bb170669cdbd0639ad429892ef65827e37a645ff318239b11e4d4ac8"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "3d393846dc28c1154dd2cbefb2e1f6c9512470e7b1b4f792f14c34ae54e0ef03",
+          "scenario_id": "energy_16_v1",
+          "scenario_text_sha256": "2b2bc7c18f4f994502de910c52e3a396b2864ca72aa0e0b4139550e85a1fce11",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "306616f6b764bd7c1062e8b2441328bdcbd765c2d4067277a720279d9686538b",
+            "opt_2": "a8b11e4e5ea7393ebaa17f321c2ee3882a6f2cef5b0876607aab2ede4ed09c25"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "42e9ba5d4cae241c855610bd611e5497a0c657dd36836ce0a7fc093fa6f165ed",
+          "scenario_id": "energy_16_v2",
+          "scenario_text_sha256": "b821f5a3c603f0b2c4891e861429b63e82a94c4fef683361fc772b57290d1e00",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "021e0e2932980851fe1d89f59941b8cfd5845412c0e9b62efa80114378a4305e",
+            "opt_2": "4be21b4e7224312e69f5fe33e1a84d3ec5d12c27c86d612a4b27d0622e614a1e"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "4db68dbf52ffb76f5a2431c0fb7c38abe895f8b5d13c64403bd7115409e15e9c",
+          "scenario_id": "energy_17_v1",
+          "scenario_text_sha256": "bc7fe379e8033ae8792c445c4c51a8d9718d1cd16c938a381adb6ad38dbd154e",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "20e1a14b6f79f56535edc03dfbd1c69a6a66e48db73c9465c4dcdd20c0f323c7",
+            "opt_2": "df9d3762acc40a7a6831ae704ef0ef4c9a84043a84ba631b8042c2fa12c2ae4d"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "31e325912c6a2d1ccfb012ae27ab0e8118cca7713a59c53f7daeb1c7b0d4df17",
+          "scenario_id": "energy_17_v2",
+          "scenario_text_sha256": "a7f3bcf14df5345ea2508ca0952321753cf18d33744c5395ce4297e63a2ff2e3",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "2dab156c67218ea6b6e7b64d9543c6bbb0007035de713ea750e321e8c77798e8",
+            "opt_2": "b2deab7ddec2cff0a0de45095bc923df732dc5439eeedd44ff1558717558d298"
+          },
+          "manual_corrections": [
+            {
+              "approval_state": "approved",
+              "condition": "RS",
+              "corrected_text": "Regular audits help large companies find savings they would otherwise overlook. Consequently, I support the option to require large companies to carry out regular energy audits.",
+              "corrected_text_sha256": "01686f76af66947676c8c1dcb358ba14071a75a21a760e9f0d8e5db453c63d64",
+              "decided_at": "2026-09-25",
+              "editor": "Vidhi Bhutani",
+              "original_call_id": "2dab156c67218ea6b6e7b64d9543c6bbb0007035de713ea750e321e8c77798e8",
+              "original_text": "Regular audits help large companies find savings they would otherwise miss. Consequently, I support the option to require large companies to carry out regular energy audits.",
+              "original_text_sha256": "e0100bf67c5eaa89b93425385a627234362ffabcdfdb7aa7201dfad64e3d5085",
+              "reason": "Segmentation, not meaning: under pinned pysbd 0.3.4 the sentence-final \"miss.\" is read as the title abbreviation \"Miss.\" when the next sentence begins \"I\" (RP), but not when it begins \"Consequently\" (RS), so RS counted 3 full-text sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH). \"overlook\" is a same-meaning replacement for \"miss\" that the segmenter splits identically in both cells. RS and RP receive the identical edit.",
+              "scenario_id": "energy_18_v1",
+              "supported_option": "opt_1",
+              "validation_error_codes": [],
+              "validation_warning_codes": []
+            },
+            {
+              "approval_state": "approved",
+              "condition": "RP",
+              "corrected_text": "Regular audits help large companies find savings they would otherwise overlook. I support the option to require large companies to carry out regular energy audits.",
+              "corrected_text_sha256": "b5d5e0ad60502af5760550969a069335a6c244732b66520a84dee694e5116599",
+              "decided_at": "2026-09-25",
+              "editor": "Vidhi Bhutani",
+              "original_call_id": "2dab156c67218ea6b6e7b64d9543c6bbb0007035de713ea750e321e8c77798e8",
+              "original_text": "Regular audits help large companies find savings they would otherwise miss. I support the option to require large companies to carry out regular energy audits.",
+              "original_text_sha256": "420326462aa1aea03c8f0e10ef6e6254211f0171b79a74d45c52537d60ca416e",
+              "reason": "Segmentation, not meaning: under pinned pysbd 0.3.4 the sentence-final \"miss.\" is read as the title abbreviation \"Miss.\" when the next sentence begins \"I\" (RP), but not when it begins \"Consequently\" (RS), so RS counted 3 full-text sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH). \"overlook\" is a same-meaning replacement for \"miss\" that the segmenter splits identically in both cells. RS and RP receive the identical edit.",
+              "scenario_id": "energy_18_v1",
+              "supported_option": "opt_1",
+              "validation_error_codes": [],
+              "validation_warning_codes": []
+            }
+          ],
+          "scenario_call_id": "7450f307ece82fcc5ac5e0f5004f2b8186ef8055d10255856a3f6331696a4636",
+          "scenario_id": "energy_18_v1",
+          "scenario_text_sha256": "fdbaf2a3af5884e898b67299c67da4055d28a64917e10a5af9d8067ee0296514",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "0f9d9998ff0de62083e83ef33c5938b03a6d3a476c9917378883e158d51aa85d",
+            "opt_2": "c4581a28b97247579f1c2e350bfb82d581254591bfc7f8129ab7a67387751362"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "a19f476ed1fae51bf744bc2371dfec3bedea890506a36bb6ab36d50b9190c1dd",
+          "scenario_id": "energy_18_v2",
+          "scenario_text_sha256": "9d10510611948ff7fd6b49554e71f54bffadfb2387cf38ba7b0582288fd84387",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "b2fe6eac532a7237e7dae904da9ab161c6370baf7198e26e5b7499e864b5bfc1",
+            "opt_2": "2b7c0dad915c4c9f1dcced1460fccf562e151207edb66bc255e55366aa101c30"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "68ce0d4e3366580b84bdc577a6fbcc5df42dc9e79706bc8d798ac91ce81f2eea",
+          "scenario_id": "energy_19_v1",
+          "scenario_text_sha256": "7f940e454d6b6694ed76de1eeadee91b5e58b9c3866b6e7375b8ac3d873bd3e8",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "89d47fc9805c5d89982d8212396899f16d3ca0c4ad67fa2df3cb11306dab02d5",
+            "opt_2": "6d06e8b3bf8586fe57d78504641b369ad1d01624ab0e0e798abe8de6193569cc"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "c8c9b485bcd78d18562db095cfc538b987ed2d55e5474091ecc2a48a6645dd27",
+          "scenario_id": "energy_19_v2",
+          "scenario_text_sha256": "761c2f5675852ed2a95f898852be1d1a76751f19a42282121f56a7ec78824b8e",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "a1893731a65d2c25af84cd75acdbab530e1174390d30b702157236247cfbcc61",
+            "opt_2": "3f3f0ce52c9e11b0a22101554ef10fa3078604c7b70c430c2514e957813adafb"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "1ea1146cb046199e9d91a5852bdb9ae5a590bdc59f48a4171735fe749ec94fcb",
+          "scenario_id": "energy_20_v1",
+          "scenario_text_sha256": "10fd44c540c5d844c1d286fd8a11c144110b24f5a597f473b834fb6c95e6e532",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "dcf5ba668021d1636c70fce8bfd35cab134e47872f4321b828442ebfcc306943",
+            "opt_2": "435f78cc6fc6fa8019b76a9941a72cd78cbdfae3f540bebd083895714f9ec82f"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "2431d56ebd531b3f93d159293158801dce90dbec6f47664655474b0317e84f54",
+          "scenario_id": "energy_20_v2",
+          "scenario_text_sha256": "efe82270c12e04a851a12e72b62fa17fcf79ada442b87030ad0383579108a2a8",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "22cd2ba8eddd4ca7324fd4b9b030a9ebed2a90b3083c2c39672735a63217e4e2",
+            "opt_2": "c85725fba6a9bac91da9b874e6998873a82ce07c991fa262b60f97f113402ce0"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "cf61d090fa91fb6e16b1de858ee6c51db08e6eddd775c28ece8665e24b9cd8aa",
+          "scenario_id": "energy_21_v1",
+          "scenario_text_sha256": "cccf0f79eb170ffc11f6a00b480b61b69b5531db9ac55acf47703848df617c07",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "a5f915fc9f50a432b2dbaa33280985e46993188b60ad15461e0415ce241f3e0e",
+            "opt_2": "54e26d1f2accbfc1f3bbf75c8b3a6bcf7a12440256cd3acc03a7465823de49d9"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "4d58342c31aa32c349e51358372e485e3b6e91f2a1f67f3bf0442ee0569974e6",
+          "scenario_id": "energy_21_v2",
+          "scenario_text_sha256": "37b2da022081fc3387fb02eebb686fffb1a86c283aa7adfda48d5f3107a335ef",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "06c79eeb2c4c37fa80fa5a6856c2028c6df02bfe76f6338a9f4994fa1006d6ff",
+            "opt_2": "11f4e792680fa2a96dd9338d508e53d6e63c26e0d04598c868ff636ad38043af"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "ddf298b589b67a24017592f42855030259ce81619000f92d42ff7a3a8962d0d4",
+          "scenario_id": "technology_06_v1",
+          "scenario_text_sha256": "619adcad93abc1fb601862bc7dc299fae8fd750e852df7eff28cc6da827ff2fa",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "e220c8368c3672ae3cee14995bc628151f1d7e9b8f7cf750a3ba4e2c7c80710a",
+            "opt_2": "f2bbf2132fadb2924a6dc26afc8987c87cd4b1bf20ad1d6063f88a040c3e49d8"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "8b36f8445d45f5109027847edc24b55777e1e89a981b70a21711ca6ed764bd4f",
+          "scenario_id": "technology_06_v2",
+          "scenario_text_sha256": "3a8276eba849744527a1abfee82667ee7dcd217b9e4c5e48722572dee416a7d9",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "57a6ad7016bf7cfbce04dfc616ee66896f89df3c98d7050e0884c6365ca9104e",
+            "opt_2": "979e82e29d481766cce1d0e62495dbaab83e9d3e3bff093262eb5109fea3cb9c"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "4ef820be92cf08d509f907591acd3a42b6cfef2af7149e7c059bd48d857cf043",
+          "scenario_id": "technology_07_v1",
+          "scenario_text_sha256": "76759e06472a63b8178c517963e718b7d3fe75316471ab2664a66aae51b74574",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "a34b256a878487e55dee37fee2f8107a79c6638a0ad91a4011e15a114da43a14",
+            "opt_2": "99b3abdc3fd9270dcbde807e28a13869237a910d945b37e13b345ec667e29c3b"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "f16a190739202572be29fa380c1d695c84d3da086e66a44176d15700daf2052d",
+          "scenario_id": "technology_07_v2",
+          "scenario_text_sha256": "22abdc1b0eb9634e17a0896d2a1d26d0d33a8c9da64447f58634841986054c04",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "84673fd7222d0e933c0ef006cbb3f0c8d5972eeded794d41e73a53e3e41b0b94",
+            "opt_2": "f1c51124eb9856714096187f78006f458798186e684371c828504cf7acc71d9e"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "9dc3b607703738fe6bec59e7a165e44315c87a90e88f569d9e281a898963e557",
+          "scenario_id": "technology_08_v1",
+          "scenario_text_sha256": "d52a7ecf337798706a56680d97271aa730a2e1d4a990a1e64c1b03afa97c8d77",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "c003fec6a9bec7b304dcd9bd5eed581143d25774082bed23964447d12d95bc9b",
+            "opt_2": "358a4c176b1d1f75639d3311daae892b509f303ef69afc673a990f8cf3c432bb"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "b8dce3994547ca0a634e547bd765e65c6373583b91fcf77d34746a470e712f84",
+          "scenario_id": "technology_08_v2",
+          "scenario_text_sha256": "862ee0e30c419c4491ff0a410dc8a24fd0cbebc6e60eb497ff17816ca1a07852",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "bc9792fd831e8e3e85ce29b66df29c310a59b7fc2591d16112b4740143942d78",
+            "opt_2": "47e756545833fe8e112799c015be3c53119e5d699f37adcd1dfb1831b249eaba"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "ecc89f578fd1ee6199dad2c33b065a1c54f684372a43023ce23056ae18707fbc",
+          "scenario_id": "technology_09_v1",
+          "scenario_text_sha256": "1d1fa40a5d8b96b127397eda41929c830dd9eecf9e46b1815210708bd9a891a8",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "18ac61dbe2e318464adc231ac0696c00390ec99ca25565502893725c616e393d",
+            "opt_2": "b30c1f0e61d34687921ea8947b56dc3d2fc4904620fda5c213c9ca0fa2e395fd"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "111b8b02e80e763b190b194b8d4a98bdb523a404bba8612583f07b37c828c84a",
+          "scenario_id": "technology_09_v2",
+          "scenario_text_sha256": "8bf42d24cef0433280e7fb1069519344e182a8abbfb61b4ffd8caebb97eb9dad",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "7b7ce4257cf10f2b20fd749aec9b10cef6b55d7d4346b2f01626e7c87dac8318",
+            "opt_2": "03074cabfab6c0745e9e84464707cd3305547a949a04ede0641b66f70be8caef"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "6816dfab025e37e19f3a2c79ed910704e4936b33e76e3906a3708c2710e3ed24",
+          "scenario_id": "technology_10_v1",
+          "scenario_text_sha256": "9811796291bc0c60f07a366c88f6135a3c0945d96cf210918d99ca54c85d068a",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "0402ac7703ecaa6b8b8337785dd02530265a4dc2cb5b3b0d36c7efb58c23409a",
+            "opt_2": "666049c09ed1ceeb469a310b4db59d736854d1a14cde6def18e617e74aa1daa7"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "8ee84a60f977af481cdc4257b942b486553a775490749745336ac6f4a37f77b8",
+          "scenario_id": "technology_10_v2",
+          "scenario_text_sha256": "68a516284c2d285bb335f22691acfa609deec0769ed63a7eb3e61fd485171e8d",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "fb6485c2e8d28ebc1e47c0905b7bac3abab4735f34df20465a5623e99f213626",
+            "opt_2": "58ae146bb67eca41a45fbebd3d5e92508ab6b03f8afb1e2a5046fe2c63100ae0"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "4d5675fb25fac72b6463cfeb4b25c4864afd2ab339e6aaca0a5e79115b6b238c",
+          "scenario_id": "technology_11_v1",
+          "scenario_text_sha256": "e64e9d2457a92be37ed63c7a5018745b5f35d184bd7bb837a3cf4aa6bd9ed39b",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "2b4a88eac55aaa5ca3854a28652a348e4e1b202cdc1c3fceae686b32cd50a398",
+            "opt_2": "47d5aa2f89b263642758c7ace8e52b88e08f65ab523791b762cb422d8e8ff5a6"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "e58a5726bbd4f306b3891ecb7e23b5d5a27e826de39ea0dcc9ad0f153e1e5bc6",
+          "scenario_id": "technology_11_v2",
+          "scenario_text_sha256": "bd4b7fd5dc22af29bb1f7b14677333c83e40ced383dcd8fe002ef3379fc861c1",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "ed6f6e1a0ea9145df2d01d0c073721a0315c2a4bc7db19e3ec754b664ba8ac17",
+            "opt_2": "f8c5ae439afcf339a145aea52f5781808366ecbbdc5573db80db5b293ea126b0"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "daf4962891c354695dd40ea4ca75b73c4674ac34bfeed12c37c5bfc67ccd6fca",
+          "scenario_id": "technology_12_v1",
+          "scenario_text_sha256": "e282cd06871d7e44910dd96e628eb3e8402e3f8fc0e28b10eca26bdbd38d55fa",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "58dc4dac08dc1f92165d961501f0e3f0fe4058ff23b06d222f6dd2abf5d95105",
+            "opt_2": "cd5c0a7504406411ab859469cfaff6810dd1dcd8f2dbf5344da47bc45f0d0100"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "8cc832f917277cf961358781838ddcc70bbd0c84e9a98c25237303b3fc7fd176",
+          "scenario_id": "technology_12_v2",
+          "scenario_text_sha256": "2180b8686b93d91b51b2432853624b9930425a12e5b2bb2ab55c8d187ec8d561",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "3ffa10f4d8176a5276064354dd9d97c9c4a5c6da5bac9a766ec9829c8cb28744",
+            "opt_2": "1a25e249d630c8f9ae497fdb2c08b61bdb1df0d8b8e96419bf426f4358f53a32"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "842b455255a43ad4ca6adb135023fc6863bdeb24da577dd38548d8c20e9f0d45",
+          "scenario_id": "technology_13_v1",
+          "scenario_text_sha256": "18b160537720ea1a0b805c522e1810b9070073359c9b376fcb5d1e185aeebf46",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "5077a1a732578d6f63d0eaf9b85de317ab9493d749d5be66e9597c845a2a1f16",
+            "opt_2": "f8c44c8279e8ccbebb632b653deec2bba2a3d6dc15883f4f09cc2a242d96c0e5"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "0ed95a6d054236449230ea62e3acd9320b46197f2e996734b265bb164f77d65e",
+          "scenario_id": "technology_13_v2",
+          "scenario_text_sha256": "cf033162e687d1cf8dbcb6b7e6b12ed60cce1dcb322210f1ea5500197f390046",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "920991245fcb2fe83495f6655ee07a6bbad5f5c35bab72e5f10f6771c7694ec1",
+            "opt_2": "b71fc5fea0a18a20ba0c699a32b19c502b94dfd8c37245958ecba9bef8eee2ba"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "2d9dc70bcf081f00af0777308a5e8950757364b1d5c91a1ddf2640b94e71215d",
+          "scenario_id": "technology_14_v1",
+          "scenario_text_sha256": "66c6c5c97eaff954fea1c42ba70939b806f57cd8cfa05e33cb1cc5ead507c821",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "b9aea6896868875258ce71a4f585f6ca1f7adbd6344af7f626f0a521c0450ca6",
+            "opt_2": "a329786367731b706407a50cf853d3dc32b8bd2c6e9f5f7dc5bb36b6be1412af"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "b6fb845c702e044324574349d684aadfc99de9679219abe43db7d4fe2c399fe1",
+          "scenario_id": "technology_14_v2",
+          "scenario_text_sha256": "60f8f30e2e93d5956c4d31bae49e06d81f382303d9bbc4f3b156c98c51b86ae3",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "36ecbd5b85b2cc0c7a60473e1f5bba63f5122b21656795fcf377a4520954b695",
+            "opt_2": "4d49f8951eecba0dcdf94a88883abdbdd91e70f51bab3595eb375ee722f1a073"
+          },
+          "manual_corrections": [
+            {
+              "approval_state": "approved",
+              "condition": "RS",
+              "corrected_text": "A resident can lack the knowledge to show an answer is wrong, even when the answer is incorrect. This implies I support the option to allow a human review of any answer on request.",
+              "corrected_text_sha256": "8f0c620b41f833cd3da1230fa75d89e224185fb83389a9ac1c395f9b82101a1a",
+              "decided_at": "2026-09-25",
+              "editor": "Vidhi Bhutani",
+              "original_call_id": "36ecbd5b85b2cc0c7a60473e1f5bba63f5122b21656795fcf377a4520954b695",
+              "original_text": "A resident can lack the knowledge to show an answer is wrong, even when it is. This implies I support the option to allow a human review of any answer on request.",
+              "original_text_sha256": "4d4c14b70d487518098e5c719a08eb7c280130f91b2d454f09582b40fbfa9155",
+              "reason": "Segmentation and clarity: under pinned pysbd 0.3.4 the elliptical ending \"even when it is.\" splits differently before \"This implies\" (RS) than before \"I support\" (RP), so RS counted 3 full-text sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH). Making the ellipsis explicit (\"it is\" = \"the answer is incorrect\") keeps the meaning and removes the ambiguity. RS and RP receive the identical edit.",
+              "scenario_id": "technology_15_v1",
+              "supported_option": "opt_1",
+              "validation_error_codes": [],
+              "validation_warning_codes": []
+            },
+            {
+              "approval_state": "approved",
+              "condition": "RP",
+              "corrected_text": "A resident can lack the knowledge to show an answer is wrong, even when the answer is incorrect. I support the option to allow a human review of any answer on request.",
+              "corrected_text_sha256": "12124a79c02380ee16833c78f07123a894ae72e64f5887fc493b8c05b75648cf",
+              "decided_at": "2026-09-25",
+              "editor": "Vidhi Bhutani",
+              "original_call_id": "36ecbd5b85b2cc0c7a60473e1f5bba63f5122b21656795fcf377a4520954b695",
+              "original_text": "A resident can lack the knowledge to show an answer is wrong, even when it is. I support the option to allow a human review of any answer on request.",
+              "original_text_sha256": "bcd9247e05368667e05e5e0cbd07bb0041bd2f65f229d9bfd6af033561121bb9",
+              "reason": "Segmentation and clarity: under pinned pysbd 0.3.4 the elliptical ending \"even when it is.\" splits differently before \"This implies\" (RS) than before \"I support\" (RP), so RS counted 3 full-text sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH). Making the ellipsis explicit (\"it is\" = \"the answer is incorrect\") keeps the meaning and removes the ambiguity. RS and RP receive the identical edit.",
+              "scenario_id": "technology_15_v1",
+              "supported_option": "opt_1",
+              "validation_error_codes": [],
+              "validation_warning_codes": []
+            }
+          ],
+          "scenario_call_id": "513df351e871355293d5f290290513350b59d9d0cc35e94ec41a61e227614944",
+          "scenario_id": "technology_15_v1",
+          "scenario_text_sha256": "33773677faf87e4ba8063fd1f70eabeacbff98dadbb204d4c10da2c1f900dc86",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "35a636e9f061f93ffe4b7e4549f46f6d8affdb69596dee8b7d9f6bd3e763c817",
+            "opt_2": "42fdfb41ec5489b8cc2b5f2291d0687299dbdba3d8dfa54c477a2c40e7e48945"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "665fbc52732b86430e283079eed24ddfd94edf1b94fe652a859a257e9ad3176f",
+          "scenario_id": "technology_15_v2",
+          "scenario_text_sha256": "be8b81cc34155931d3f4356788f78fb80906d092d0a37e3e8d2507c0fca356b3",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "404dadc10d56f88547654c34d5b5906f904a57b93807f4aff220cb95dac8589c",
+            "opt_2": "19e2594c28e047bd5df9f3c5ab2b36a63c98401aeef9d1c2512f25a095dee1a2"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "86ab975d1e8d7e5d766950f3b31b6b34cb1d4c06e4014eccc277d452c6d605b6",
+          "scenario_id": "technology_16_v1",
+          "scenario_text_sha256": "b32155bd422a3ed0ee8816ab224aa10d5a54ecc482ffe7bc7cf8ed5515a9dc6a",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "4476e3329b505256702a44f65aebc9e3915f33f7a616091bed516f6731f928e2",
+            "opt_2": "d74ae17d5dcc306ef4245acb704e4af98c06212bd0c38a01e24e2a5c7897ccd0"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "5ab4a44860f10310cf8a0c671c85b30e2084b775b1fa290248df26fe2be0ad90",
+          "scenario_id": "technology_16_v2",
+          "scenario_text_sha256": "9a52c5474f3ff26d8224680a5c317511bc02f946bdee1f4f2df8b6c3f2e254f7",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "882652ffe876d68dae777b5bd1aba9fdb68c29156594b9e6936211b059ae7f4b",
+            "opt_2": "4ace2aabc89f0014b05c0429c4b3bbcef6fb549c96b220089b1d1a5837c5ed94"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "37b8d380fc2f739e777ed87dbc135a53e7ce716c7d166cb0fb96b04d929bb8f7",
+          "scenario_id": "technology_17_v1",
+          "scenario_text_sha256": "5358891e2a67ccf61ef9ccdfc7046d4414414c2bc79e151bd5b935e2b2ff5226",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "1e6b271ef719e056c2cf8ac2ba4eb96e5dd590425c758a5d05d7bbd8525b3805",
+            "opt_2": "0c52883b2b12771d69f491f09c13d05ee32733d2fc659e36e541e3dd45f34668"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "abcad4a98d0d19f9c9e33d3d461b0844846268e2942c80474b9982807ebdefeb",
+          "scenario_id": "technology_17_v2",
+          "scenario_text_sha256": "d1ad3d47536d924e6520fc371a3c720a3658d12bd9f64fb51d8f02857eaad17d",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "e96b6793e25dcb73b0414272aa927819ed0a8d9f80ec86336a8c793fb90d6e04",
+            "opt_2": "e2fbde7cbed07e39393d6bedf8dda531d2251908601e456ed81aa8e8599f256e"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "6c4ff2a11c4673d1195254a0ae83ca5b9e85053b54b8f094fe83353e17e6caff",
+          "scenario_id": "technology_18_v1",
+          "scenario_text_sha256": "0a1cc80c675a2938ff49b4661203f8d7fdd8bdbdf5d9cc0756af34f6debb8d96",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "2cd0f599a1c850c7e5aa0cf6432c08f6ad1043ccfceca5ef8620c166bbadbb3a",
+            "opt_2": "1fb312bfdfc94902848fadbd33c3722f7bf23cb692fa70cae81280ed14573840"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "90e8c3f1fe9550f07482b52ca67e5e7e893403a3586845a4379e94d55c1e4be4",
+          "scenario_id": "technology_18_v2",
+          "scenario_text_sha256": "5b2dd9dd2479ac3c83ba43ba106f9789c4149a895a8237b56efa2a48d5a7fc3f",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "17541b3154089d7d40cdedd6b918c5af68fdde67e2dfcad85a38db57fbf20d3a",
+            "opt_2": "4578ecf3346be0fefb6e988dc20d4bc508c08450433430f6fc35ac0e621bbc3a"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "b07305ca14a47a87f63c232bc3152278281ae5f951b66e86f7064976bb21310b",
+          "scenario_id": "technology_19_v1",
+          "scenario_text_sha256": "7c922bb48f9c4755045ee9823e2095c120649f62e09091965ca9d6b30ac1e891",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "7f88bb0d8bebc6f4e6b2de69133f29bf83f02f329f9bb1cd27dc3ad03b380282",
+            "opt_2": "32d8af7541ee6543847df4b8cae087b74a3376253453cdb938126221f1b53dbc"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "0a1a5e976d0d2f10444f667edf32822e03a7835d90a0f60e711c6d8fc7006b7c",
+          "scenario_id": "technology_19_v2",
+          "scenario_text_sha256": "7570aeb3fdc2764b686d645e6cfdf7adcabf16f49728343dc0848260e202efde",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "045bdff623ec087e120d77d57c966b3efc360a220446af6aec0a1c4e55d85d26",
+            "opt_2": "a87fd3a2907909775998eeb4d47fa24bc8ebe1716949200b15b24029ddd11b64"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "b94d85f17ad481c4324182a2e17c4021edd71a427824b99fcd781fe896414e91",
+          "scenario_id": "technology_20_v1",
+          "scenario_text_sha256": "3fbd9c133e6c417bd995fef1ef79ece7c06c61412db24d614683a424e068d07d",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "8411fcec05a0dd06fd0ea9e6f50030286c927088f1bb3a0a5d7a1f00e867374d",
+            "opt_2": "a9a6637a44fc4e91f525da69d353ce5925bbe36c810041014b35bf740bc76493"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "37e990cb0f69f87542b7ba731779d1ba43c41c9fb0d330d55f44034c774f8c6b",
+          "scenario_id": "technology_20_v2",
+          "scenario_text_sha256": "a0716413049fdb83a71f1bb5572283abf66512d081ae58020d6183ddb2946865",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "90e8e3f94fab27470d30cc3fbbb2927da80d487547e588c3773eb198cad1474b",
+            "opt_2": "7f42f80738c3d250f0bb9784093dde58831b5749e467a0c96902cacad08d48ae"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "9bda55434add808c28c3e4c1ed64d7ca25f82fa80fec9f91cc1dde8f81ee5326",
+          "scenario_id": "technology_21_v1",
+          "scenario_text_sha256": "b169f5b0702ca8df28b1fafbfc0938ba044e450cca3e2895e83782bff3c0b6e6",
+          "validation_status": "draft"
+        },
+        {
+          "group_call_ids": {
+            "opt_1": "fbc3c212b510d3d0a506419969134f6e7e13e789ee303c8c8c1b351d196960b9",
+            "opt_2": "0db6b2add256935c308ddabae38bef1bc7d2c49fdfe519a5b3261a112e65c84e"
+          },
+          "manual_corrections": [],
+          "scenario_call_id": "0103aa392183f3d41ba4765e80857d7075480a4464f2f535c2e5b0148c297334",
+          "scenario_id": "technology_21_v2",
+          "scenario_text_sha256": "6fa137145dd57e22d667bb2a1937c656493d39e27239150452cf6cdec8c50038",
+          "validation_status": "draft"
+        }
+      ],
+      "topic_bank_content_hash": "92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea",
+      "validation_status": "draft"
+    }
+  ],
+  "topic_bank_content_hash": "92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea",
+  "validation_status": "draft"
+}

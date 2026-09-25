@@ -54,6 +54,7 @@ __all__ = [
     "SeedCorpus",
     "SeedCorpusError",
     "combine_corpus",
+    "combined_corpus_problems",
     "load_seed_corpus",
     "plan_full_corpus",
     "seed_corpus_spec",
@@ -547,3 +548,64 @@ def combine_corpus(seed: SeedCorpus, plan: CorpusPlan, new_records, new_manifest
         "corpus_sha256": sha256_of(body),
     }
     return body, manifest
+
+
+def combined_corpus_problems(seed: SeedCorpus, plan: CorpusPlan, body: str,
+                             allocation: MarkerAllocation, cfg: ExperimentConfig,
+                             segmenter) -> tuple[list[str], Any]:
+    """Every reason the combined corpus ``body`` may not be written, and the
+    full-scope validation report it was judged by. Writes nothing.
+
+    The whole corpus is validated at ``full`` scope, so the marker-allocation
+    minima and caps and cross-corpus duplicate checks run over all of it. Seed
+    records keep the pilot configuration's hash by design (they are carried
+    byte for byte, never restamped), so ``E_CONFIG_HASH_MISMATCH`` is expected
+    on exactly the seed records, carrying exactly the seed's verified hash, and
+    on nothing else. Any other error refuses. Every allocation row must be
+    covered exactly once, with its own marker fields, and the counts must be
+    exactly the plan's.
+    """
+    records = [ScenarioRecord.model_validate_json(line) for line in body.splitlines()
+               if line.strip()]
+    report = validate_corpus(records, cfg, segmenter, corpus_scope="full")
+    seed_hash = seed.provenance["config_content_hash"]
+    problems: list[str] = []
+    expected = 0
+    for finding in report.errors:
+        if (finding.code == "E_CONFIG_HASH_MISMATCH" and finding.scenario_id in seed.lines
+                and finding.detail.get("record") == seed_hash):
+            expected += 1
+            continue
+        problems.append(f"{finding.scenario_id or 'corpus'}: {finding.code}: {finding.message}")
+    if expected != len(seed.lines):
+        problems.append(f"{expected} seed record(s) carry the seed configuration hash; "
+                        f"expected all {len(seed.lines)}")
+
+    rows = {(g.scenario_id, g.supported_option): g for g in allocation.groups}
+    if len(rows) != len(allocation.groups):
+        problems.append("the allocation names some (scenario, option) more than once")
+    found = Counter((r.scenario_id, option) for r in records for option in r.counterarguments)
+    duplicated = sorted(k for k, n in found.items() if n > 1)
+    missing = sorted(set(rows) - set(found))
+    extra = sorted(set(found) - set(rows))
+    if duplicated or missing or extra:
+        problems.append(f"allocation coverage is not exact: duplicated {duplicated}, "
+                        f"missing {missing}, unallocated {extra}")
+    for record in records:
+        for option, block in record.counterarguments.items():
+            row = rows.get((record.scenario_id, option))
+            if row is not None and (block.marker_family, block.marker_string,
+                                    block.marker_realization_id) != (
+                    row.marker_family, row.marker_string, row.marker_realization_id):
+                problems.append(f"{record.scenario_id}/{option}: marker fields differ from "
+                                f"the allocation")
+
+    n_seed = len(seed.lines)
+    want = {"decisions": len(plan.expected_decisions),
+            "scenarios": n_seed + len(plan.new_scenario_ids),
+            "groups": len(rows), "texts": 4 * len(rows)}
+    got = {"decisions": len({r.decision_id for r in records}), "scenarios": len(records),
+           "groups": sum(found.values()), "texts": report.n_texts}
+    if got != want:
+        problems.append(f"the combined corpus has {got}; the plan requires {want}")
+    return problems, report

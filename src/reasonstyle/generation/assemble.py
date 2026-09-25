@@ -483,7 +483,7 @@ def corpus_matches_manifest(corpus_path: str | Path,
 
 def write_pilot_corpus(records, manifest: dict[str, Any], *, corpus_path: str | Path,
                        manifest_path: str | Path | None = None,
-                       overwrite: bool = False) -> tuple[Path, Path]:
+                       overwrite: bool = False, body: str | None = None) -> tuple[Path, Path]:
     """Write the corpus, then its manifest, each replaced atomically.
 
     What this guarantees, exactly: every byte of each file is written to a
@@ -500,6 +500,10 @@ def write_pilot_corpus(records, manifest: dict[str, Any], *, corpus_path: str | 
 
     An existing corpus is never replaced silently: overwriting is an explicit
     act, because the file it replaces may be what a reviewer has been reading.
+
+    ``body``, when given, is written exactly as supplied instead of
+    re-serialising ``records`` — the combined full corpus carries its seed
+    lines byte for byte (``corpus_source.combine_corpus``).
     """
     from ..corpus.store import dumps_record
 
@@ -512,7 +516,8 @@ def write_pilot_corpus(records, manifest: dict[str, Any], *, corpus_path: str | 
             f"replace it deliberately")
 
     corpus_path.parent.mkdir(parents=True, exist_ok=True)
-    body = "".join(dumps_record(record) + "\n" for record in records)
+    if body is None:
+        body = "".join(dumps_record(record) + "\n" for record in records)
     manifest = {**manifest, "corpus_sha256": sha256_of(body),
                 "corpus_file": corpus_path.name}
     temporary = []

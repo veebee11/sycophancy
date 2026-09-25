@@ -141,6 +141,8 @@ from reasonstyle.generation.scenario_source import (
 )
 from reasonstyle.generation.corpus_source import (
     SeedCorpusError,
+    combine_corpus,
+    combined_corpus_problems,
     load_seed_corpus,
     plan_full_corpus,
     seed_corpus_spec,
@@ -151,7 +153,7 @@ from reasonstyle.generation.scenario_corrections import (
     load_scenario_corrections,
 )
 from reasonstyle.generation.requests import RequestError, group_request, scenario_request
-from reasonstyle.hashing import content_hash, sha256_of
+from reasonstyle.hashing import content_hash, file_sha256, sha256_of
 
 #: The second key a live pilot stage requires, over and above the key a smoke
 #: call needs. Drafting a corpus is not the same decision as one smoke call.
@@ -1212,6 +1214,104 @@ def _assemble(args, cfg, bank, allocation, topics, store: CallStore) -> int:
     return 0
 
 
+def _groups_drafted_from(store: CallStore, correction, groups) -> dict[str, dict[str, str]]:
+    """Which text of a corrected scenario each of its recorded groups was
+    drafted from, read from the group call's stored prompt (read-only)."""
+    out = {}
+    for (scenario_id, option), recorded in sorted(groups.items()):
+        if scenario_id != correction.scenario_id or not recorded.get("call_id"):
+            continue
+        raw = json.loads(store.raw_path(recorded["call_id"]).read_text(encoding="utf-8"))
+        prompt = json.dumps(raw.get("prompt"), ensure_ascii=False)
+        texts = {"original": correction.original_text, "corrected": correction.corrected_text}
+        found = [name for name, text in texts.items()
+                 if json.dumps(text, ensure_ascii=False)[1:-1] in prompt]
+        out[option] = {"call_id": recorded["call_id"],
+                       "drafted_from": found[0] if len(found) == 1 else "undetermined"}
+    return out
+
+
+def _assemble_full(args, cfg, bank, allocation, topics, store: CallStore, seed, plan) -> int:
+    """The full corpus: the verified seed, byte for byte, plus the new material
+    assembled by the same code as the pilot, or nothing at all.
+
+    ``topics`` is already only the new decisions. The combined corpus must then
+    pass ``combined_corpus_problems`` -- full-scope validation, exact
+    allocation coverage and the planned counts -- before anything is written.
+    """
+    segmenter = segmenter_from_config(cfg)
+    approvals, gate_hash, _ = _gate(args, cfg, store)
+    bank_hash = content_hash(bank.model_dump(mode="json"))
+    groups = recorded_groups(store)
+    try:
+        records, new_manifest = assemble_pilot(
+            topics=topics, allocation_groups=allocation.groups, approvals=approvals,
+            approval_config_content_hash=gate_hash, scenario_source=None,
+            corrections=load_corrections(args.corrections_file),
+            scenarios=_current_scenarios(args, cfg, store), groups=groups, cfg=cfg,
+            segmenter=segmenter, topic_bank_content_hash=bank_hash, variants=plan.variants)
+        # Validated as a subset here; allocation checks run on the combined corpus.
+        new_manifest = {**new_manifest, "corpus_scope": "new_material"}
+        body, manifest = combine_corpus(seed, plan, records, new_manifest, cfg=cfg)
+    except (AssemblyError, SeedCorpusError) as exc:
+        print(f"\nnothing was assembled:\n{exc}", file=sys.stderr)
+        return 1
+    problems, report = combined_corpus_problems(seed, plan, body, allocation, cfg, segmenter)
+    if problems:
+        print("\nnothing was assembled; the combined corpus does not verify:\n  - "
+              + "\n  - ".join(problems), file=sys.stderr)
+        return 1
+
+    scenario_corrections = load_scenario_corrections(args.scenario_corrections_file)
+    inputs = {name: path for name, path in (
+        ("config", args.config), ("topic_bank", args.topics), ("allocation", args.allocation),
+        ("scenario_approvals", args.approvals_file),
+        ("scenario_corrections", args.scenario_corrections_file),
+        ("manual_corrections", args.corrections_file))}
+    seed_findings = len(report.errors)
+    manifest.update({
+        "n_decisions": len(plan.expected_decisions),
+        "n_groups": len(allocation.groups),
+        "n_texts": report.n_texts,
+        "counts_by_source": {
+            "seed": {"scenarios": len(seed.lines), "texts": seed.provenance["counts"]["texts"]},
+            "full_run": {"scenarios": len(records), "texts": new_manifest["n_texts"]}},
+        "machine_errors": seed_findings - len(seed.lines),
+        "machine_warnings": len(report.warnings),
+        "outstanding_human_review": len(report.human_review),
+        "seed_config_hash_findings": {
+            "count": seed_findings,
+            "note": ("E_CONFIG_HASH_MISMATCH on exactly the seed records, which keep the "
+                     "pilot configuration's verified hash by design; not a machine error")},
+        "topic_bank_content_hash": bank_hash,
+        "allocation_content_hash": allocation.content_hash,
+        "inputs": {name: {"path": str(path),
+                          "sha256": file_sha256(path) if Path(path).is_file() else None}
+                   for name, path in inputs.items()},
+        "scenario_corrections": [
+            {**c.as_dict(), "groups": _groups_drafted_from(store, c, groups)}
+            for c in scenario_corrections],
+        "note": ("Draft. Machine-valid and scenario-approved; every item, pair and scenario "
+                 "judgement is still outstanding. A scenario correction whose groups were "
+                 "drafted from its original text is a recorded exception: see its reason and "
+                 "docs/design_notes.md, The curator-approval gate."),
+    })
+    try:
+        corpus, manifest_path = write_pilot_corpus(
+            [], manifest, corpus_path=args.corpus, overwrite=args.overwrite, body=body)
+    except AssemblyError as exc:
+        print(f"\n{exc}", file=sys.stderr)
+        return 1
+    print(f"wrote {corpus} ({manifest['n_scenarios']} scenarios, {manifest['n_groups']} groups, "
+          f"{manifest['n_texts']} texts; seed {len(seed.lines)}, full run {len(records)})")
+    print(f"wrote {manifest_path}")
+    print(f"validation   {manifest['machine_errors']} errors, {manifest['machine_warnings']} "
+          f"warnings, {manifest['outstanding_human_review']} human judgements outstanding")
+    print(f"status       every record is '{manifest['validation_status']}'. Machine-valid "
+          f"and scenario-approved is not an approved corpus.")
+    return 0
+
+
 def _counts(args, cfg, bank, topics, store: CallStore) -> int:
     """Read-only counts across both stages."""
     variants = tuple(args.variants)
@@ -1731,12 +1831,7 @@ def main(argv: list[str] | None = None) -> int:
         except SeedCorpusError as exc:
             print(f"refusing: {exc}", file=sys.stderr)
             return 1
-        if args.command == "assemble":
-            print("refusing: the full corpus is assembled from the verified seed plus a "
-                  "completed full run (corpus_source.combine_corpus); no full run exists, so "
-                  "nothing is assembled", file=sys.stderr)
-            return 1
-        if args.command in DRAFTING_COMMANDS:
+        if args.command in DRAFTING_COMMANDS or args.command == "assemble":
             topics = [t for t in topics if t.decision_id in set(plan.new_decisions)]
     elif args.command == "preflight":
         print("refusing: preflight checks a seed-aware full-corpus configuration, and "
@@ -1766,6 +1861,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "group-review":
             return _group_review(args, cfg, bank, allocation, topics, store)
         if args.command == "assemble":
+            if seed is not None:
+                return _assemble_full(args, cfg, bank, allocation, topics, store, seed, plan)
             return _assemble(args, cfg, bank, allocation, topics, store)
         if args.command == "redraft-scenarios":
             return _redraft(args, cfg, bank, topics, store)
