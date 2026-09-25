@@ -1579,7 +1579,7 @@ def _full_status(args, cfg, bank, allocation, seed, plan, store) -> int:
     # `scenario-review` already judge it (`_current_scenarios`) — otherwise
     # this view and those disagree about a redraft the approvals file has
     # since caught up with.
-    scenarios = current_scenarios(store) if store.log.path.is_file() else {}
+    scenarios = _current_scenarios(args, cfg, store) if store.log.path.is_file() else {}
     groups = recorded_groups(store) if store.log.path.is_file() else {}
     made_scenarios = sum(1 for sid in plan.new_scenario_ids
                          if (scenarios.get(sid) or {}).get("scenario_text"))

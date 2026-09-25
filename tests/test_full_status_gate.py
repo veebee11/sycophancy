@@ -12,6 +12,7 @@ seed). No request is made and no credential is read.
 
 from __future__ import annotations
 
+import dataclasses
 import importlib.util
 import re
 from datetime import date
@@ -53,8 +54,9 @@ def _load_pilot_script():
 
 
 def _isolated_config(tmp_path: Path) -> Path:
-    """A copy of the frozen full configuration with its run directory and
-    approvals file redirected into ``tmp_path``. Every other path — the
+    """A copy of the frozen full configuration with its run directory,
+    approvals file and both correction ledgers (bound to the real run's calls)
+    redirected into ``tmp_path``. Every other path — the
     allocation, the seed pilot corpus, the topic bank — still names the real
     committed files, opened read-only."""
     text = FULL.read_text(encoding="utf-8")
@@ -62,6 +64,11 @@ def _isolated_config(tmp_path: Path) -> Path:
     text = text.replace(
         "  approvals: data/full/scenario_approvals_full_v2.yaml\n",
         f"  approvals: {tmp_path / 'scenario_approvals_full_v2.yaml'}\n", 1)
+    for key, name in (("scenario_corrections", "scenario_corrections_full_v2.yaml"),
+                      ("corrections", "manual_corrections_full_v2.yaml")):
+        line = f"  {key}: data/full/{name}\n"
+        assert text.count(line) == 1, line
+        text = text.replace(line, f"  {key}: {tmp_path / name}\n")
     assert str(tmp_path) in text and "data/full/run_v2" not in text.split("paths:", 1)[1].split(
         "\n\n", 1)[0]
     # ``load_config`` refuses a ``status: frozen`` file whose parent directory
@@ -245,6 +252,40 @@ def test_approvals_command_agrees_with_status(cfg_path, plan, completed_run, cap
 
 NG_TOTAL = 96
 NG_GROUP_TOTAL = 192
+
+
+def test_status_applies_an_approved_scenario_correction_like_approvals(
+        tmp_path, cfg_path, cfg, plan, completed_run, capsys):
+    """An approved scenario correction, re-approved on its corrected text, is
+    judged by ``status`` exactly as ``approvals`` judges it: approved, not
+    stale. Uses only the isolated run, approvals and correction ledger."""
+    from reasonstyle.generation.approvals import load_approvals
+    from reasonstyle.generation.scenario_corrections import (
+        ScenarioCorrection, save_scenario_corrections)
+    corrected_id = "climate_10_v1"
+    record = recorded_scenarios(completed_run)[corrected_id]
+    corrected = record["scenario_text"] + " The scheme must choose one scope."
+    save_scenario_corrections([ScenarioCorrection(
+        scenario_id=corrected_id, original_call_id=record["call_id"],
+        original_text=record["scenario_text"], corrected_text=corrected,
+        editor="Vidhi Bhutani", reason="synthetic correction", decided_at=date(2026, 9, 25),
+        approval_state="approved")], tmp_path / "scenario_corrections_full_v2.yaml")
+    approvals_path = tmp_path / "scenario_approvals_full_v2.yaml"
+    approvals = load_approvals(approvals_path)
+    approvals[corrected_id] = dataclasses.replace(
+        approvals[corrected_id], scenario_text_sha256=sha256_of(corrected),
+        decided_at=date(2026, 9, 25))
+    save_approvals(approvals, approvals_path)
+
+    pilot = _load_pilot_script()
+    assert pilot.main(["status", "--config", str(cfg_path)]) == 0
+    status_out = capsys.readouterr().out
+    assert pilot.main(["approvals", "--config", str(cfg_path),
+                       "--only", *sorted(plan.new_decisions)]) == 0
+    approvals_out = capsys.readouterr().out
+    assert re.search(rf"^\s+{corrected_id}\s+approved$", approvals_out, re.MULTILINE)
+    assert "scenario review      94 approved, 2 redraft" in status_out
+    assert "stale" not in status_out
 
 
 def _gate_for(**counts_and_ids):

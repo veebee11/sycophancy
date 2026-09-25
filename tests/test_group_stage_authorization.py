@@ -771,23 +771,26 @@ def _real_snapshot(cfg, bank, alloc):
     return pilot._current_scenarios(args, cfg, store)
 
 
-def test_the_real_group_stage_record_bindings_match_reality():
-    """Read-only against the real committed files, and independent of the
-    record's lifecycle. Every scientific binding -- configuration, approvals
-    file, allocation file and hash, cells, and all 192 targets' scenario and
-    marker bindings -- matches reality. The lifecycle fields are overridden
-    on an in-memory copy only, so this holds whether the tracked record is
-    proposed or authorised; refusal of a proposed record is proven by the
-    isolated tests above and ``test_cli_proposed_record_cannot_send``."""
+def _real_state():
     cfg = load_config(FULL)
-    assert cfg.content_hash == FROZEN_CONTENT_HASH
-    bank_path = ROOT / "data/topics/full_topics_v2.yaml"
     from reasonstyle.corpus.topics import load_topic_bank
-    bank = load_topic_bank(bank_path)
+    bank = load_topic_bank(ROOT / "data/topics/full_topics_v2.yaml")
     alloc = load_allocation(REAL_ALLOCATION)
+    plan = plan_full_corpus(cfg, bank, load_seed_corpus(cfg, bank=bank, root=ROOT))
+    return cfg, bank, alloc, plan
+
+
+def test_the_real_group_stage_record_is_historical_and_stale_only_where_expected():
+    """Read-only against the real committed files. The record is spent
+    history: its 192 bindings are exactly what was authorised and sent. The
+    audited climate_10_v1 scenario correction and re-approval (2026-09-25,
+    path A1) make it stale against the current state in exactly three ways --
+    the approvals-file hash and the two climate_10_v1 scenario-text bindings --
+    so it cannot authorise another call. Lifecycle fields are overridden in
+    memory only, so this does not depend on them."""
+    cfg, bank, alloc, plan = _real_state()
+    assert cfg.content_hash == FROZEN_CONTENT_HASH
     assert alloc.content_hash == REAL_ALLOCATION_CONTENT_HASH
-    seed = load_seed_corpus(cfg, bank=bank, root=ROOT)
-    plan = plan_full_corpus(cfg, bank, seed)
     approvals = load_approvals(REAL_APPROVALS)
     snapshot = _real_snapshot(cfg, bank, alloc)
 
@@ -800,9 +803,9 @@ def test_the_real_group_stage_record_bindings_match_reality():
     # The two approved redrafts stand in the snapshot, and their targets bind
     # the redraft calls -- not the rejected originals they superseded.
     import json
+    log = [json.loads(line) for line in open(REAL_RUN_V2 / "generation_log.jsonl")]
     redrafts = {f"{e['decision_id']}_v{e['variant_id']}": e["call_id"]
-                for e in map(json.loads, open(REAL_RUN_V2 / "generation_log.jsonl"))
-                if e["kind"] == "scenario_redraft"}
+                for e in log if e["kind"] == "scenario_redraft"}
     assert set(redrafts) == REDRAFTED
     for t in live_targets:
         if t.scenario_id in REDRAFTED:
@@ -819,9 +822,75 @@ def test_the_real_group_stage_record_bindings_match_reality():
         record_version=GROUP_STAGE_AUTHORIZATION_RECORD_VERSION, targets=live_targets,
         approvals_path=REAL_APPROVALS, allocation_path=REAL_ALLOCATION,
         allocation_content_hash=alloc.content_hash)
-    assert problems == []
+    assert len(problems) == 3, problems
+    assert sum("approvals-file SHA-256" in p for p in problems) == 1
+    assert sorted(p.split(":")[0] for p in problems if "stale binding" in p) == [
+        f"{CORRECTED_SCENARIO}/opt_1", f"{CORRECTED_SCENARIO}/opt_2"]
     assert {(sid, opt) for sid, per in record["targets"].items() for opt in per} \
         == set(plan.new_groups)
+
+    # History: every binding is the model scenario text that group's recorded
+    # prompt actually contained, from the bound scenario call.
+    results = REAL_RUN_V2 / "results"
+    sent = {(f"{e['decision_id']}_v{e['variant_id']}", e["supported_option"]): e["call_id"]
+            for e in log if e["kind"] == "group"}
+    for sid, per in record["targets"].items():
+        for opt, binding in per.items():
+            model_text = json.loads((results / f"{binding['scenario_call_id']}.json")
+                                    .read_text(encoding="utf-8"))["fields"]["scenario_text"]
+            assert sha256_of(model_text) == binding["scenario_text_sha256"], (sid, opt)
+            prompt = json.loads((REAL_RUN_V2 / "raw" / f"{sent[(sid, opt)]}.json")
+                                .read_text(encoding="utf-8"))["prompt"]
+            assert json.dumps(model_text)[1:-1] in json.dumps(prompt), (sid, opt)
+
+
+CORRECTED_SCENARIO = "climate_10_v1"
+REAL_SCENARIO_CORRECTIONS = ROOT / "data/full/scenario_corrections_full_v2.yaml"
+
+
+def test_the_climate_10_v1_correction_binds_what_its_groups_were_drafted_from():
+    """The A1 exception, checked: the scenario correction's original text is
+    exactly what the consumed record bound and what both kept groups were
+    drafted from; the current approval binds the corrected text instead."""
+    from reasonstyle.generation.scenario_corrections import load_scenario_corrections
+    [correction] = load_scenario_corrections(REAL_SCENARIO_CORRECTIONS)
+    assert correction.scenario_id == CORRECTED_SCENARIO
+    assert correction.approval_state == "approved"
+    record = load_stage_authorization(REAL_RECORD)
+    for opt in ("opt_1", "opt_2"):
+        binding = record["targets"][CORRECTED_SCENARIO][opt]
+        assert binding["scenario_call_id"] == correction.original_call_id
+        assert binding["scenario_text_sha256"] == correction.original_text_sha256
+    approval = load_approvals(REAL_APPROVALS)[CORRECTED_SCENARIO]
+    assert approval.call_id == correction.original_call_id
+    assert approval.scenario_text_sha256 == correction.corrected_text_sha256
+
+
+def test_the_real_frozen_config_approvals_allocation_and_record_are_unchanged():
+    assert file_sha256(FULL) == "5d34bad7fc3b81d122fc0feb62fb502097f2b220200544027e42a70c94abe819"
+    assert load_config(FULL).content_hash == FROZEN_CONTENT_HASH
+    assert (file_sha256(REAL_APPROVALS)
+            == "46b451f5af869d6e16de260bfacf42b4d2438c9d2a71375f9b0050765d856382")
+    assert load_allocation(REAL_ALLOCATION).content_hash == REAL_ALLOCATION_CONTENT_HASH
+    # The consumed record is historical evidence, kept byte for byte.
+    assert (file_sha256(REAL_RECORD)
+            == "8a7acf3e407fa031a4d928773c790a64f84df355cb63f6e0df708462dab53133")
+
+
+def test_using_the_mechanism_reads_but_never_writes_the_real_files():
+    before = [file_sha256(p) for p in (FULL, REAL_APPROVALS, REAL_ALLOCATION, REAL_RECORD)]
+    cfg, bank, alloc, plan = _real_state()
+    live_targets = group_stage_targets(
+        plan.new_groups, load_approvals(REAL_APPROVALS), alloc,
+        config_content_hash=cfg.content_hash,
+        topic_bank_content_hash=content_hash(bank.model_dump(mode="json")),
+        scenarios=_real_snapshot(cfg, bank, alloc))
+    group_stage_authorization_problems(
+        load_stage_authorization(REAL_RECORD), cfg=cfg, kind=GROUP_STAGE_KIND,
+        record_version=GROUP_STAGE_AUTHORIZATION_RECORD_VERSION, targets=live_targets,
+        approvals_path=REAL_APPROVALS, allocation_path=REAL_ALLOCATION,
+        allocation_content_hash=alloc.content_hash)
+    assert [file_sha256(p) for p in (FULL, REAL_APPROVALS, REAL_ALLOCATION, REAL_RECORD)] == before
 
 
 def _group_evidence_violations(log_path: Path, authorizations_dir: Path,
@@ -1015,6 +1084,21 @@ def test_cli_on_an_undrifted_copy_passes_verification_and_stops_at_the_proposal(
     assert rc == 1
     assert "no group-stage target can be built" not in err
     assert "not 'authorized'" in err
+
+
+def test_cli_the_consumed_real_record_cannot_authorise_another_call(tmp_path, capsys,
+                                                                    monkeypatch):
+    """The real, authorised, spent record is stale against the corrected state
+    and refuses before any backend could be built."""
+    pilot = _load_pilot_script()
+    monkeypatch.setattr(pilot, "_live_backend",
+                        lambda cfg: pytest.fail("a backend was built"))
+    rc = pilot.main(["groups", "--config", str(FULL), "--out", str(_copy_run(tmp_path)),
+                     "--stage-authorization", str(REAL_RECORD)])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "refusing; nothing was sent" in err
+    assert f"{CORRECTED_SCENARIO}/opt_1" in err and "stale binding" in err
 
 
 def test_cli_without_stage_authorization_is_unchanged(capsys):

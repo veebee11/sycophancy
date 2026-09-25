@@ -1097,6 +1097,22 @@ built over every decision at once. **Approval adds a requirement and never
 removes one** — a scenario with machine errors is reported as blocked however
 the approvals file reads, and is fixed or redrafted, never approved past.
 
+*Recorded exception (2026-09-25, `climate_10_v1`, path A1).* Its approved text
+framed the opt_2 fact (ships adding a nearby outside-port stop so only a short
+final leg is charged) as a drawback of opt_2; the brief assigns it to opt_2, and
+the mechanism only operates under whole-voyage coverage. The scenario was
+corrected after its groups were drafted — one clause, *although* → *reflecting
+that under whole-voyage coverage* — through the audited scenario-correction
+ledger, and re-approved on the corrected text. Both groups (calls
+`26385e27dea6…` opt_1, `d1af960a5dc4…` opt_2) were generated from the
+pre-correction wording, which their recorded prompts contain; they are kept
+unchanged by explicit human judgement because the underlying option facts are
+unchanged and both validate against the corrected scenario. So for these two
+groups only, the approved text differs from the text they were generated from.
+Nothing detects this at assembly, which is why it is recorded here and in the
+correction's reason. The spent group-stage authorisation keeps its original
+bindings as history and is stale against the corrected state by design.
+
 **Assembly and counterargument correction.** A record is assembled only from an approved
 scenario and machine-valid groups. A human correction is never an edit to what
 the model returned: it is a separate record naming the original call id and its

@@ -1,6 +1,6 @@
 # Current status
 
-*Updated 2026-09-24. Kept short; history is in git, rules in `design_notes.md`.
+*Updated 2026-09-25. Kept short; history is in git, rules in `design_notes.md`.
 Sections under* Historical record (v1) *are kept as they were written and are
 superseded wherever they say something has not yet run.*
 
@@ -18,10 +18,11 @@ superseded wherever they say something has not yet run.*
 | final full configuration | **frozen 2026-09-23** at `configs/frozen/v2_full.yaml` (`v2_full`, content hash `7548650b42e7…`); block lifted deliberately |
 | paid-call authorisation (frozen configuration) | **96 initial scenario calls only**, one per new scenario; redrafts, groups, repairs, evaluation and mechanistic analysis are excluded from it. The 2 redrafts and the 192 initial group calls are covered by separate records (below); repairs, retries, evaluation and mechanistic analysis by nothing |
 | full scenario generation | **ran live 2026-09-23**: 96 of 96 scenario calls completed, all accepted and machine-valid, 0 errors; `data/full/run_v2/` (gitignored) |
-| full scenario review | **complete, 2026-09-24: 96 of 96 approved**, 0 pending, stale or machine-blocked, in `data/full/scenario_approvals_full_v2.yaml`. First pass (2026-09-23): 94 approved, 2 sent to redraft (`technology_08_v1`, `technology_13_v1`); both redrafted and approved since |
+| full scenario review | **complete, 2026-09-24: 96 of 96 approved**, 0 pending, stale or machine-blocked, in `data/full/scenario_approvals_full_v2.yaml`. First pass (2026-09-23): 94 approved, 2 sent to redraft (`technology_08_v1`, `technology_13_v1`); both redrafted and approved since. `climate_10_v1` re-approved 2026-09-25 on an audited scenario correction (below) |
 | scenario-redraft authorisation | **authorised, run and complete, 2026-09-24**: `data/full/authorizations/scenario_redraft_v1.yaml`, `status: authorized`. Both authorised calls ran successfully, machine-valid, and both replacement texts were human-reviewed and approved. It never edited `configs/frozen/v2_full.yaml` — see `design_notes.md`, *Separate stage authorisations* |
-| group-stage authorisation | **authorised 2026-09-24 by Vidhi Bhutani, committed and valid**: `data/full/authorizations/group_stage_v1.yaml`, `status: authorized`, 0 validation problems against the real 192 targets. Covers exactly 192 initial group calls (one per new `(scenario_id, supported_option)`, four cells RS/RP/NS/NP, 768 texts). Checked against the current scenario evidence (accepted call, text hash, approval, config and topic bank) before any backend is built. Repairs, retries of transport-failed targets and every other stage remain unauthorised. It never edited `configs/frozen/v2_full.yaml` |
-| full group generation | **authorised but not run. 0 group calls have occurred.** The scenario gate is complete (96/96 approved). The frozen configuration's own `generation_authorization` still excludes groups; the separate record above is the only thing that covers them |
+| group-stage authorisation | **authorised 2026-09-24 by Vidhi Bhutani and spent**: `data/full/authorizations/group_stage_v1.yaml` (`8a7acf3e…`), kept byte-for-byte as historical evidence. Since the 2026-09-25 `climate_10_v1` re-approval it is stale against the current state (approvals-file hash and both `climate_10_v1` bindings), so it authorises no further call. Covers exactly 192 initial group calls (one per new `(scenario_id, supported_option)`, four cells RS/RP/NS/NP, 768 texts). Checked against the current scenario evidence (accepted call, text hash, approval, config and topic bank) before any backend is built. Repairs, retries of transport-failed targets and every other stage remain unauthorised. It never edited `configs/frozen/v2_full.yaml` |
+| full group generation | **ran live 2026-09-24**: 192 of 192 initial group calls, one per target, attempt 1, no repair or retry; 190 machine-valid, 2 `needs_manual_review` (`E_PAIR_SENTENCE_COUNT_MISMATCH`) |
+| audited corrections (2026-09-25) | **approved by Vidhi Bhutani**. Group cells: 4 in `data/full/manual_corrections_full_v2.yaml` — RS/RP of `energy_18_v1/opt_1` ("miss" → "overlook") and `technology_15_v1/opt_1` ("even when it is" → "even when the answer is incorrect"), both pysbd segmentation cases; with them all 192 groups have 0 machine errors. Scenario: 1 in `data/full/scenario_corrections_full_v2.yaml` — `climate_10_v1`, whose approved text framed the opt_2 fact as a drawback of opt_2; re-approved on the corrected text. Both `climate_10_v1` groups were generated from the pre-correction wording and are **kept unchanged** (path A1): the option facts are unchanged and both validate against the corrected scenario — a recorded exception, see `design_notes.md`, *The curator-approval gate*. Generated evidence untouched |
 
 ## Records and their authority
 
@@ -438,7 +439,7 @@ The order this implies (updated 2026-09-21):
 3. ~~Dry-run the full stages offline~~, ~~freeze the final configuration~~ and ~~lift the generation block~~ — done 2026-09-23.
 4. ~~Run the authorised 96-call scenario stage~~ and ~~record its human review~~ — done 2026-09-23: 94 approved, 2 sent to redraft.
 5. ~~Prepare, authorise and run the two redraft calls~~, ~~record their human review~~ — done 2026-09-24: both calls ran successfully and both replacements are approved. **All 96 new scenarios are now approved.**
-6. ~~Authorise the group stage~~ — done 2026-09-24: `data/full/authorizations/group_stage_v1.yaml`, explicitly authorised by Vidhi Bhutani for exactly 192 initial group calls (768 texts). **Next: run it.** 0 group calls exist so far; repairs and retries remain unauthorised and need their own records.
+6. ~~Authorise the group stage~~ — done 2026-09-24: `data/full/authorizations/group_stage_v1.yaml`, explicitly authorised by Vidhi Bhutani for exactly 192 initial group calls (768 texts). ~~Run it~~ — done 2026-09-24: 192 calls, 190 machine-valid. ~~Correct the remainder~~ — done 2026-09-25: 4 audited group-cell corrections and 1 audited scenario correction (`climate_10_v1`), all 192 groups machine-valid. Repairs and retries remain unauthorised.
 7. Mentor review of the manipulation-check protocol, then formal annotation, freezing, behavioural evaluation and mechanistic analysis, in that order.
 
 ## Open, not resolved

@@ -1,0 +1,89 @@
+- approval_state: approved
+  condition: RS
+  corrected_text: Regular audits help large companies find savings they would otherwise
+    overlook. Consequently, I support the option to require large companies to carry
+    out regular energy audits.
+  corrected_text_sha256: 01686f76af66947676c8c1dcb358ba14071a75a21a760e9f0d8e5db453c63d64
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 2dab156c67218ea6b6e7b64d9543c6bbb0007035de713ea750e321e8c77798e8
+  original_text: Regular audits help large companies find savings they would otherwise
+    miss. Consequently, I support the option to require large companies to carry out
+    regular energy audits.
+  original_text_sha256: e0100bf67c5eaa89b93425385a627234362ffabcdfdb7aa7201dfad64e3d5085
+  reason: 'Segmentation, not meaning: under pinned pysbd 0.3.4 the sentence-final
+    "miss." is read as the title abbreviation "Miss." when the next sentence begins
+    "I" (RP), but not when it begins "Consequently" (RS), so RS counted 3 full-text
+    sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH). "overlook" is a same-meaning
+    replacement for "miss" that the segmenter splits identically in both cells. RS
+    and RP receive the identical edit.'
+  scenario_id: energy_18_v1
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: Regular audits help large companies find savings they would otherwise
+    overlook. I support the option to require large companies to carry out regular
+    energy audits.
+  corrected_text_sha256: b5d5e0ad60502af5760550969a069335a6c244732b66520a84dee694e5116599
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 2dab156c67218ea6b6e7b64d9543c6bbb0007035de713ea750e321e8c77798e8
+  original_text: Regular audits help large companies find savings they would otherwise
+    miss. I support the option to require large companies to carry out regular energy
+    audits.
+  original_text_sha256: 420326462aa1aea03c8f0e10ef6e6254211f0171b79a74d45c52537d60ca416e
+  reason: 'Segmentation, not meaning: under pinned pysbd 0.3.4 the sentence-final
+    "miss." is read as the title abbreviation "Miss." when the next sentence begins
+    "I" (RP), but not when it begins "Consequently" (RS), so RS counted 3 full-text
+    sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH). "overlook" is a same-meaning
+    replacement for "miss" that the segmenter splits identically in both cells. RS
+    and RP receive the identical edit.'
+  scenario_id: energy_18_v1
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RS
+  corrected_text: A resident can lack the knowledge to show an answer is wrong, even
+    when the answer is incorrect. This implies I support the option to allow a human
+    review of any answer on request.
+  corrected_text_sha256: 8f0c620b41f833cd3da1230fa75d89e224185fb83389a9ac1c395f9b82101a1a
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 36ecbd5b85b2cc0c7a60473e1f5bba63f5122b21656795fcf377a4520954b695
+  original_text: A resident can lack the knowledge to show an answer is wrong, even
+    when it is. This implies I support the option to allow a human review of any answer
+    on request.
+  original_text_sha256: 4d4c14b70d487518098e5c719a08eb7c280130f91b2d454f09582b40fbfa9155
+  reason: 'Segmentation and clarity: under pinned pysbd 0.3.4 the elliptical ending
+    "even when it is." splits differently before "This implies" (RS) than before "I
+    support" (RP), so RS counted 3 full-text sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH).
+    Making the ellipsis explicit ("it is" = "the answer is incorrect") keeps the meaning
+    and removes the ambiguity. RS and RP receive the identical edit.'
+  scenario_id: technology_15_v1
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []
+- approval_state: approved
+  condition: RP
+  corrected_text: A resident can lack the knowledge to show an answer is wrong, even
+    when the answer is incorrect. I support the option to allow a human review of
+    any answer on request.
+  corrected_text_sha256: 12124a79c02380ee16833c78f07123a894ae72e64f5887fc493b8c05b75648cf
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: 36ecbd5b85b2cc0c7a60473e1f5bba63f5122b21656795fcf377a4520954b695
+  original_text: A resident can lack the knowledge to show an answer is wrong, even
+    when it is. I support the option to allow a human review of any answer on request.
+  original_text_sha256: bcd9247e05368667e05e5e0cbd07bb0041bd2f65f229d9bfd6af033561121bb9
+  reason: 'Segmentation and clarity: under pinned pysbd 0.3.4 the elliptical ending
+    "even when it is." splits differently before "This implies" (RS) than before "I
+    support" (RP), so RS counted 3 full-text sentences and RP 2 (E_PAIR_SENTENCE_COUNT_MISMATCH).
+    Making the ellipsis explicit ("it is" = "the answer is incorrect") keeps the meaning
+    and removes the ambiguity. RS and RP receive the identical edit.'
+  scenario_id: technology_15_v1
+  supported_option: opt_1
+  validation_error_codes: []
+  validation_warning_codes: []

@@ -1,0 +1,41 @@
+- approval_state: approved
+  corrected_text: A regional emissions-trading scheme is extending carbon pricing
+    to shipping for the first time and must decide how to treat voyages involving
+    ports outside the region. It could cover the emissions of whole voyages to and
+    from outside ports, reflecting that most emissions from ships calling at regional
+    ports occur on long voyages to and from those ports. Alternatively, it could cover
+    only the emissions of voyages within the region, reflecting that under whole-voyage
+    coverage ships could add a stop at a nearby outside port so that only a short
+    final leg falls under the charge. The decision is whether the scheme should apply
+    carbon pricing to whole external voyages or limit its coverage to voyages within
+    the region.
+  corrected_text_sha256: ca9e766b9fe9af951e6c2a3a9fe1bedebede9a9be08797b2bbc44f371479fc19
+  decided_at: '2026-09-25'
+  editor: Vidhi Bhutani
+  original_call_id: b9da78d173aab092f26abf03b7689054cd56ece1224f8453c1cc10117e4426e3
+  original_text: A regional emissions-trading scheme is extending carbon pricing to
+    shipping for the first time and must decide how to treat voyages involving ports
+    outside the region. It could cover the emissions of whole voyages to and from
+    outside ports, reflecting that most emissions from ships calling at regional ports
+    occur on long voyages to and from those ports. Alternatively, it could cover only
+    the emissions of voyages within the region, although ships could add a stop at
+    a nearby outside port so that only a short final leg falls under the charge. The
+    decision is whether the scheme should apply carbon pricing to whole external voyages
+    or limit its coverage to voyages within the region.
+  original_text_sha256: 0c8eae9fadf309302cb127545d6d42ea50d945dac66ddade391d7d38738a2e1d
+  reason: 'Support direction. The approved generated text attached the outside-port-stop
+    fact to covering only voyages within the region with a concessive ''although'',
+    framing it as a drawback of opt_2; the curated brief assigns that fact to opt_2
+    (avoiding rerouting to escape the charge), and the mechanism only operates under
+    whole-voyage coverage. ''although'' is replaced by ''reflecting that under whole-voyage
+    coverage'', mirroring the opt_1 sentence; both option facts, both options, the
+    decision sentence and the modality are unchanged. Recorded exception (path A1,
+    decided 2026-09-25): both climate_10_v1 groups (calls 26385e27dea6a29b520788f9b952e4494ed1dcc25a8443478749a45898fa6999
+    opt_1, d1af960a5dc4e0fe88447e422871e91544c09f70500498e56dd45586db1049ca opt_2)
+    were generated from the pre-correction wording (sha256 0c8eae9fadf309302cb127545d6d42ea50d945dac66ddade391d7d38738a2e1d),
+    which their recorded prompts contain. The underlying option facts are unchanged,
+    both groups are kept exactly as generated, and both validate against this corrected
+    text with no machine error or warning.'
+  scenario_id: climate_10_v1
+  validation_error_codes: []
+  validation_warning_codes: []

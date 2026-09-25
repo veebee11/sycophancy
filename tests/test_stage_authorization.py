@@ -64,8 +64,9 @@ def _load_pilot_script():
 
 
 def _isolated_config(tmp_path: Path) -> Path:
-    """A copy of the frozen full configuration with its run directory and
-    approvals file redirected into ``tmp_path``. Identical in spirit to the
+    """A copy of the frozen full configuration with its run directory,
+    approvals file and both correction ledgers (bound to the real run's calls)
+    redirected into ``tmp_path``. Identical in spirit to the
     fixture in ``test_full_status_gate.py``, kept local so this file stands
     alone."""
     text = FULL.read_text(encoding="utf-8")
@@ -73,6 +74,11 @@ def _isolated_config(tmp_path: Path) -> Path:
     text = text.replace(
         "  approvals: data/full/scenario_approvals_full_v2.yaml\n",
         f"  approvals: {tmp_path / 'scenario_approvals_full_v2.yaml'}\n", 1)
+    for key, name in (("scenario_corrections", "scenario_corrections_full_v2.yaml"),
+                      ("corrections", "manual_corrections_full_v2.yaml")):
+        line = f"  {key}: data/full/{name}\n"
+        assert text.count(line) == 1, line
+        text = text.replace(line, f"  {key}: {tmp_path / name}\n")
     frozen_dir = tmp_path / "frozen"
     frozen_dir.mkdir(exist_ok=True)
     path = frozen_dir / "v2_full.yaml"
@@ -844,7 +850,9 @@ def test_status_and_approvals_agree_once_both_redrafts_are_approved(
 # committed files — never a live claim that the record is still operative
 # for a *new* call, which the last test in this section shows it is not.
 
-REAL_NEW_APPROVALS_SHA256 = "fbf4c7528afbc16822bbd249660435067e7191581b9057b0f43b1b5d2ded31bd"
+#: The current approvals file: after both redraft approvals (2026-09-24, `fbf4c752…`) and the
+#: climate_10_v1 re-approval of its audited scenario correction (2026-09-25).
+REAL_NEW_APPROVALS_SHA256 = "46b451f5af869d6e16de260bfacf42b4d2438c9d2a71375f9b0050765d856382"
 REAL_RUN_V2 = ROOT / "data/full/run_v2"
 
 #: The two calls the authorisation covered, and what they actually produced —

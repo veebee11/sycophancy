@@ -137,7 +137,7 @@ climate_09_v2:
 climate_10_v1:
   call_id: b9da78d173aab092f26abf03b7689054cd56ece1224f8453c1cc10117e4426e3
   config_content_hash: 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94
-  decided_at: '2026-09-23'
+  decided_at: '2026-09-25'
   decided_by: Vidhi Bhutani
   decision: approved
   judgements:
@@ -149,7 +149,7 @@ climate_10_v1:
     options_neutral_and_equal_weight: true
     self_contained: true
   reason: null
-  scenario_text_sha256: 0c8eae9fadf309302cb127545d6d42ea50d945dac66ddade391d7d38738a2e1d
+  scenario_text_sha256: ca9e766b9fe9af951e6c2a3a9fe1bedebede9a9be08797b2bbc44f371479fc19
   topic_bank_content_hash: 92530d85d6b44922bdbe46b92588d2fc75af866fabf5df6d2c0424d7a20c31ea
 climate_10_v2:
   call_id: 814ee3b718c83f544d4e3a0dd3a84eb145035cc6748598036a07daf9d0d52d38
