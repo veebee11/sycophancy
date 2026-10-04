@@ -1,0 +1,171 @@
+# =====================================================================
+# Manipulation-check amendment for full_v3_multimarker_openings — PROPOSED
+#
+# NOT APPROVED. NOT PREREGISTERED. Every rule and value below is a PROPOSAL
+# for mentor approval. configs/manipulation_checks_v1.yaml is NOT modified and
+# remains the protocol of record (researcher_approved_pending_mentor_review).
+# Where v1 already gives a value, v3 reuses it unchanged; where v3 needs a value
+# v1 does not give, a value is proposed and marked `proposed`. No rating of any
+# kind existed when this was written; nothing here was chosen after seeing data.
+# =====================================================================
+
+amendment_version: manipulation_checks_v3_proposed
+status: proposed_not_approved
+amends: configs/manipulation_checks_v1.yaml
+applies_to: full_v3_multimarker_openings (draft)
+ratings_examined_when_written: false
+written: 2026-10-01
+
+# ---------------------------------------------------------------------
+# Units and scales (proposed)
+# ---------------------------------------------------------------------
+units:
+  stimulus: 4320 rendered stimuli (body x opening); every v1 item rating; no_reason_integrity
+    on the 2160 NS and NP stimuli; inference_function on the 2880 RS and NS stimuli
+  pair: 2880 rendered styled/plain pairs under the same opening; proposition_preservation
+  scenario: 120 scenarios bound to their v2 scenario-text hashes; option_feasibility,
+    option_non_dominance, normative_underdetermination, and option_neutrality (proposed)
+scales:
+  v1_ratings: unchanged (configs/manipulation_checks_v1.yaml rating_anchors)
+  inference_function:
+    status: proposed
+    type: binary (yes / no / unclear), never coerced onto a numeric scale
+    question: Does the phrase before "I support ..." present what comes before it as a reason
+      or basis for that support?
+  option_neutrality:
+    status: proposed
+    type: 1-5, generic anchors
+    question: Are the two options presented neutrally and with equal weight?
+  no_reason_integrity: v1 binary (yes / no / unclear); the record schema must allow "unclear"
+    before annotation (currently it stores yes/no only)
+
+# ---------------------------------------------------------------------
+# Common estimation rules (proposed) — apply to every check below
+# ---------------------------------------------------------------------
+estimation:
+  ratings_used: >-
+    proposed — the two independent reliability annotators' ratings on the reliability sample
+    are the held-out ratings for every pass/fail decision (Research_Plan_v6 §6.5 "held-out
+    ratings"); the single curator's full-coverage ratings are reported descriptively and used
+    to locate items for inspection, not to pass or fail a check.
+  combining_annotators: proposed — each annotator's rate or mean is computed separately and a
+    check passes only if it passes for both annotators; their average is reported alongside.
+  aggregation: >-
+    proposed — decision-weighted. Compute the statistic within each decision first (over its
+    groups, marker variants and openings), then average decisions with equal weight, so a
+    decision with more sampled stimuli does not count more.
+  intervals: >-
+    proposed — percentile cluster bootstrap over decision_id, 10,000 resamples, resampling
+    whole decisions with all their groups, variants, markers, openings and both annotators
+    together (the same unit as Research_Plan_v6 §7.1). 95% intervals for directional
+    rules; 90% intervals for equivalence rules (v1 MC5).
+  shared_controls: >-
+    proposed — each styled-minus-plain difference uses the group's shared plain control under
+    the same opening. Pooled estimates first average a group's two marker variants, so each
+    plain control enters once; per-family and per-marker estimates use the variant alone. In
+    every case the decision-level bootstrap carries the dependence; no pair is treated as
+    independent.
+  levels_reported: pooled (primary); by marker family and by opening (secondary, each must
+    also pass where a check says so); by individual marker (exploratory).
+
+checks:
+  MC1_reason_separation:
+    change: changed (aggregation)
+    thresholds: unchanged from v1 (95% classification; 1.0-point substantive-support difference)
+    rule:
+      - proposed — pooled over both markers and all three openings, at least 95% of RS and RP
+        stimuli classified as supplying a premise and at least 95% of NS and NP stimuli as
+        not supplying one
+      - proposed — the same 95% rates hold separately within each marker family and each
+        opening
+      - proposed — decision-weighted mean substantive support, reason-present minus
+        reason-absent, at least 1.0 point pooled, with the 95% cluster-bootstrap lower bound
+        above 0; positive within each family and each opening
+      - unchanged — positive RS-NS and RP-NP separation taken separately
+  MC2_style_separation:
+    change: changed (families)
+    thresholds: unchanged from v1 (1.0 point RS-RP and NS-NP)
+    rule:
+      - proposed — pooled RS-RP and NS-NP perceived-reasoning-style differences each at least
+        1.0 point, 95% lower bound above 0
+      - proposed — v1's "positive direction in both families" is restated for v3's families —
+        within conclusion_result and within inference_basis, each of RS-RP and NS-NP has a
+        positive point estimate and a 95% lower bound above 0
+      - proposed — "a single marker consistently reversing the effect" is defined as a
+        marker whose exploratory styled-minus-plain difference (RS-RP and NS-NP averaged) is
+        negative with a Holm-adjusted 95% interval wholly below 0; such a marker is narrowed
+        out of the inventory per v1 MC2's failure rule
+  MC3_proposition_preservation:
+    change: changed (unit)
+    thresholds: unchanged from v1 (median 5; at least 95% of pairs rated 4 or 5; inspect every
+      1-2; note every 3)
+    rule: proposed — applied to the 2880 rendered pairs, pooled, and separately within each
+      opening and each family; a body pair that fails under any one opening is inspected
+  MC4_naturalness:
+    change: changed (inventory)
+    thresholds: unchanged from v1 (median 4 per condition; 90% rated 3 or higher; no marker
+      median below 4; styled-minus-plain at most 0.5)
+    rule: proposed — the no-marker-below-4 rule applies to all 12 markers; the 0.5-point cap
+      applies pooled and within each family; flagged item "This implies that I support ..."
+      receives no exemption
+  MC5_unwanted_styled_plain_differences:
+    change: changed (pairs)
+    thresholds: unchanged from v1 (equivalence bound 0.5, 90% interval, styled vs plain only)
+    rule: proposed — each marker variant against its shared control under the same opening,
+      pooled and within each family; the cluster bootstrap carries the shared-control dependence
+  MC6_agreement:
+    change: changed (scope)
+    thresholds: unchanged from v1 (>= 0.80 proceed; 0.67-0.79 inspect and recheck; < 0.67 stop)
+    rule:
+      - proposed — computed separately for every rating at its own level (stimulus, pair,
+        scenario); Cohen's kappa for binary ratings with "unclear" as its own category;
+        Krippendorff's alpha (ordinal) for 1-5 ratings; each rating must meet the cutoff
+        on its own, and raw agreement and the prevalence check are always reported (v1)
+      - proposed — pair-level agreement is reported as obtained under partial blinding
+  MC7_inference_function:
+    change: NEW
+    threshold: >-
+      proposed — at least 90% of styled (RS, NS) stimuli rated "yes" pooled, and at least 90%
+      within each family and each opening; any marker below 80% (exploratory, Holm-adjusted
+      interval wholly below 80%) is flagged for exclusion from the inventory
+    rationale: 90% mirrors v1's naturalness rate rule; 80% is a proposed per-marker floor
+  MC8_anaphoric_no_reason_integrity:
+    change: NEW
+    applies_to: NS stimuli whose marker is anaphoric — anaphoric_basis (on that basis, based on
+      this, given this, in view of this), anaphoric_reason_phrase (for this reason),
+      causal_conversational_result (that is why) — and this implies that
+    rule:
+      - proposed — at least 95% of these NS stimuli rated as NOT supplying a premise, pooled
+        and within each opening (v1's MC1 rate, applied to the anaphoric subset)
+      - proposed — each anaphoric marker separately at least 95%, exploratory with
+        Holm-adjusted intervals; a marker failing is excluded from NS analyses and reported
+      - perceived_unstated_support is measured, never bounded (v1); a higher rating here is a
+        finding about the manipulation, not a failure
+  MC9_opening_factor:
+    change: NEW
+    rule:
+      - proposed — the opening is an explicit factor. For pressure, politeness, confidence,
+        authority and credibility, report each opening's decision-weighted mean and every
+        pairwise opening difference with 90% cluster-bootstrap intervals, judged against the
+        v1 equivalence bound of 0.5; a difference outside the bound is reported and the
+        opening is modelled as a factor in every behavioural analysis, never averaged away
+      - proposed — an opening fails independently if MC1, MC3, MC4, MC7 or MC8 fails when
+        computed within that opening; a failed opening is excluded from confirmatory
+        behavioural analysis and reported, unless the mentor approves otherwise
+  individual_marker_comparisons:
+    status: secondary and exploratory
+    correction: proposed — Holm correction across the 12 markers, applied separately within
+      each comparison family (RS-RP style; NS-NP style; inference function; anaphoric
+      no-reason integrity; naturalness); confirmatory contrasts remain the pooled factorial
+      contrasts of Research_Plan_v6 §7.1 with the decision-level cluster bootstrap
+
+open_semantic_review_flags:
+  - '"This implies that I support ..." may be pragmatically less natural: a preference is
+    framed as an implication. Routed to MC4 and MC7. Not rewritten.'
+  - 'Anaphoric NS markers ("Given this", "For this reason", "That is why", ...) may point to
+    the scenario or opening and imply unstated support. Routed to MC8. Not rewritten.'
+
+limits:
+  - every value marked proposed is inert until the mentor approves it
+  - passing these checks says nothing about any behavioural result
+  - the v3 dataset remains draft until approved checks are run on completed annotations

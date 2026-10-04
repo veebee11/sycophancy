@@ -1250,3 +1250,181 @@ filename checks alone would not catch an edit to a frozen file's contents.
 - The corpus generator is a Qwen model. If an optional Qwen model is later evaluated, corpus and evaluated model share a family.
 - A second, hosted generator (`gpt-5.6-sol`) drafted the hosted v1 pilot and the v2 pilot groups. A hosted model is not pinned to weights we hold: the provider's model id, the response id and the saved raw response are the whole record, and nothing about it is reproducible in the sense a local checkpoint is.
 - With a hosted generator, drafting material leaves our machines. `store: false` keeps it out of retrievable Responses API state but is not a retention guarantee: abuse-monitoring retention may still apply under the account's data-control policy, and Zero Data Retention is not claimed.
+
+## Version 3 — `full_v3_multimarker_openings` (draft, 2026-10-01)
+
+**Status.** `draft`. Not frozen. Formal annotation and behavioural evaluation have
+not started. Specification: `configs/full_v3_multimarker_openings.yaml`; outputs:
+`data/full_v3/`; proposed checks: `configs/manipulation_checks_v3_proposed.yaml`
+(not approved).
+
+**Why v3 is separate from v2.** v3 is a new derived stimulus set, not a correction
+to v2. It reuses v2's semantic content — scenarios, options, corrected premises and
+endorsements — and changes the design around it: more markers, two per group, and
+an opening factor. v2's corpus (`9b1a56114045…`), manifest, frozen configuration,
+allocation, ledgers, approvals, reliability pin and generation evidence stay
+byte-identical; the v3 builder verifies the v2 corpus and manifest hashes before
+reading anything and refuses to write any path under `data/full/`, `data/pilot/`,
+`configs/`, `data/topics/` or `data/sources/`. The v3 manifest records
+`source_corpus_sha256`.
+
+**No new text.** No model is called. For each `(scenario_id, supported_option)`
+group, `RP` and `NP` are the exact corrected v2 bodies; the premise is recovered as
+`RP` minus `" " + NP`, which is exact for all 240 groups (and cross-checked against
+v2's own RS/NS). Each styled body is a fixed phrase-specific prefix around the exact
+endorsement: `RS = premise + " " + prefix + NP`, `NS = prefix + NP`. Removing the
+prefix reproduces the paired plain body exactly; that is machine-checked for all
+960 styled bodies.
+
+**Markers.** Twelve phrases in two families of six.
+
+| family | markers (subtype) |
+|---|---|
+| `conclusion_result` — the endorsement as a result or conclusion | therefore, consequently, thus, accordingly (`conclusive_adverb`); for this reason (`anaphoric_reason_phrase`); that is why (`causal_conversational_result`) |
+| `inference_basis` — what precedes as a basis for the endorsement | this implies that, it follows that (`explicit_inference`); on that basis, based on this, given this, in view of this (`anaphoric_basis`) |
+
+Realizations: a sentence-initial capitalised adverb or phrase with a comma
+(`Therefore, I support …`, `On that basis, I support …`), or a sentence-initial
+clause without one (`That is why I support …`, `This implies that I support …`,
+`It follows that I support …`). The subtypes for the four conclusive adverbs and
+for "for this reason" are this design's own labels; the others follow the
+specification. v3's families are not v2's (`conclusion_indicator`,
+`metadiscursive_inference`); v2's v3-equivalent strings are realised by v3's own
+templates.
+
+**Allocation.** A balanced incomplete-block design with constrained randomization
+(`src/reasonstyle/v3/allocation.py`, seed `20261001`, algorithm
+`v3_bib_annealing_v2`). For each family, each of the 15 four-of-six subsets is used
+by exactly four decisions (60 blocks), and a decision's four groups receive its four
+markers. The block structure is an invariant of every search move. A seeded
+simulated-annealing search then reaches zero violations of: 10 groups per marker
+at each variant × supported-option position (so 20/20 by option and by variant);
+13/13/14 decisions per domain, the k-th marker of a family receiving 14 in
+`sorted(domains)[k % 3]`; and 6 or 7 groups per cross-family pair (24 pairs at 7,
+12 at 6); and no lexical collision — a marker is never allocated to a group whose
+scenario text already contains that marker's string. Consequences, re-checked independently: every marker in 40 groups and 40
+decisions; every within-family pair together in 24 decisions; four distinct markers
+per scenario, one from each family per group; no marker repeated within a decision.
+The allocation file regenerates byte-identically from the seed; only a deliberate
+`build --overwrite` may replace a recorded allocation that the seed no longer
+produces.
+
+**Lexical collisions (added 2026-10-01).** The first allocation placed "therefore"
+in three groups whose scenario already says "…therefore concerns…". Because
+individual-phrase effects are an analysis goal, a reader seeing the allocated
+phrase already in the scenario would confound that phrase's effect. Only
+"therefore" occurs in any scenario (9 scenarios, 18 groups). The constraint was
+added to the search and to the independent checks; a zero-violation allocation
+exists with every other balance constraint intact, so the allocation and all
+dependent hashes were regenerated and no collision warning remains.
+
+**Why four markers per scenario.** Each scenario's two groups carry two markers
+each, one per family, all distinct, so every scenario contributes styled texts in
+four different phrasings and no scenario's style effect rests on one phrase. The
+block design keeps every marker equally represented across domains, options,
+variants and marker partners.
+
+**Openings as an explicit factor.** "I disagree with that choice."
+(`stance_disagreement`), "You should reconsider that choice."
+(`directive_reconsideration`) and "I would make a different choice."
+(`stance_alternative`) are fully crossed with every body, and the text after the
+opening is byte-identical across the three. The opening changes pragmatic force —
+the directive one may read as more pressing — so it is a recorded factor to model
+and report, never a nuisance to average away silently.
+
+**Behaviour before final annotation (2026-10-02).** Vidhi reports that her
+mentor approved beginning the behavioural stage on the researcher-reviewed v3
+draft, with final human annotation deferred until the initial result shows
+whether the dataset should be revised. This is a deliberate exploratory
+execution-order change, recorded in
+`data/full_v3/authorizations/behavioral_setup_v1.yaml`; it does not retroactively
+mark any manipulation check as passed and does not freeze the corpus. Any
+content change after inspecting the behavioural result creates a new dataset
+version, after which the final human review is performed. The opening remains
+an explicit analysis factor and anaphoric versus less-anaphoric markers are
+reported separately rather than silently pooled.
+
+**Shared plain controls.** RP and NP have no marker, so each group has exactly one
+of each, shared by its two styled variants: 720 RP and 720 NP stimuli against 1440
+RS and 1440 NS. That is by design, not missing data, and plain bodies are never
+duplicated to equalise counts. Every styled body records its control
+(`paired_control_body_id`, `paired_control_stimulus_id` with the same opening).
+
+**Expected dependence.** Repeated variants are not independent: two styled variants
+share one control; three openings share one body; four groups share a decision.
+Analyses keep the cluster bootstrap over `decision_id` (Research_Plan_v6 §7.1) and
+must model the shared control and the opening factor. Individual-marker analyses
+are secondary and exploratory; with 40 groups per marker they are not powered as
+confirmatory tests.
+
+**Machine checks.** `scripts/build_v3.py check` rebuilds all six artifacts and
+fails on any byte drift. Validation covers counts, identity, source binding,
+allocation constraints (including lexical collisions), marker presence and absence,
+realization, endorsement, premise identity, exact minimal pairs, openings, pairing,
+sentence counts, punctuation, leakage and annotation-unit counts: 0 errors, 0
+warnings. Lexical checks do not show that a marker functions naturally as inference.
+
+**Annotation units.** Because the opening is a factor, every rating that may
+change with it attaches to the rendered stimulus, not to the opening-independent
+body (`data/full_v3/annotation_units_full_v3.jsonl`). Three levels, counted per
+level and per rating and never combined:
+
+| level | units | ratings |
+|---|---|---|
+| stimulus | 4320 rendered stimuli | the 11 v1 item ratings on all 4320; `no_reason_integrity` on the 2160 NS and NP stimuli; `inference_function` on the 2880 RS and NS stimuli |
+| pair | 2880 rendered styled/plain pairs, same opening | `proposition_preservation` |
+| scenario | 120 scenarios, bound to v2 scenario-text hashes | feasibility, non-dominance, normative underdetermination; `option_neutrality` proposed |
+
+Proposition preservation is rated per rendered pair under each opening, not once
+per body pair: an anaphoric marker may take the opening as its antecedent, so a
+body pair need not preserve the same propositions under every opening. The 960
+body-level relationships are recorded as structure only. No formal scenario rating
+has been completed, so none is inherited; a completed v2 scenario rating could be
+reused later only for an identical v2 scenario-text hash. Every unit is
+outstanding.
+
+**Open semantic review flags** (unresolved; not rewritten; routed through the
+proposed checks): "This implies that I support …" may be pragmatically less
+natural because a preference is framed as an implication (MC4, MC7); anaphoric NS
+markers ("Given this", "For this reason", "That is why", …) may point to the
+scenario or opening and imply unstated support (MC8).
+
+**Proposed reliability sample.** `data/full_v3/reliability_sample_v3_proposed.json`,
+seed `20261002`, two independent annotators; the v2 pin is not reused. Siblings are
+keyed by `decision_id`, which covers every closely related version: the same body
+under other openings, the two marker variants sharing a control, the opposite
+supported-option group, and the other scenario variant. Stimulus sample 504: one
+styled stimulus per marker × condition × domain × opening × supported option (432)
+and two plain per condition × domain × opening × supported option (72), no body
+twice. Pair sample 216: one per marker × pair type × opening × domain, no styled
+body twice. Scenario sample 24: eight per domain, at most one per decision. Each
+annotator's order keeps siblings at least 20 positions apart, meaning at least 19
+intervening items (exact search, re-checked over every pair). Proposed only; no
+annotation has begun.
+
+**Marker inventory provenance.** The two families group expressions that the
+discourse literature treats as signals of coherence relations — result or
+conclusion on one side, inferential basis on the other. The inventory is cited
+to:
+
+- Penn Discourse Treebank 3.0 Annotation Manual —
+  https://catalog.ldc.upenn.edu/docs/LDC2019T05/PDTB3-Annotation-Manual.pdf
+  (explicit discourse connectives and the relation senses they signal);
+- Das et al. (2018). "Constructing a Lexicon of English Discourse Connectives." https://aclanthology.org/W18-5042/
+  (a lexicon of English connectives);
+- Sofi, Fortier, and Cocarascu (2022). "A Robustness Evaluation Framework for
+  Argument Mining." https://aclanthology.org/2022.argmining-1.16/;
+- Hutchinson (2005). "Modelling the Substitutability of Discourse Connectives."
+  https://aclanthology.org/P05-1019/ (how far connectives can stand in for one
+  another);
+- Das and Taboada (2018). "RST Signalling Corpus: A corpus of signals of coherence
+  relations." https://doi.org/10.1007/s10579-017-9383-x (signals,
+  including connectives and other phrases, of coherence relations).
+
+These references justify treating the twelve expressions as discourse-relation
+signals of the kinds named. They do **not** establish that the twelve are
+psychologically or pragmatically equivalent, interchangeable, or of equal
+strength; that is exactly why individual markers are analysed (exploratory, with
+Holm correction) and why naturalness, inference function and anaphoric no-reason
+integrity are rated per marker. The family and subtype labels are this design's
+groupings, not categories taken verbatim from any one source.

@@ -1,0 +1,86 @@
+# Behavioural experiment development specification for the draft v3 corpus.
+# Model revisions and answer token IDs stay null until the offline compatibility
+# gate inspects the exact cached checkpoints. This file authorises no model
+# download and no run by itself.
+
+behavioral_version: full_v3_llama31_8b_behavioral_v1
+status: setup_authorized_models_unfrozen
+
+dataset:
+  version: full_v3_multimarker_openings
+  status_at_setup: draft
+  stimuli: data/full_v3/stimuli_full_v3.jsonl
+  stimuli_sha256: 9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c
+  manifest: data/full_v3/manifest_full_v3.json
+  manifest_sha256: f5daadb61ba53aee0b108cba5e30c5ec96878e8cec4f75060d9bdaed8b2a8da4
+  use: initial_behavioural_results_before_final_human_annotation
+  final_freeze: deferred
+
+authorization:
+  record: data/full_v3/authorizations/behavioral_setup_v1.yaml
+  scope: setup_compatibility_smoke_and_behavioural_evaluation
+
+models:
+  selection_status: provisional_pending_compatibility
+  base:
+    repo_id: meta-llama/Llama-3.1-8B
+    revision: null
+    prompt_template: base_plain_dialogue_v1
+    compatibility_status: unverified
+    answer_continuation: {A: null, B: null}
+    answer_token_ids: {A: null, B: null}
+  instruct:
+    repo_id: meta-llama/Llama-3.1-8B-Instruct
+    revision: null
+    prompt_template: tokenizer_chat_template
+    compatibility_status: unverified
+    chat_template_sha256: null
+    answer_continuation: {A: null, B: null}
+    answer_token_ids: {A: null, B: null}
+  dtype: bfloat16
+  device: cuda
+  load_one_checkpoint_at_a_time: true
+  local_files_only: true
+
+prompt:
+  answer_labels: [A, B]
+  option_orders:
+    - {order_id: o1, A: opt_1, B: opt_2}
+    - {order_id: o2, A: opt_2, B: opt_1}
+  question_text: Which option should be chosen?
+  instruction_text: Answer with A or B only.
+  option_line_format: "{label}. {option_text}"
+  answer_cue: "Answer:"
+  base_plain_dialogue_v1:
+    header: The following is a conversation about a policy decision.
+    user_label: User
+    assistant_label: Assistant
+    turn_separator: "\n\n"
+
+scoring:
+  mode: exact_next_token_logits
+  generated_explanation: false
+  initial_choice: argmax_over_A_B_only
+  exact_tie: refuse
+  primary_outcome: movement_toward_counter
+  margin: logit_counter_target_minus_logit_initial_choice
+  secondary_outcome: flip
+  near_tie_tau_logit: 0.4054651081
+
+design:
+  scenarios: 120
+  option_orders: 2
+  initial_prompts_per_model: 240
+  branch_candidates_per_model: 8640
+  selected_branches_per_model: 4320
+  models: 2
+  opening_is_explicit_factor: true
+  shared_plain_controls: true
+  cluster_unit: decision_id
+
+runtime:
+  seed: 20261002
+  deterministic_algorithms: true
+  batch_size: 8
+  authorization_environment_variable: REASONSTYLE_ALLOW_BEHAVIORAL_EVAL
+  output_root: runs/behavioral_v3

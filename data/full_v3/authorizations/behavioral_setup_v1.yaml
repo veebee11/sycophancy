@@ -1,0 +1,24 @@
+record_type: researcher_report_of_mentor_authorization
+record_version: behavioral_setup_v1
+reported_by: Vidhi Bhutani
+reported_at: 2026-10-02
+mentor_source_document_attached: false
+statement: >-
+  The mentor approved the current design and asked the researcher to begin the
+  behavioural experiments to determine whether the intended effects appear.
+  The researcher has reviewed the current dataset and accepts all scenarios,
+  markers and openings for this initial behavioural stage. If the behavioural
+  results motivate dataset changes, those changes will create a revised dataset;
+  human annotators will review the resulting final dataset.
+scope:
+  - behavioural implementation
+  - offline model compatibility checks
+  - smoke runs
+  - behavioural evaluation with Llama-3.1-8B Base and Instruct
+excluded:
+  - mechanistic evaluation
+  - claiming that human manipulation checks passed
+  - freezing the current draft as the final dataset
+dataset_version: full_v3_multimarker_openings
+stimuli_sha256: 9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c
+human_annotation: deferred_until_after_initial_behavioural_results

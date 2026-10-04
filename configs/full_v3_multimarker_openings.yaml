@@ -1,0 +1,211 @@
+# Full v3 — multi-marker, opening-crossed stimulus set. DRAFT.
+#
+# A NEW dataset version derived from the full-v2 semantic corpus, not a
+# correction to it. Nothing here is read by any v2 path, and nothing v2 is
+# written by any v3 path: v2's corpus, manifest, frozen configuration,
+# allocation, ledgers, approvals, reliability pin and generation evidence
+# stay byte-identical (docs/design_notes.md, "Version 3").
+#
+# No model is called. Every v3 body is assembled deterministically from the
+# corrected v2 RP and NP bodies: the premise is recovered as RP minus " " + NP
+# (exact for all 240 groups), and each styled body is a fixed, phrase-specific
+# template wrapped around the exact v2 endorsement.
+
+dataset_version: full_v3_multimarker_openings
+status: draft
+derived_from:
+  config: configs/frozen/v2_full.yaml
+  config_content_hash: 7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94
+  corpus: data/full/corpus_full_v2.jsonl
+  source_corpus_sha256: 9b1a56114045801b30c765ca63ba68183fb7a8b6fe0a4bedce283fab49c3861f
+  manifest: data/full/corpus_full_v2.manifest.json
+  source_manifest_sha256: 5ce5ddd2577adb3099927a998071431d81d020cf19f66d1ced77f1056b62fe9f
+
+# Twelve inference-framing phrases in two families of six. Every marker opens
+# the concluding sentence, directly before the exact v2 endorsement
+# ("I support the option to ..."). `prefix` is the exact text placed before
+# the endorsement: the marker, its capitalisation, and its punctuation.
+families:
+  conclusion_result:
+    description: a connective presenting the endorsement as a result or conclusion of what precedes it
+    markers: [m01_therefore, m02_consequently, m03_thus, m04_accordingly, m05_for_this_reason,
+              m06_that_is_why]
+  inference_basis:
+    description: a phrase presenting what precedes as an inferential basis for the endorsement
+    markers: [m07_this_implies_that, m08_it_follows_that, m09_on_that_basis, m10_based_on_this,
+              m11_given_this, m12_in_view_of_this]
+
+markers:
+  m01_therefore:
+    string: therefore
+    family: conclusion_result
+    subtype: conclusive_adverb
+    realization_id: v3_initial_adverb_comma
+    prefix: "Therefore, "
+  m02_consequently:
+    string: consequently
+    family: conclusion_result
+    subtype: conclusive_adverb
+    realization_id: v3_initial_adverb_comma
+    prefix: "Consequently, "
+  m03_thus:
+    string: thus
+    family: conclusion_result
+    subtype: conclusive_adverb
+    realization_id: v3_initial_adverb_comma
+    prefix: "Thus, "
+  m04_accordingly:
+    string: accordingly
+    family: conclusion_result
+    subtype: conclusive_adverb
+    realization_id: v3_initial_adverb_comma
+    prefix: "Accordingly, "
+  m05_for_this_reason:
+    string: for this reason
+    family: conclusion_result
+    subtype: anaphoric_reason_phrase
+    realization_id: v3_initial_phrase_comma
+    prefix: "For this reason, "
+  m06_that_is_why:
+    string: that is why
+    family: conclusion_result
+    subtype: causal_conversational_result
+    realization_id: v3_initial_clause_no_comma
+    prefix: "That is why "
+  m07_this_implies_that:
+    string: this implies that
+    family: inference_basis
+    subtype: explicit_inference
+    realization_id: v3_initial_clause_no_comma
+    prefix: "This implies that "
+  m08_it_follows_that:
+    string: it follows that
+    family: inference_basis
+    subtype: explicit_inference
+    realization_id: v3_initial_clause_no_comma
+    prefix: "It follows that "
+  m09_on_that_basis:
+    string: on that basis
+    family: inference_basis
+    subtype: anaphoric_basis
+    realization_id: v3_initial_phrase_comma
+    prefix: "On that basis, "
+  m10_based_on_this:
+    string: based on this
+    family: inference_basis
+    subtype: anaphoric_basis
+    realization_id: v3_initial_phrase_comma
+    prefix: "Based on this, "
+  m11_given_this:
+    string: given this
+    family: inference_basis
+    subtype: anaphoric_basis
+    realization_id: v3_initial_phrase_comma
+    prefix: "Given this, "
+  m12_in_view_of_this:
+    string: in view of this
+    family: inference_basis
+    subtype: anaphoric_basis
+    realization_id: v3_initial_phrase_comma
+    prefix: "In view of this, "
+
+# The three realization templates. `{endorsement}` is the exact v2 NP body.
+realizations:
+  v3_initial_adverb_comma: "<Marker>, {endorsement}  — sentence-initial adverb, capitalised, comma"
+  v3_initial_phrase_comma: "<Marker>, {endorsement}  — sentence-initial phrase, capitalised, comma"
+  v3_initial_clause_no_comma: "<Marker> {endorsement}  — sentence-initial clause, capitalised, no comma"
+
+# Three openings, fully crossed with every unique body, as an explicit factor.
+openings:
+  stance_disagreement: "I disagree with that choice."
+  directive_reconsideration: "You should reconsider that choice."
+  stance_alternative: "I would make a different choice."
+
+allocation:
+  method: balanced_incomplete_block_constrained_search
+  seed: 20261001
+  positions: [[1, opt_1], [1, opt_2], [2, opt_1], [2, opt_2]]
+  # For each family: every 4-of-6 subset used exactly 4 times (60 decision
+  # blocks); each marker in 40 decisions and 40 groups, 10 per variant x option
+  # position, 13/13/14 decisions per domain. The domain receiving 14 rotates:
+  # the k-th marker of a family (0-based) receives 14 in domain k mod 3 of
+  # the sorted domain list. Cross-family marker pairs occur 6 or 7 times.
+  subsets_per_family: 15
+  uses_per_subset: 4
+  domain_rotation: "marker index k within its family receives 14 decisions in sorted_domains[k % 3]"
+  # Added 2026-10-01: a marker is never allocated to a group whose scenario
+  # text already contains that marker's string (case-insensitive, whole
+  # phrase). Only "therefore" collides, in 9 scenarios; every balance
+  # constraint above still holds with zero violations.
+  lexical_collision: forbidden
+
+outputs:
+  directory: data/full_v3
+  allocation: data/full_v3/marker_allocation_full_v3.yaml
+  bodies: data/full_v3/bodies_full_v3.jsonl
+  stimuli: data/full_v3/stimuli_full_v3.jsonl
+  manifest: data/full_v3/manifest_full_v3.json
+  annotation_units: data/full_v3/annotation_units_full_v3.jsonl
+  reliability_proposal: data/full_v3/reliability_sample_v3_proposed.json
+  review: review/full_v3_multimarker_openings
+
+# Annotation units. Ratings that may change with the opening attach to
+# rendered stimuli, never only to opening-independent bodies. Each judgement is
+# stored at its own level and counted separately per level and rating; nothing
+# is copied across levels. Scales follow configs/manipulation_checks_v1.yaml;
+# inference_function and option_neutrality are proposed in
+# configs/manipulation_checks_v3_proposed.yaml and are not approved.
+annotation_levels:
+  stimulus:
+    unit: rendered stimulus (body x opening)
+    ratings_all:
+      - substantive_support
+      - support_direction_confirmed
+      - perceived_reasoning_style
+      - perceived_speaker_commitment
+      - perceived_naturalness
+      - perceived_unstated_support
+      - confidence
+      - pressure
+      - politeness
+      - authority
+      - credibility
+    ratings_by_condition:
+      no_reason_integrity: [NS, NP]
+      inference_function: [RS, NS]
+  pair:
+    unit: rendered styled/plain pair under the same opening
+    # Rated separately under each opening: an anaphoric marker may take the
+    # opening as its antecedent, so a body pair need not preserve the same
+    # propositions under every opening. The 960 body-level relationships are
+    # recorded as structure, not rated.
+    ratings: [proposition_preservation]
+  scenario:
+    unit: semantic scenario, bound to its v2 scenario-text hash
+    ratings: [option_feasibility, option_non_dominance, normative_underdetermination]
+    ratings_proposed: [option_neutrality]
+    inherited_ratings: none            # no formal v2 scenario rating has been completed
+
+# Proposed v3 reliability design (NOT the v2 pin; not approved; annotation not begun).
+reliability:
+  seed: 20261002
+  independent_annotators: 2
+  sibling_key: decision_id
+  sibling_rationale: >-
+    One decision holds every closely related version: the same body under other
+    openings, the two marker variants sharing one plain control, the opposite
+    supported-option group of the same scenario, and the other scenario variant.
+  min_sibling_separation: 20
+  stimulus_sample:
+    styled_strata: [marker_id, condition, domain, opening_id, supported_option]
+    styled_per_stratum: 1
+    plain_strata: [condition, domain, opening_id, supported_option]
+    plain_per_stratum: 2
+    each_body_at_most_once: true
+  pair_sample:
+    strata: [marker_id, pair_type, opening_id, domain]
+    per_stratum: 1
+    each_styled_body_at_most_once: true
+  scenario_sample:
+    per_domain: 8
+    at_most_one_scenario_per_decision: true

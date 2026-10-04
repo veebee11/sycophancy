@@ -1,0 +1,442 @@
+{
+  "allocation": {
+    "algorithm": "v3_bib_annealing_v2",
+    "lexical_collision": "forbidden",
+    "seed": 20261001,
+    "sha256": "558be05ad765fe5bc96be9499e44dd831d220d9a0e0d6c645dcc46be1d88669a"
+  },
+  "annotation_note": "Counts are per level and per rating and are never summed across levels. Every unit is outstanding; no rating is completed, inherited or passed. Proposition preservation is rated per rendered pair under each opening, because an anaphoric marker may take the opening as its antecedent.",
+  "annotation_units": {
+    "pair": {
+      "body_level_relationships": 960,
+      "ratings": {
+        "proposition_preservation": 2880
+      },
+      "units": 2880
+    },
+    "scenario": {
+      "inherited_ratings": 0,
+      "ratings": {
+        "normative_underdetermination": 120,
+        "option_feasibility": 120,
+        "option_non_dominance": 120
+      },
+      "ratings_proposed": {
+        "option_neutrality": 120
+      },
+      "units": 120
+    },
+    "stimulus": {
+      "ratings": {
+        "authority": 4320,
+        "confidence": 4320,
+        "credibility": 4320,
+        "inference_function": 2880,
+        "no_reason_integrity": 2160,
+        "perceived_naturalness": 4320,
+        "perceived_reasoning_style": 4320,
+        "perceived_speaker_commitment": 4320,
+        "perceived_unstated_support": 4320,
+        "politeness": 4320,
+        "pressure": 4320,
+        "substantive_support": 4320,
+        "support_direction_confirmed": 4320
+      },
+      "units": 4320
+    }
+  },
+  "artifacts_sha256": {
+    "allocation": "558be05ad765fe5bc96be9499e44dd831d220d9a0e0d6c645dcc46be1d88669a",
+    "annotation_units": "ae576faf07f4a9523ee2f5ce1eb2027fb8a4dab0c2649f72e91291d8154fd5ae",
+    "bodies": "f295f29779aaf4dfad70976dfd998225ba0ea1db3ac9a80efadfada9f282e4ca",
+    "reliability_proposal": "d76450148aa48891120c362c3a5a9282eb2d0132f7c1500450872c398285ff99",
+    "stimuli": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c"
+  },
+  "balance": {
+    "cross_family_pair_counts": {
+      "6": 12,
+      "7": 24
+    },
+    "groups_per_marker_by_domain": {
+      "m01_therefore": {
+        "climate": 14,
+        "energy": 13,
+        "technology": 13
+      },
+      "m02_consequently": {
+        "climate": 13,
+        "energy": 14,
+        "technology": 13
+      },
+      "m03_thus": {
+        "climate": 13,
+        "energy": 13,
+        "technology": 14
+      },
+      "m04_accordingly": {
+        "climate": 14,
+        "energy": 13,
+        "technology": 13
+      },
+      "m05_for_this_reason": {
+        "climate": 13,
+        "energy": 14,
+        "technology": 13
+      },
+      "m06_that_is_why": {
+        "climate": 13,
+        "energy": 13,
+        "technology": 14
+      },
+      "m07_this_implies_that": {
+        "climate": 14,
+        "energy": 13,
+        "technology": 13
+      },
+      "m08_it_follows_that": {
+        "climate": 13,
+        "energy": 14,
+        "technology": 13
+      },
+      "m09_on_that_basis": {
+        "climate": 13,
+        "energy": 13,
+        "technology": 14
+      },
+      "m10_based_on_this": {
+        "climate": 14,
+        "energy": 13,
+        "technology": 13
+      },
+      "m11_given_this": {
+        "climate": 13,
+        "energy": 14,
+        "technology": 13
+      },
+      "m12_in_view_of_this": {
+        "climate": 13,
+        "energy": 13,
+        "technology": 14
+      }
+    },
+    "groups_per_marker_by_supported_option": {
+      "m01_therefore": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m02_consequently": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m03_thus": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m04_accordingly": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m05_for_this_reason": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m06_that_is_why": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m07_this_implies_that": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m08_it_follows_that": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m09_on_that_basis": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m10_based_on_this": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m11_given_this": {
+        "opt_1": 20,
+        "opt_2": 20
+      },
+      "m12_in_view_of_this": {
+        "opt_1": 20,
+        "opt_2": 20
+      }
+    },
+    "groups_per_marker_by_variant_id": {
+      "m01_therefore": {
+        "1": 20,
+        "2": 20
+      },
+      "m02_consequently": {
+        "1": 20,
+        "2": 20
+      },
+      "m03_thus": {
+        "1": 20,
+        "2": 20
+      },
+      "m04_accordingly": {
+        "1": 20,
+        "2": 20
+      },
+      "m05_for_this_reason": {
+        "1": 20,
+        "2": 20
+      },
+      "m06_that_is_why": {
+        "1": 20,
+        "2": 20
+      },
+      "m07_this_implies_that": {
+        "1": 20,
+        "2": 20
+      },
+      "m08_it_follows_that": {
+        "1": 20,
+        "2": 20
+      },
+      "m09_on_that_basis": {
+        "1": 20,
+        "2": 20
+      },
+      "m10_based_on_this": {
+        "1": 20,
+        "2": 20
+      },
+      "m11_given_this": {
+        "1": 20,
+        "2": 20
+      },
+      "m12_in_view_of_this": {
+        "1": 20,
+        "2": 20
+      }
+    },
+    "within_family_pair_cooccurrence": {
+      "24": 30
+    }
+  },
+  "behavioural_evaluation": "not started",
+  "counts": {
+    "bodies_per_group": [
+      6
+    ],
+    "by_condition": {
+      "NP": 720,
+      "NS": 1440,
+      "RP": 720,
+      "RS": 1440
+    },
+    "by_domain": {
+      "climate": 1440,
+      "energy": 1440,
+      "technology": 1440
+    },
+    "by_family": {
+      "conclusion_result": 1440,
+      "inference_basis": 1440
+    },
+    "by_marker": {
+      "m01_therefore": 240,
+      "m02_consequently": 240,
+      "m03_thus": 240,
+      "m04_accordingly": 240,
+      "m05_for_this_reason": 240,
+      "m06_that_is_why": 240,
+      "m07_this_implies_that": 240,
+      "m08_it_follows_that": 240,
+      "m09_on_that_basis": 240,
+      "m10_based_on_this": 240,
+      "m11_given_this": 240,
+      "m12_in_view_of_this": 240
+    },
+    "by_opening": {
+      "directive_reconsideration": 1440,
+      "stance_alternative": 1440,
+      "stance_disagreement": 1440
+    },
+    "by_supported_option": {
+      "opt_1": 2160,
+      "opt_2": 2160
+    },
+    "decisions": 60,
+    "decisions_per_domain": {
+      "climate": 20,
+      "energy": 20,
+      "technology": 20
+    },
+    "groups": 240,
+    "per_decision": [
+      72
+    ],
+    "per_scenario": [
+      36
+    ],
+    "scenarios": 120,
+    "stimuli": 4320,
+    "unique_bodies": 1440
+  },
+  "dataset_version": "full_v3_multimarker_openings",
+  "formal_annotation": "not started",
+  "machine_validation": {
+    "errors": 0,
+    "warning_detail": [],
+    "warnings": 0
+  },
+  "manipulation_checks": "configs/manipulation_checks_v3_proposed.yaml — proposed, not approved; configs/manipulation_checks_v1.yaml unchanged",
+  "open_semantic_review_flags": [
+    "\"This implies that I support ...\" may be pragmatically less natural: a preference is framed as an implication (route: MC4, MC7)",
+    "anaphoric NS markers (\"Given this\", \"For this reason\", \"That is why\", ...) may point to the scenario or opening and imply unstated support (route: MC8)"
+  ],
+  "plain_controls": "RP and NP are shared: each group's two RS marker variants pair with its one RP, and its two NS variants with its one NP, so RP and NP have half as many rows as RS and NS. This is by design, not missing data; the two styled variants of a group are dependent through their shared control.",
+  "relationship_to_v2": "a new derived dataset version; not a correction to v2, which is unchanged",
+  "reliability_proposal": {
+    "annotation_begun": false,
+    "coverage": {
+      "pair": {
+        "condition": {
+          "NS": 108,
+          "RS": 108
+        },
+        "distinct_styled_bodies": 216,
+        "domain": {
+          "climate": 72,
+          "energy": 72,
+          "technology": 72
+        },
+        "marker_id": {
+          "m01_therefore": 18,
+          "m02_consequently": 18,
+          "m03_thus": 18,
+          "m04_accordingly": 18,
+          "m05_for_this_reason": 18,
+          "m06_that_is_why": 18,
+          "m07_this_implies_that": 18,
+          "m08_it_follows_that": 18,
+          "m09_on_that_basis": 18,
+          "m10_based_on_this": 18,
+          "m11_given_this": 18,
+          "m12_in_view_of_this": 18
+        },
+        "opening_id": {
+          "directive_reconsideration": 72,
+          "stance_alternative": 72,
+          "stance_disagreement": 72
+        }
+      },
+      "scenario": {
+        "by_domain": {
+          "climate": 8,
+          "energy": 8,
+          "technology": 8
+        },
+        "decisions_covered": 24
+      },
+      "stimulus": {
+        "condition": {
+          "NP": 36,
+          "NS": 216,
+          "RP": 36,
+          "RS": 216
+        },
+        "decisions_covered": 60,
+        "distinct_bodies": 504,
+        "domain": {
+          "climate": 168,
+          "energy": 168,
+          "technology": 168
+        },
+        "marker_family": {
+          "conclusion_result": 216,
+          "inference_basis": 216,
+          "none": 72
+        },
+        "marker_id": {
+          "m01_therefore": 36,
+          "m02_consequently": 36,
+          "m03_thus": 36,
+          "m04_accordingly": 36,
+          "m05_for_this_reason": 36,
+          "m06_that_is_why": 36,
+          "m07_this_implies_that": 36,
+          "m08_it_follows_that": 36,
+          "m09_on_that_basis": 36,
+          "m10_based_on_this": 36,
+          "m11_given_this": 36,
+          "m12_in_view_of_this": 36,
+          "none": 72
+        },
+        "max_per_decision": 14,
+        "opening_id": {
+          "directive_reconsideration": 168,
+          "stance_alternative": 168,
+          "stance_disagreement": 168
+        },
+        "supported_option": {
+          "opt_1": 252,
+          "opt_2": 252
+        }
+      }
+    },
+    "reuses_v2_pin": false,
+    "seed": 20261002,
+    "separation": {
+      "pair": {
+        "annotator_1": {
+          "achieved_all_pairs": 20,
+          "method": "exact_backtracking",
+          "satisfied": true
+        },
+        "annotator_2": {
+          "achieved_all_pairs": 20,
+          "method": "exact_backtracking",
+          "satisfied": true
+        }
+      },
+      "scenario": {
+        "annotator_1": {
+          "achieved_all_pairs": null,
+          "method": "randomized_search",
+          "satisfied": true
+        },
+        "annotator_2": {
+          "achieved_all_pairs": null,
+          "method": "randomized_search",
+          "satisfied": true
+        }
+      },
+      "stimulus": {
+        "annotator_1": {
+          "achieved_all_pairs": 20,
+          "method": "exact_backtracking",
+          "satisfied": true
+        },
+        "annotator_2": {
+          "achieved_all_pairs": 20,
+          "method": "exact_backtracking",
+          "satisfied": true
+        }
+      }
+    },
+    "sizes": {
+      "pair": 216,
+      "scenario": 24,
+      "stimulus": 504
+    },
+    "status": "proposed_not_approved"
+  },
+  "source_config_content_hash": "7548650b42e7cb7407f521d10d9e8c2d4f9f25b5074d98cc523b4a5e35a99c94",
+  "source_corpus": "data/full/corpus_full_v2.jsonl",
+  "source_corpus_sha256": "9b1a56114045801b30c765ca63ba68183fb7a8b6fe0a4bedce283fab49c3861f",
+  "source_manifest_sha256": "5ce5ddd2577adb3099927a998071431d81d020cf19f66d1ced77f1056b62fe9f",
+  "spec": "configs/full_v3_multimarker_openings.yaml",
+  "spec_sha256": "50b0f41bbb5dd93f4043def61543217d4cf6243bb38506e1d86948375c1c36f7",
+  "status": "draft"
+}

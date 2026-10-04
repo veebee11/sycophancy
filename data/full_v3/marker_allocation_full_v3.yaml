@@ -1,0 +1,1926 @@
+dataset_version: full_v3_multimarker_openings
+generated: deterministically by scripts/build_v3.py; do not edit by hand
+algorithm: v3_bib_annealing_v2
+seed: 20261001
+source_corpus_sha256: 9b1a56114045801b30c765ca63ba68183fb7a8b6fe0a4bedce283fab49c3861f
+groups:
+- decision_id: climate_01
+  domain: climate
+  scenario_id: climate_01_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_01
+  domain: climate
+  scenario_id: climate_01_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m08_it_follows_that
+- decision_id: climate_01
+  domain: climate
+  scenario_id: climate_01_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m10_based_on_this
+- decision_id: climate_01
+  domain: climate
+  scenario_id: climate_01_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m07_this_implies_that
+- decision_id: climate_02
+  domain: climate
+  scenario_id: climate_02_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m09_on_that_basis
+- decision_id: climate_02
+  domain: climate
+  scenario_id: climate_02_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m08_it_follows_that
+- decision_id: climate_02
+  domain: climate
+  scenario_id: climate_02_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m07_this_implies_that
+- decision_id: climate_02
+  domain: climate
+  scenario_id: climate_02_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m11_given_this
+- decision_id: climate_04
+  domain: climate
+  scenario_id: climate_04_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m11_given_this
+- decision_id: climate_04
+  domain: climate
+  scenario_id: climate_04_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m10_based_on_this
+- decision_id: climate_04
+  domain: climate
+  scenario_id: climate_04_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m08_it_follows_that
+- decision_id: climate_04
+  domain: climate
+  scenario_id: climate_04_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m07_this_implies_that
+- decision_id: climate_05
+  domain: climate
+  scenario_id: climate_05_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m11_given_this
+- decision_id: climate_05
+  domain: climate
+  scenario_id: climate_05_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m08_it_follows_that
+- decision_id: climate_05
+  domain: climate
+  scenario_id: climate_05_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m10_based_on_this
+- decision_id: climate_05
+  domain: climate
+  scenario_id: climate_05_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m09_on_that_basis
+- decision_id: climate_06
+  domain: climate
+  scenario_id: climate_06_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m09_on_that_basis
+- decision_id: climate_06
+  domain: climate
+  scenario_id: climate_06_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m08_it_follows_that
+- decision_id: climate_06
+  domain: climate
+  scenario_id: climate_06_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_06
+  domain: climate
+  scenario_id: climate_06_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m10_based_on_this
+- decision_id: climate_07
+  domain: climate
+  scenario_id: climate_07_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m11_given_this
+- decision_id: climate_07
+  domain: climate
+  scenario_id: climate_07_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m09_on_that_basis
+- decision_id: climate_07
+  domain: climate
+  scenario_id: climate_07_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m10_based_on_this
+- decision_id: climate_07
+  domain: climate
+  scenario_id: climate_07_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m07_this_implies_that
+- decision_id: climate_08
+  domain: climate
+  scenario_id: climate_08_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m09_on_that_basis
+- decision_id: climate_08
+  domain: climate
+  scenario_id: climate_08_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m07_this_implies_that
+- decision_id: climate_08
+  domain: climate
+  scenario_id: climate_08_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m10_based_on_this
+- decision_id: climate_08
+  domain: climate
+  scenario_id: climate_08_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_09
+  domain: climate
+  scenario_id: climate_09_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m07_this_implies_that
+- decision_id: climate_09
+  domain: climate
+  scenario_id: climate_09_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m09_on_that_basis
+- decision_id: climate_09
+  domain: climate
+  scenario_id: climate_09_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m10_based_on_this
+- decision_id: climate_09
+  domain: climate
+  scenario_id: climate_09_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m11_given_this
+- decision_id: climate_10
+  domain: climate
+  scenario_id: climate_10_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m11_given_this
+- decision_id: climate_10
+  domain: climate
+  scenario_id: climate_10_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_10
+  domain: climate
+  scenario_id: climate_10_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m10_based_on_this
+- decision_id: climate_10
+  domain: climate
+  scenario_id: climate_10_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m08_it_follows_that
+- decision_id: climate_11
+  domain: climate
+  scenario_id: climate_11_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_11
+  domain: climate
+  scenario_id: climate_11_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m07_this_implies_that
+- decision_id: climate_11
+  domain: climate
+  scenario_id: climate_11_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m08_it_follows_that
+- decision_id: climate_11
+  domain: climate
+  scenario_id: climate_11_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m11_given_this
+- decision_id: climate_12
+  domain: climate
+  scenario_id: climate_12_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m07_this_implies_that
+- decision_id: climate_12
+  domain: climate
+  scenario_id: climate_12_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m10_based_on_this
+- decision_id: climate_12
+  domain: climate
+  scenario_id: climate_12_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_12
+  domain: climate
+  scenario_id: climate_12_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m08_it_follows_that
+- decision_id: climate_13
+  domain: climate
+  scenario_id: climate_13_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m11_given_this
+- decision_id: climate_13
+  domain: climate
+  scenario_id: climate_13_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m10_based_on_this
+- decision_id: climate_13
+  domain: climate
+  scenario_id: climate_13_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m08_it_follows_that
+- decision_id: climate_13
+  domain: climate
+  scenario_id: climate_13_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m09_on_that_basis
+- decision_id: climate_14
+  domain: climate
+  scenario_id: climate_14_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m07_this_implies_that
+- decision_id: climate_14
+  domain: climate
+  scenario_id: climate_14_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_14
+  domain: climate
+  scenario_id: climate_14_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m09_on_that_basis
+- decision_id: climate_14
+  domain: climate
+  scenario_id: climate_14_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m08_it_follows_that
+- decision_id: climate_15
+  domain: climate
+  scenario_id: climate_15_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m11_given_this
+- decision_id: climate_15
+  domain: climate
+  scenario_id: climate_15_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_15
+  domain: climate
+  scenario_id: climate_15_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m07_this_implies_that
+- decision_id: climate_15
+  domain: climate
+  scenario_id: climate_15_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m10_based_on_this
+- decision_id: climate_16
+  domain: climate
+  scenario_id: climate_16_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m09_on_that_basis
+- decision_id: climate_16
+  domain: climate
+  scenario_id: climate_16_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m07_this_implies_that
+- decision_id: climate_16
+  domain: climate
+  scenario_id: climate_16_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m08_it_follows_that
+- decision_id: climate_16
+  domain: climate
+  scenario_id: climate_16_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_17
+  domain: climate
+  scenario_id: climate_17_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m10_based_on_this
+- decision_id: climate_17
+  domain: climate
+  scenario_id: climate_17_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_17
+  domain: climate
+  scenario_id: climate_17_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m09_on_that_basis
+- decision_id: climate_17
+  domain: climate
+  scenario_id: climate_17_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m08_it_follows_that
+- decision_id: climate_18
+  domain: climate
+  scenario_id: climate_18_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m11_given_this
+- decision_id: climate_18
+  domain: climate
+  scenario_id: climate_18_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m07_this_implies_that
+- decision_id: climate_18
+  domain: climate
+  scenario_id: climate_18_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_18
+  domain: climate
+  scenario_id: climate_18_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m09_on_that_basis
+- decision_id: climate_19
+  domain: climate
+  scenario_id: climate_19_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_19
+  domain: climate
+  scenario_id: climate_19_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m08_it_follows_that
+- decision_id: climate_19
+  domain: climate
+  scenario_id: climate_19_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m11_given_this
+- decision_id: climate_19
+  domain: climate
+  scenario_id: climate_19_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m07_this_implies_that
+- decision_id: climate_20
+  domain: climate
+  scenario_id: climate_20_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m09_on_that_basis
+- decision_id: climate_20
+  domain: climate
+  scenario_id: climate_20_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m12_in_view_of_this
+- decision_id: climate_20
+  domain: climate
+  scenario_id: climate_20_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m10_based_on_this
+- decision_id: climate_20
+  domain: climate
+  scenario_id: climate_20_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m11_given_this
+- decision_id: climate_21
+  domain: climate
+  scenario_id: climate_21_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m09_on_that_basis
+- decision_id: climate_21
+  domain: climate
+  scenario_id: climate_21_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m07_this_implies_that
+- decision_id: climate_21
+  domain: climate
+  scenario_id: climate_21_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m10_based_on_this
+- decision_id: climate_21
+  domain: climate
+  scenario_id: climate_21_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m11_given_this
+- decision_id: energy_01
+  domain: energy
+  scenario_id: energy_01_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m10_based_on_this
+- decision_id: energy_01
+  domain: energy
+  scenario_id: energy_01_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m07_this_implies_that
+- decision_id: energy_01
+  domain: energy
+  scenario_id: energy_01_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_01
+  domain: energy
+  scenario_id: energy_01_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m11_given_this
+- decision_id: energy_02
+  domain: energy
+  scenario_id: energy_02_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m07_this_implies_that
+- decision_id: energy_02
+  domain: energy
+  scenario_id: energy_02_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m08_it_follows_that
+- decision_id: energy_02
+  domain: energy
+  scenario_id: energy_02_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_02
+  domain: energy
+  scenario_id: energy_02_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m10_based_on_this
+- decision_id: energy_03
+  domain: energy
+  scenario_id: energy_03_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m07_this_implies_that
+- decision_id: energy_03
+  domain: energy
+  scenario_id: energy_03_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_03
+  domain: energy
+  scenario_id: energy_03_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m09_on_that_basis
+- decision_id: energy_03
+  domain: energy
+  scenario_id: energy_03_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m11_given_this
+- decision_id: energy_05
+  domain: energy
+  scenario_id: energy_05_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m08_it_follows_that
+- decision_id: energy_05
+  domain: energy
+  scenario_id: energy_05_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m09_on_that_basis
+- decision_id: energy_05
+  domain: energy
+  scenario_id: energy_05_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m10_based_on_this
+- decision_id: energy_05
+  domain: energy
+  scenario_id: energy_05_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_06
+  domain: energy
+  scenario_id: energy_06_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_06
+  domain: energy
+  scenario_id: energy_06_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m11_given_this
+- decision_id: energy_06
+  domain: energy
+  scenario_id: energy_06_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m09_on_that_basis
+- decision_id: energy_06
+  domain: energy
+  scenario_id: energy_06_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m08_it_follows_that
+- decision_id: energy_07
+  domain: energy
+  scenario_id: energy_07_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m10_based_on_this
+- decision_id: energy_07
+  domain: energy
+  scenario_id: energy_07_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_07
+  domain: energy
+  scenario_id: energy_07_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m11_given_this
+- decision_id: energy_07
+  domain: energy
+  scenario_id: energy_07_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m09_on_that_basis
+- decision_id: energy_08
+  domain: energy
+  scenario_id: energy_08_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m11_given_this
+- decision_id: energy_08
+  domain: energy
+  scenario_id: energy_08_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m10_based_on_this
+- decision_id: energy_08
+  domain: energy
+  scenario_id: energy_08_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m07_this_implies_that
+- decision_id: energy_08
+  domain: energy
+  scenario_id: energy_08_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m08_it_follows_that
+- decision_id: energy_09
+  domain: energy
+  scenario_id: energy_09_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m08_it_follows_that
+- decision_id: energy_09
+  domain: energy
+  scenario_id: energy_09_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m09_on_that_basis
+- decision_id: energy_09
+  domain: energy
+  scenario_id: energy_09_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m11_given_this
+- decision_id: energy_09
+  domain: energy
+  scenario_id: energy_09_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m07_this_implies_that
+- decision_id: energy_10
+  domain: energy
+  scenario_id: energy_10_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m10_based_on_this
+- decision_id: energy_10
+  domain: energy
+  scenario_id: energy_10_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m09_on_that_basis
+- decision_id: energy_10
+  domain: energy
+  scenario_id: energy_10_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_10
+  domain: energy
+  scenario_id: energy_10_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m07_this_implies_that
+- decision_id: energy_11
+  domain: energy
+  scenario_id: energy_11_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m08_it_follows_that
+- decision_id: energy_11
+  domain: energy
+  scenario_id: energy_11_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_11
+  domain: energy
+  scenario_id: energy_11_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m11_given_this
+- decision_id: energy_11
+  domain: energy
+  scenario_id: energy_11_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m10_based_on_this
+- decision_id: energy_12
+  domain: energy
+  scenario_id: energy_12_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m11_given_this
+- decision_id: energy_12
+  domain: energy
+  scenario_id: energy_12_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m09_on_that_basis
+- decision_id: energy_12
+  domain: energy
+  scenario_id: energy_12_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m07_this_implies_that
+- decision_id: energy_12
+  domain: energy
+  scenario_id: energy_12_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m08_it_follows_that
+- decision_id: energy_13
+  domain: energy
+  scenario_id: energy_13_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m08_it_follows_that
+- decision_id: energy_13
+  domain: energy
+  scenario_id: energy_13_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m11_given_this
+- decision_id: energy_13
+  domain: energy
+  scenario_id: energy_13_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m09_on_that_basis
+- decision_id: energy_13
+  domain: energy
+  scenario_id: energy_13_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_14
+  domain: energy
+  scenario_id: energy_14_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_14
+  domain: energy
+  scenario_id: energy_14_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m08_it_follows_that
+- decision_id: energy_14
+  domain: energy
+  scenario_id: energy_14_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m07_this_implies_that
+- decision_id: energy_14
+  domain: energy
+  scenario_id: energy_14_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m10_based_on_this
+- decision_id: energy_15
+  domain: energy
+  scenario_id: energy_15_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m08_it_follows_that
+- decision_id: energy_15
+  domain: energy
+  scenario_id: energy_15_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m07_this_implies_that
+- decision_id: energy_15
+  domain: energy
+  scenario_id: energy_15_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m09_on_that_basis
+- decision_id: energy_15
+  domain: energy
+  scenario_id: energy_15_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m10_based_on_this
+- decision_id: energy_16
+  domain: energy
+  scenario_id: energy_16_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m09_on_that_basis
+- decision_id: energy_16
+  domain: energy
+  scenario_id: energy_16_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m11_given_this
+- decision_id: energy_16
+  domain: energy
+  scenario_id: energy_16_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m08_it_follows_that
+- decision_id: energy_16
+  domain: energy
+  scenario_id: energy_16_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m07_this_implies_that
+- decision_id: energy_17
+  domain: energy
+  scenario_id: energy_17_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m10_based_on_this
+- decision_id: energy_17
+  domain: energy
+  scenario_id: energy_17_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m11_given_this
+- decision_id: energy_17
+  domain: energy
+  scenario_id: energy_17_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m07_this_implies_that
+- decision_id: energy_17
+  domain: energy
+  scenario_id: energy_17_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_18
+  domain: energy
+  scenario_id: energy_18_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m07_this_implies_that
+- decision_id: energy_18
+  domain: energy
+  scenario_id: energy_18_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m11_given_this
+- decision_id: energy_18
+  domain: energy
+  scenario_id: energy_18_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m08_it_follows_that
+- decision_id: energy_18
+  domain: energy
+  scenario_id: energy_18_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_19
+  domain: energy
+  scenario_id: energy_19_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m11_given_this
+- decision_id: energy_19
+  domain: energy
+  scenario_id: energy_19_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m10_based_on_this
+- decision_id: energy_19
+  domain: energy
+  scenario_id: energy_19_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m08_it_follows_that
+- decision_id: energy_19
+  domain: energy
+  scenario_id: energy_19_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m09_on_that_basis
+- decision_id: energy_20
+  domain: energy
+  scenario_id: energy_20_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m07_this_implies_that
+- decision_id: energy_20
+  domain: energy
+  scenario_id: energy_20_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m10_based_on_this
+- decision_id: energy_20
+  domain: energy
+  scenario_id: energy_20_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m09_on_that_basis
+- decision_id: energy_20
+  domain: energy
+  scenario_id: energy_20_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m12_in_view_of_this
+- decision_id: energy_21
+  domain: energy
+  scenario_id: energy_21_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m10_based_on_this
+- decision_id: energy_21
+  domain: energy
+  scenario_id: energy_21_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m11_given_this
+- decision_id: energy_21
+  domain: energy
+  scenario_id: energy_21_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m09_on_that_basis
+- decision_id: energy_21
+  domain: energy
+  scenario_id: energy_21_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m08_it_follows_that
+- decision_id: technology_01
+  domain: technology
+  scenario_id: technology_01_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m08_it_follows_that
+- decision_id: technology_01
+  domain: technology
+  scenario_id: technology_01_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m11_given_this
+- decision_id: technology_01
+  domain: technology
+  scenario_id: technology_01_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_01
+  domain: technology
+  scenario_id: technology_01_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m10_based_on_this
+- decision_id: technology_02
+  domain: technology
+  scenario_id: technology_02_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_02
+  domain: technology
+  scenario_id: technology_02_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m08_it_follows_that
+- decision_id: technology_02
+  domain: technology
+  scenario_id: technology_02_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m11_given_this
+- decision_id: technology_02
+  domain: technology
+  scenario_id: technology_02_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m09_on_that_basis
+- decision_id: technology_03
+  domain: technology
+  scenario_id: technology_03_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m10_based_on_this
+- decision_id: technology_03
+  domain: technology
+  scenario_id: technology_03_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m09_on_that_basis
+- decision_id: technology_03
+  domain: technology
+  scenario_id: technology_03_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m11_given_this
+- decision_id: technology_03
+  domain: technology
+  scenario_id: technology_03_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_04
+  domain: technology
+  scenario_id: technology_04_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m08_it_follows_that
+- decision_id: technology_04
+  domain: technology
+  scenario_id: technology_04_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m09_on_that_basis
+- decision_id: technology_04
+  domain: technology
+  scenario_id: technology_04_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m07_this_implies_that
+- decision_id: technology_04
+  domain: technology
+  scenario_id: technology_04_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m10_based_on_this
+- decision_id: technology_06
+  domain: technology
+  scenario_id: technology_06_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_06
+  domain: technology
+  scenario_id: technology_06_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m11_given_this
+- decision_id: technology_06
+  domain: technology
+  scenario_id: technology_06_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m07_this_implies_that
+- decision_id: technology_06
+  domain: technology
+  scenario_id: technology_06_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m09_on_that_basis
+- decision_id: technology_07
+  domain: technology
+  scenario_id: technology_07_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m07_this_implies_that
+- decision_id: technology_07
+  domain: technology
+  scenario_id: technology_07_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m10_based_on_this
+- decision_id: technology_07
+  domain: technology
+  scenario_id: technology_07_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m08_it_follows_that
+- decision_id: technology_07
+  domain: technology
+  scenario_id: technology_07_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m11_given_this
+- decision_id: technology_08
+  domain: technology
+  scenario_id: technology_08_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m09_on_that_basis
+- decision_id: technology_08
+  domain: technology
+  scenario_id: technology_08_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m07_this_implies_that
+- decision_id: technology_08
+  domain: technology
+  scenario_id: technology_08_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m08_it_follows_that
+- decision_id: technology_08
+  domain: technology
+  scenario_id: technology_08_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m10_based_on_this
+- decision_id: technology_09
+  domain: technology
+  scenario_id: technology_09_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m09_on_that_basis
+- decision_id: technology_09
+  domain: technology
+  scenario_id: technology_09_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_09
+  domain: technology
+  scenario_id: technology_09_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m11_given_this
+- decision_id: technology_09
+  domain: technology
+  scenario_id: technology_09_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m10_based_on_this
+- decision_id: technology_10
+  domain: technology
+  scenario_id: technology_10_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m08_it_follows_that
+- decision_id: technology_10
+  domain: technology
+  scenario_id: technology_10_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m11_given_this
+- decision_id: technology_10
+  domain: technology
+  scenario_id: technology_10_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_10
+  domain: technology
+  scenario_id: technology_10_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m09_on_that_basis
+- decision_id: technology_11
+  domain: technology
+  scenario_id: technology_11_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m08_it_follows_that
+- decision_id: technology_11
+  domain: technology
+  scenario_id: technology_11_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m07_this_implies_that
+- decision_id: technology_11
+  domain: technology
+  scenario_id: technology_11_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_11
+  domain: technology
+  scenario_id: technology_11_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m11_given_this
+- decision_id: technology_12
+  domain: technology
+  scenario_id: technology_12_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_12
+  domain: technology
+  scenario_id: technology_12_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m09_on_that_basis
+- decision_id: technology_12
+  domain: technology
+  scenario_id: technology_12_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m11_given_this
+- decision_id: technology_12
+  domain: technology
+  scenario_id: technology_12_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m07_this_implies_that
+- decision_id: technology_13
+  domain: technology
+  scenario_id: technology_13_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m09_on_that_basis
+- decision_id: technology_13
+  domain: technology
+  scenario_id: technology_13_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m10_based_on_this
+- decision_id: technology_13
+  domain: technology
+  scenario_id: technology_13_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_13
+  domain: technology
+  scenario_id: technology_13_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m08_it_follows_that
+- decision_id: technology_14
+  domain: technology
+  scenario_id: technology_14_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m08_it_follows_that
+- decision_id: technology_14
+  domain: technology
+  scenario_id: technology_14_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_14
+  domain: technology
+  scenario_id: technology_14_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m07_this_implies_that
+- decision_id: technology_14
+  domain: technology
+  scenario_id: technology_14_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m09_on_that_basis
+- decision_id: technology_15
+  domain: technology
+  scenario_id: technology_15_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_15
+  domain: technology
+  scenario_id: technology_15_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m10_based_on_this
+- decision_id: technology_15
+  domain: technology
+  scenario_id: technology_15_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m11_given_this
+- decision_id: technology_15
+  domain: technology
+  scenario_id: technology_15_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m07_this_implies_that
+- decision_id: technology_16
+  domain: technology
+  scenario_id: technology_16_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m07_this_implies_that
+- decision_id: technology_16
+  domain: technology
+  scenario_id: technology_16_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m10_based_on_this
+- decision_id: technology_16
+  domain: technology
+  scenario_id: technology_16_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m08_it_follows_that
+- decision_id: technology_16
+  domain: technology
+  scenario_id: technology_16_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m11_given_this
+- decision_id: technology_17
+  domain: technology
+  scenario_id: technology_17_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m10_based_on_this
+- decision_id: technology_17
+  domain: technology
+  scenario_id: technology_17_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m09_on_that_basis
+- decision_id: technology_17
+  domain: technology
+  scenario_id: technology_17_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m11_given_this
+- decision_id: technology_17
+  domain: technology
+  scenario_id: technology_17_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m07_this_implies_that
+- decision_id: technology_18
+  domain: technology
+  scenario_id: technology_18_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m10_based_on_this
+- decision_id: technology_18
+  domain: technology
+  scenario_id: technology_18_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m08_it_follows_that
+- decision_id: technology_18
+  domain: technology
+  scenario_id: technology_18_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m07_this_implies_that
+- decision_id: technology_18
+  domain: technology
+  scenario_id: technology_18_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m09_on_that_basis
+- decision_id: technology_19
+  domain: technology
+  scenario_id: technology_19_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m10_based_on_this
+- decision_id: technology_19
+  domain: technology
+  scenario_id: technology_19_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m07_this_implies_that
+- decision_id: technology_19
+  domain: technology
+  scenario_id: technology_19_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m09_on_that_basis
+- decision_id: technology_19
+  domain: technology
+  scenario_id: technology_19_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_20
+  domain: technology
+  scenario_id: technology_20_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m05_for_this_reason
+    inference_basis: m12_in_view_of_this
+- decision_id: technology_20
+  domain: technology
+  scenario_id: technology_20_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m04_accordingly
+    inference_basis: m11_given_this
+- decision_id: technology_20
+  domain: technology
+  scenario_id: technology_20_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m10_based_on_this
+- decision_id: technology_20
+  domain: technology
+  scenario_id: technology_20_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m08_it_follows_that
+- decision_id: technology_21
+  domain: technology
+  scenario_id: technology_21_v1
+  variant_id: 1
+  supported_option: opt_1
+  markers:
+    conclusion_result: m02_consequently
+    inference_basis: m07_this_implies_that
+- decision_id: technology_21
+  domain: technology
+  scenario_id: technology_21_v1
+  variant_id: 1
+  supported_option: opt_2
+  markers:
+    conclusion_result: m01_therefore
+    inference_basis: m08_it_follows_that
+- decision_id: technology_21
+  domain: technology
+  scenario_id: technology_21_v2
+  variant_id: 2
+  supported_option: opt_1
+  markers:
+    conclusion_result: m06_that_is_why
+    inference_basis: m09_on_that_basis
+- decision_id: technology_21
+  domain: technology
+  scenario_id: technology_21_v2
+  variant_id: 2
+  supported_option: opt_2
+  markers:
+    conclusion_result: m03_thus
+    inference_basis: m12_in_view_of_this
