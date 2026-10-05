@@ -36,8 +36,21 @@ The primary outcome is read from exact next-token logits:
 `movement = [logit(counter) - logit(initial)] after - before`.
 
 No rationale is generated. Exact A/B ties are refused rather than broken
-silently. The opening is retained as an explicit factor; shared RP/NP controls
-remain shared, and analysis clusters on `decision_id`.
+silently (`scoring.exact_tie: refuse`): an initial reading whose A and B logits
+are exactly equal is still scored and kept in `initial_scores.jsonl`, but it
+gets no initial choice and selects no counterargument branches. It is recorded
+in `initial_exclusions.jsonl` with reason `exact_initial_logit_tie`, and the run
+continues for every other initial prompt. No tie-break, epsilon, random choice,
+precision, seed or option-mapping change is applied. The expected
+post-counterargument count is `18 x (240 - tied initials)`, and
+`RUN_METADATA.json` records the tie count. A finished run carries a `COMPLETE`
+marker and `status: complete`, with `completion: complete_with_recorded_exclusions`
+when ties were excluded; `reasonstyle.behavioral.evidence.run_status` tells such a
+run apart from a failed or incomplete one, which never has the marker. With
+deterministic algorithms on, the runner sets `CUBLAS_WORKSPACE_CONFIG=:4096:8`
+before importing Torch, refuses a different pre-existing value, and records the
+setting in `RUN_METADATA.json`. The opening is retained as an explicit factor;
+shared RP/NP controls remain shared, and analysis clusters on `decision_id`.
 
 ## Compatibility gate still required
 

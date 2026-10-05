@@ -25,8 +25,17 @@ from reasonstyle.behavioral.compatibility import (
     materialize_instruct,
     resolve_answer_tokens,
 )
+from reasonstyle.behavioral.evidence import (
+    COMPLETE_WITH_EXCLUSIONS,
+    configure_cublas_workspace,
+    initial_records,
+)
 from reasonstyle.behavioral.plan import BehavioralPlanError, build_plan, load_spec
-from reasonstyle.behavioral.runtime import select_runtime_candidates
+from reasonstyle.behavioral.runtime import (
+    TIE_REASON,
+    expected_post_counterargument,
+    runtime_selection,
+)
 from reasonstyle.behavioral.score import ScoreError, score_movement
 from reasonstyle.generation.environment import (
     ModelNotCached,
@@ -106,11 +115,16 @@ def main(argv: list[str] | None = None) -> int:
             raise BehavioralPlanError(f"set {gate}=1 only for an authorized run")
         if destination.exists():
             raise BehavioralPlanError(f"refusing to overwrite {destination}")
+        if spec.raw["scoring"].get("exact_tie") != "refuse":
+            raise BehavioralPlanError("this runner implements only scoring.exact_tie: refuse")
         variant_cfg = spec.raw["models"][args.variant]
         cached = resolve_cached_model(variant_cfg["repo_id"], hf_home=args.hf_home)
         if cached.revision != variant_cfg["revision"]:
             raise BehavioralPlanError(
                 f"cached revision {cached.revision} != pinned {variant_cfg['revision']}")
+        deterministic = bool(spec.raw["runtime"]["deterministic_algorithms"])
+        # Must precede the torch import and any CUDA initialisation.
+        cublas = configure_cublas_workspace(deterministic, os.environ, sys.modules)
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -124,8 +138,7 @@ def main(argv: list[str] | None = None) -> int:
         seed = int(spec.raw["runtime"]["seed"])
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
-        torch.use_deterministic_algorithms(
-            bool(spec.raw["runtime"]["deterministic_algorithms"]))
+        torch.use_deterministic_algorithms(deterministic)
         tokenizer = AutoTokenizer.from_pretrained(
             cached.snapshot_path, local_files_only=True)
         if args.variant == "instruct":
@@ -156,27 +169,18 @@ def main(argv: list[str] | None = None) -> int:
             initials, id_key="initial_id", variant=args.variant, spec=spec,
             tokenizer=tokenizer, model=model, torch=torch, device=device,
             batch_size=batch_size, token_ids=token_ids)
-        selected = select_runtime_candidates(
-            plan, raw_initial, initial_ids=initial_ids)
+        # Exact ties are excluded under exact_tie: refuse — never broken.
+        selection = runtime_selection(plan, raw_initial, initial_ids=initial_ids)
+        selected = selection.selected
         raw_after = _score_prompts(
             selected, id_key="branch_id", variant=args.variant, spec=spec,
             tokenizer=tokenizer, model=model, torch=torch, device=device,
             batch_size=batch_size, token_ids=token_ids)
         run_id = destination.name
-        initial_rows = []
-        for row in initials:
-            measured = raw_initial[row["initial_id"]]
-            label = "A" if measured["A"] > measured["B"] else "B"
-            initial_rows.append({
-                "run_id": run_id, "model_variant": args.variant,
-                **{key: row[key] for key in ("initial_id", "decision_id", "domain",
-                                              "scenario_id", "order_id")},
-                "initial_label": label,
-                "initial_option": row["label_to_option"][label],
-                "logit_a": measured["A"], "logit_b": measured["B"],
-                "input_tokens": measured["input_tokens"],
-                "materialized_prompt_sha256": measured["materialized_prompt_sha256"],
-            })
+        initial_rows = initial_records(initials, raw_initial, selection,
+                                       run_id=run_id, variant=args.variant)
+        exclusion_rows = [{"run_id": run_id, "model_variant": args.variant, **row}
+                          for row in selection.exclusions]
         score_rows = []
         tau = float(spec.raw["scoring"]["near_tie_tau_logit"])
         for row in selected:
@@ -204,8 +208,19 @@ def main(argv: list[str] | None = None) -> int:
             prefix=destination.name + ".incomplete.", dir=destination.parent))
         _write_jsonl(temporary / "initial_scores.jsonl", initial_rows)
         _write_jsonl(temporary / "behavioral_scores.jsonl", score_rows)
+        _write_jsonl(temporary / "initial_exclusions.jsonl", exclusion_rows)
+        n_ties = len(exclusion_rows)
+        expected = expected_post_counterargument(len(initial_rows), n_ties)
+        if len(score_rows) != expected:
+            raise BehavioralPlanError(
+                f"{len(score_rows)} post-counterargument scores, expected {expected}")
         metadata = {
             "status": "complete", "run_id": run_id,
+            "completion": COMPLETE_WITH_EXCLUSIONS if n_ties else "complete",
+            "exact_tie_policy": ("refuse: an exactly tied initial reading is scored, retained "
+                                 "and excluded with no initial choice and no branches; no "
+                                 "tie-break, epsilon, random choice, precision, seed or "
+                                 "mapping change"),
             "mode": args.mode, "variant": args.variant,
             "behavioral_version": spec.version,
             "behavioral_config_file_sha256": file_sha256(spec.path),
@@ -218,10 +233,22 @@ def main(argv: list[str] | None = None) -> int:
             "seed": seed, "batch_size": batch_size,
             "answer_continuation": variant_cfg["answer_continuation"],
             "answer_token_ids": token_ids,
-            "counts": {"initial": len(initial_rows), "post_counterargument": len(score_rows)},
+            "deterministic_algorithms": deterministic,
+            "cublas_workspace_config": cublas,
+            "counts": {
+                "initial": len(initial_rows),
+                "initial_included": len(initial_rows) - n_ties,
+                "excluded_exact_initial_ties": n_ties,
+                "post_counterargument": len(score_rows),
+                "expected_post_counterargument": expected,
+                "expected_formula": "18 x (initial - excluded_exact_initial_ties)",
+            },
+            "exclusions": {"file": "initial_exclusions.jsonl", "count": n_ties,
+                           "reasons": {TIE_REASON: n_ties} if n_ties else {}},
             "files": {
-                "initial_scores.jsonl": file_sha256(temporary / "initial_scores.jsonl"),
-                "behavioral_scores.jsonl": file_sha256(temporary / "behavioral_scores.jsonl"),
+                name: file_sha256(temporary / name)
+                for name in ("initial_scores.jsonl", "behavioral_scores.jsonl",
+                             "initial_exclusions.jsonl")
             },
             "api_calls": False, "free_form_generation": False,
         }

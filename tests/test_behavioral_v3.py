@@ -207,3 +207,179 @@ def test_compatibility_reports_pin_a_new_config_without_touching_dataset(world, 
     assert pinned["models"]["base"]["answer_token_ids"] == {"A": 10, "B": 11}
     assert pinned["models"]["instruct"]["chat_template_sha256"] == "template-hash"
     assert pinned["dataset"] == spec.raw["dataset"]
+
+
+# --- exact initial ties under exact_tie: refuse ------------------------------------
+
+from reasonstyle.behavioral.evidence import (  # noqa: E402
+    COMPLETE,
+    COMPLETE_WITH_EXCLUSIONS,
+    CUBLAS_REQUIRED,
+    INCOMPLETE,
+    configure_cublas_workspace,
+    initial_records,
+    run_status,
+)
+from reasonstyle.behavioral.plan import BehavioralPlan  # noqa: E402
+from reasonstyle.behavioral.runtime import (  # noqa: E402
+    TIE_REASON,
+    expected_post_counterargument,
+    runtime_selection,
+)
+from reasonstyle.hashing import canonical_json, file_sha256  # noqa: E402
+
+
+def _logits(plan, tied: set[str]):
+    """Distinct A/B logits for every initial; exact equality for the tied ones."""
+    out = {}
+    for n, row in enumerate(plan.initials):
+        a = 1.0 + n / 1000
+        out[row["initial_id"]] = {"A": a, "B": a if row["initial_id"] in tied else a - 0.5,
+                                  "input_tokens": 100 + n,
+                                  "materialized_prompt_sha256": f"{n:064x}"}
+    return out
+
+
+@pytest.mark.parametrize("n_ties", [0, 1, 5])
+def test_exact_initial_ties_are_excluded_and_counted(world, n_ties):
+    spec, plan = world
+    ids = [row["initial_id"] for row in plan.initials]
+    tied = set(ids[3:3 + n_ties])
+    logits = _logits(plan, tied)
+    selection = runtime_selection(plan, logits)
+    assert len(selection.selected) == expected_post_counterargument(240, n_ties) == \
+        18 * (240 - n_ties)
+    assert {x["initial_id"] for x in selection.exclusions} == tied
+    assert not tied & {x["initial_id"] for x in selection.selected}
+    assert set(Counter(x["initial_id"] for x in selection.selected).values()) <= {18}
+    for x in selection.exclusions:
+        row = next(r for r in plan.initials if r["initial_id"] == x["initial_id"])
+        assert x["exclusion_reason"] == TIE_REASON and x["initial_choice"] is None
+        assert x["branches_selected"] == 0
+        assert x["logit_a"] == x["logit_b"] == logits[x["initial_id"]]["A"]   # unaltered
+        assert x["label_to_option"] == row["label_to_option"]
+        assert (x["decision_id"], x["scenario_id"], x["order_id"]) == (
+            row["decision_id"], row["scenario_id"], row["order_id"])
+    records = initial_records(plan.initials, logits, selection, run_id="r", variant="base")
+    assert len(records) == 240                                   # every initial retained
+    excluded = [r for r in records if r["excluded"]]
+    assert len(excluded) == n_ties
+    assert all(r["initial_label"] is None and r["initial_option"] is None
+               and r["exclusion_reason"] == TIE_REASON for r in excluded)
+    assert all(r["initial_label"] in ("A", "B") for r in records if not r["excluded"])
+
+
+def test_a_tie_in_a_smoke_subset_selects_no_branches(world):
+    _, plan = world
+    chosen = {row["initial_id"] for row in plan.initials[:2]}
+    tied = {plan.initials[0]["initial_id"]}
+    selection = runtime_selection(plan, _logits(plan, tied), initial_ids=chosen)
+    assert len(selection.selected) == 18 and len(selection.exclusions) == 1
+
+
+def test_ties_are_never_broken(world):
+    _, plan = world
+    with pytest.raises(BehavioralPlanError, match="tie"):
+        initial_argmax(1.25, 1.25)
+    with pytest.raises(ScoreError, match="tie"):            # scoring formula unchanged
+        score_movement(initial_logit_a=1.25, initial_logit_b=1.25, after_logit_a=1.0,
+                       after_logit_b=2.0, counter_target_label="B")
+
+
+def test_tie_handling_is_deterministic(world):
+    _, plan = world
+    tied = {plan.initials[7]["initial_id"], plan.initials[100]["initial_id"]}
+    runs = []
+    for _ in range(2):
+        selection = runtime_selection(plan, _logits(plan, tied))
+        records = initial_records(plan.initials, _logits(plan, tied), selection,
+                                  run_id="r", variant="base")
+        runs.append("".join(canonical_json(x) + "\n" for x in
+                            [*records, *selection.exclusions, *selection.selected]))
+    assert runs[0] == runs[1]
+
+
+def test_selection_counts_are_validated(world):
+    _, plan = world
+    # _logits gives every untied initial an A argmax, so drop one branch it would select.
+    victim = next(i for i, c in enumerate(plan.candidates) if c["required_initial_label"] == "A")
+    broken = BehavioralPlan(initials=plan.initials,
+                            candidates=plan.candidates[:victim] + plan.candidates[victim + 1:],
+                            manifest=plan.manifest)
+    with pytest.raises(BehavioralPlanError, match="18 branches"):
+        runtime_selection(broken, _logits(broken, set()))
+    with pytest.raises(BehavioralPlanError, match="missing initial logits"):
+        runtime_selection(plan, {})
+
+
+# --- cuBLAS workspace -----------------------------------------------------------------
+
+
+def test_cublas_workspace_is_set_before_torch_and_conflicts_refuse():
+    env: dict[str, str] = {}
+    record = configure_cublas_workspace(True, env, {})
+    assert env["CUBLAS_WORKSPACE_CONFIG"] == CUBLAS_REQUIRED == ":4096:8"
+    assert record["set_by_runner"] and record["preexisting_value"] is None
+    same = configure_cublas_workspace(True, {"CUBLAS_WORKSPACE_CONFIG": ":4096:8"}, {})
+    assert not same["set_by_runner"] and same["value"] == ":4096:8"
+    with pytest.raises(BehavioralPlanError, match="conflicts"):
+        configure_cublas_workspace(True, {"CUBLAS_WORKSPACE_CONFIG": ":16:8"}, {})
+    with pytest.raises(BehavioralPlanError, match="torch was imported"):
+        configure_cublas_workspace(True, {}, {"torch": object()})
+    untouched: dict[str, str] = {}
+    assert configure_cublas_workspace(False, untouched, {})["value"] is None and not untouched
+
+
+def test_the_runner_sets_cublas_before_importing_torch():
+    source = (ROOT / "scripts/run_behavioral_v3.py").read_text()
+    assert source.index("configure_cublas_workspace(") < source.index("import torch")
+    assert '"cublas_workspace_config": cublas' in source
+    assert "initial_exclusions.jsonl" in source and "expected_post_counterargument" in source
+
+
+# --- complete-with-exclusions versus failed / incomplete -------------------------------
+
+
+def _write_run(tmp_path, plan, tied, *, name="run", complete=True, drop_score=False):
+    run = tmp_path / name
+    run.mkdir()
+    logits = _logits(plan, tied)
+    selection = runtime_selection(plan, logits)
+    records = initial_records(plan.initials, logits, selection, run_id=name, variant="base")
+    scores = [{"initial_id": x["initial_id"], "branch_id": x["branch_id"]}
+              for x in selection.selected]
+    if drop_score:
+        scores = scores[:-1]
+    for fname, rows in (("initial_scores.jsonl", records), ("behavioral_scores.jsonl", scores),
+                        ("initial_exclusions.jsonl", selection.exclusions)):
+        (run / fname).write_text("".join(canonical_json(r) + "\n" for r in rows))
+    n_ties = len(selection.exclusions)
+    meta = {"status": "complete",
+            "counts": {"initial": 240, "excluded_exact_initial_ties": n_ties,
+                       "post_counterargument": len(scores),
+                       "expected_post_counterargument": 18 * (240 - n_ties)},
+            "files": {f: file_sha256(run / f) for f in (
+                "initial_scores.jsonl", "behavioral_scores.jsonl", "initial_exclusions.jsonl")}}
+    (run / "RUN_METADATA.json").write_text(json.dumps(meta))
+    if complete:
+        (run / "COMPLETE").write_text("complete\n")
+    return run
+
+
+def test_analysis_distinguishes_complete_exclusions_and_failed_runs(world, tmp_path):
+    _, plan = world
+    ids = [row["initial_id"] for row in plan.initials]
+    assert run_status(_write_run(tmp_path, plan, set(), name="clean")) == (COMPLETE, [])
+    assert run_status(_write_run(tmp_path, plan, set(ids[:3]), name="ties")) == (
+        COMPLETE_WITH_EXCLUSIONS, [])
+    status, problems = run_status(_write_run(tmp_path, plan, set(), name="nomarker",
+                                             complete=False))
+    assert status == INCOMPLETE and any("COMPLETE" in p for p in problems)
+    status, problems = run_status(_write_run(tmp_path, plan, {ids[0]}, name="short",
+                                             drop_score=True))
+    assert status == INCOMPLETE
+    tampered = _write_run(tmp_path, plan, {ids[0]}, name="tampered")
+    (tampered / "initial_exclusions.jsonl").write_text("")
+    assert run_status(tampered)[0] == INCOMPLETE
+    leftover = _write_run(tmp_path, plan, set(), name="run.incomplete.abc")
+    assert run_status(leftover)[0] == INCOMPLETE
