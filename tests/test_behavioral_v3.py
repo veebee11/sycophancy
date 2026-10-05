@@ -340,26 +340,52 @@ def test_the_runner_sets_cublas_before_importing_torch():
 # --- complete-with-exclusions versus failed / incomplete -------------------------------
 
 
-def _write_run(tmp_path, plan, tied, *, name="run", complete=True, drop_score=False):
+def _score_rows(plan, logits, selection, *, post_tied=frozenset(), run_id="run"):
+    """Behavioural-score rows built by the real scoring function; branches in
+    ``post_tied`` get exactly equal post logits."""
+    rows = []
+    for n, row in enumerate(selection.selected):
+        before = logits[row["initial_id"]]
+        a = 0.25 + n / 10000
+        after_a, after_b = (a, a) if row["branch_id"] in post_tied else (a, a + 1.0)
+        score = score_movement(initial_logit_a=before["A"], initial_logit_b=before["B"],
+                               after_logit_a=after_a, after_logit_b=after_b,
+                               counter_target_label=row["counter_target_label"])
+        rows.append({"run_id": run_id, "model_variant": "base",
+                     **{k: row[k] for k in ("branch_id", "initial_id", "stimulus_id",
+                                            "decision_id", "domain", "scenario_id",
+                                            "variant_id", "supported_option", "condition",
+                                            "marker_id", "opening_id", "order_id",
+                                            "counter_target_label")},
+                     **score.as_dict()})
+    return rows
+
+
+def _write_run(tmp_path, plan, tied, *, name="run", complete=True, drop_score=False,
+               post_tied=frozenset()):
+    from reasonstyle.behavioral.evidence import completion_label, post_tie_records
     run = tmp_path / name
     run.mkdir()
     logits = _logits(plan, tied)
     selection = runtime_selection(plan, logits)
     records = initial_records(plan.initials, logits, selection, run_id=name, variant="base")
-    scores = [{"initial_id": x["initial_id"], "branch_id": x["branch_id"]}
-              for x in selection.selected]
+    scores = _score_rows(plan, logits, selection, post_tied=post_tied, run_id=name)
+    post = post_tie_records(selection.selected, scores)
     if drop_score:
         scores = scores[:-1]
     for fname, rows in (("initial_scores.jsonl", records), ("behavioral_scores.jsonl", scores),
-                        ("initial_exclusions.jsonl", selection.exclusions)):
+                        ("initial_exclusions.jsonl", selection.exclusions),
+                        ("post_ties.jsonl", post)):
         (run / fname).write_text("".join(canonical_json(r) + "\n" for r in rows))
     n_ties = len(selection.exclusions)
-    meta = {"status": "complete",
+    meta = {"status": "complete", "completion": completion_label(n_ties, len(post)),
             "counts": {"initial": 240, "excluded_exact_initial_ties": n_ties,
                        "post_counterargument": len(scores),
-                       "expected_post_counterargument": 18 * (240 - n_ties)},
+                       "expected_post_counterargument": 18 * (240 - n_ties),
+                       "post_exact_ties": len(post)},
             "files": {f: file_sha256(run / f) for f in (
-                "initial_scores.jsonl", "behavioral_scores.jsonl", "initial_exclusions.jsonl")}}
+                "initial_scores.jsonl", "behavioral_scores.jsonl", "initial_exclusions.jsonl",
+                "post_ties.jsonl")}}
     (run / "RUN_METADATA.json").write_text(json.dumps(meta))
     if complete:
         (run / "COMPLETE").write_text("complete\n")
@@ -383,3 +409,97 @@ def test_analysis_distinguishes_complete_exclusions_and_failed_runs(world, tmp_p
     assert run_status(tampered)[0] == INCOMPLETE
     leftover = _write_run(tmp_path, plan, set(), name="run.incomplete.abc")
     assert run_status(leftover)[0] == INCOMPLETE
+
+
+# --- exact post-counterargument ties ---------------------------------------------------
+
+from reasonstyle.behavioral.evidence import (  # noqa: E402
+    COMPLETE_WITH_EXCLUSIONS_AND_SECONDARY_TIES,
+    COMPLETE_WITH_SECONDARY_TIES,
+    POST_TIE_REASON,
+    flip_rate_rows,
+    movement_rows,
+    post_tie_records,
+)
+
+
+def test_a_post_tie_keeps_its_movement_and_has_no_flip():
+    score = score_movement(initial_logit_a=3.0, initial_logit_b=1.0,
+                           after_logit_a=2.25, after_logit_b=2.25, counter_target_label="B")
+    assert score.post_exact_tie is True
+    assert (score.after_logit_a, score.after_logit_b) == (2.25, 2.25)      # preserved
+    assert score.m_after == 0 and score.m_before == -2.0
+    assert score.movement_toward_counter == score.m_after - score.m_before == 2.0
+    assert score.final_label is None and score.flip is None
+    untied = score_movement(initial_logit_a=3.0, initial_logit_b=1.0,
+                            after_logit_a=2.25, after_logit_b=2.5, counter_target_label="B")
+    assert untied.post_exact_tie is False and untied.flip is True and untied.final_label == "B"
+    with pytest.raises(ScoreError, match="initial reading"):               # initial policy unchanged
+        score_movement(initial_logit_a=1.0, initial_logit_b=1.0, after_logit_a=2.0,
+                       after_logit_b=2.0, counter_target_label="B")
+
+
+@pytest.mark.parametrize("n_initial_ties,n_post_ties,label", [
+    (0, 0, COMPLETE), (0, 1, COMPLETE_WITH_SECONDARY_TIES), (0, 7, COMPLETE_WITH_SECONDARY_TIES),
+    (3, 0, COMPLETE_WITH_EXCLUSIONS), (3, 4, COMPLETE_WITH_EXCLUSIONS_AND_SECONDARY_TIES)])
+def test_post_ties_are_recorded_retained_and_labelled(world, tmp_path, n_initial_ties,
+                                                      n_post_ties, label):
+    _, plan = world
+    ids = [row["initial_id"] for row in plan.initials]
+    tied = set(ids[:n_initial_ties])
+    selection = runtime_selection(plan, _logits(plan, tied))
+    post_tied = {row["branch_id"] for row in selection.selected[10:10 + n_post_ties]}
+    run = _write_run(tmp_path, plan, tied, name=f"run_{n_initial_ties}_{n_post_ties}",
+                     post_tied=post_tied)
+    assert run_status(run) == (label, [])
+    scores = [json.loads(x) for x in (run / "behavioral_scores.jsonl").read_text().splitlines()]
+    post = [json.loads(x) for x in (run / "post_ties.jsonl").read_text().splitlines()]
+    assert len(scores) == 18 * (240 - n_initial_ties)           # a post tie removes no row
+    assert len(post) == n_post_ties and {x["branch_id"] for x in post} == post_tied
+    assert len(movement_rows(scores)) == len(scores)
+    assert len(flip_rate_rows(scores)) == len(scores) - n_post_ties
+    for x in post:
+        assert x["exclusion_reason"] == POST_TIE_REASON
+        assert x["after_logit_a"] == x["after_logit_b"] and x["m_after"] == 0
+        assert x["final_label"] is None and x["flip"] is None
+        assert x["movement_toward_counter"] == x["m_after"] - x["m_before"]
+        assert x["excluded_from"] == ["flip_rate"]
+        assert set(x["label_to_option"]) == {"A", "B"}
+        for key in ("branch_id", "initial_id", "stimulus_id", "decision_id", "scenario_id",
+                    "order_id", "condition"):
+            assert x[key]
+
+
+def test_post_tie_records_are_deterministic(world):
+    _, plan = world
+    logits = _logits(plan, set())
+    selection = runtime_selection(plan, logits)
+    post_tied = {row["branch_id"] for row in selection.selected[:3]}
+    texts = ["".join(canonical_json(x) + "\n" for x in post_tie_records(
+        selection.selected, _score_rows(plan, logits, selection, post_tied=post_tied)))
+        for _ in range(2)]
+    assert texts[0] == texts[1] and texts[0].count("\n") == 3
+
+
+@pytest.mark.parametrize("defect", ["flip_set", "unequal_logits", "unlisted", "bad_movement"])
+def test_invalid_post_tie_evidence_is_incomplete(world, tmp_path, defect):
+    _, plan = world
+    selection = runtime_selection(plan, _logits(plan, set()))
+    target = selection.selected[5]["branch_id"]
+    run = _write_run(tmp_path, plan, set(), name=f"bad_{defect}", post_tied={target})
+    scores = [json.loads(x) for x in (run / "behavioral_scores.jsonl").read_text().splitlines()]
+    row = next(x for x in scores if x["branch_id"] == target)
+    if defect == "flip_set":
+        row["flip"] = False
+    elif defect == "unequal_logits":
+        row["after_logit_b"] = row["after_logit_a"] + 0.5
+    elif defect == "bad_movement":
+        row["movement_toward_counter"] = row["movement_toward_counter"] + 1.0
+    else:
+        (run / "post_ties.jsonl").write_text("")
+    (run / "behavioral_scores.jsonl").write_text("".join(canonical_json(x) + "\n" for x in scores))
+    meta = json.loads((run / "RUN_METADATA.json").read_text())
+    meta["files"] = {f: file_sha256(run / f) for f in meta["files"]}  # re-hash: test content, not hashes
+    (run / "RUN_METADATA.json").write_text(json.dumps(meta))
+    status, problems = run_status(run)
+    assert status == INCOMPLETE and problems

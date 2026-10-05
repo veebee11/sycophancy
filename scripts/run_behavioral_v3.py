@@ -26,9 +26,11 @@ from reasonstyle.behavioral.compatibility import (
     resolve_answer_tokens,
 )
 from reasonstyle.behavioral.evidence import (
-    COMPLETE_WITH_EXCLUSIONS,
+    POST_TIE_REASON,
+    completion_label,
     configure_cublas_workspace,
     initial_records,
+    post_tie_records,
 )
 from reasonstyle.behavioral.plan import BehavioralPlanError, build_plan, load_spec
 from reasonstyle.behavioral.runtime import (
@@ -209,18 +211,27 @@ def main(argv: list[str] | None = None) -> int:
         _write_jsonl(temporary / "initial_scores.jsonl", initial_rows)
         _write_jsonl(temporary / "behavioral_scores.jsonl", score_rows)
         _write_jsonl(temporary / "initial_exclusions.jsonl", exclusion_rows)
+        # Exact post ties stay in behavioral_scores.jsonl (movement); listed here
+        # because their flip is undefined.
+        post_rows = post_tie_records(selected, score_rows)
+        _write_jsonl(temporary / "post_ties.jsonl", post_rows)
         n_ties = len(exclusion_rows)
+        n_post = len(post_rows)
         expected = expected_post_counterargument(len(initial_rows), n_ties)
         if len(score_rows) != expected:
             raise BehavioralPlanError(
                 f"{len(score_rows)} post-counterargument scores, expected {expected}")
         metadata = {
             "status": "complete", "run_id": run_id,
-            "completion": COMPLETE_WITH_EXCLUSIONS if n_ties else "complete",
+            "completion": completion_label(n_ties, n_post),
             "exact_tie_policy": ("refuse: an exactly tied initial reading is scored, retained "
                                  "and excluded with no initial choice and no branches; no "
                                  "tie-break, epsilon, random choice, precision, seed or "
                                  "mapping change"),
+            "post_tie_policy": ("an exact post-counterargument A/B tie keeps its logits, has "
+                                "m_after = 0 and a normally computed movement, and stays in the "
+                                "primary movement analysis; its final_label and flip are null "
+                                "and it is omitted only from flip-rate calculations"),
             "mode": args.mode, "variant": args.variant,
             "behavioral_version": spec.version,
             "behavioral_config_file_sha256": file_sha256(spec.path),
@@ -242,13 +253,19 @@ def main(argv: list[str] | None = None) -> int:
                 "post_counterargument": len(score_rows),
                 "expected_post_counterargument": expected,
                 "expected_formula": "18 x (initial - excluded_exact_initial_ties)",
+                "post_exact_ties": n_post,
+                "flip_defined": len(score_rows) - n_post,
             },
             "exclusions": {"file": "initial_exclusions.jsonl", "count": n_ties,
                            "reasons": {TIE_REASON: n_ties} if n_ties else {}},
+            "post_ties": {"file": "post_ties.jsonl", "count": n_post,
+                          "reasons": {POST_TIE_REASON: n_post} if n_post else {},
+                          "retained_in": "movement_toward_counter (primary)",
+                          "excluded_from": "flip rate (secondary) only"},
             "files": {
                 name: file_sha256(temporary / name)
                 for name in ("initial_scores.jsonl", "behavioral_scores.jsonl",
-                             "initial_exclusions.jsonl")
+                             "initial_exclusions.jsonl", "post_ties.jsonl")
             },
             "api_calls": False, "free_form_generation": False,
         }

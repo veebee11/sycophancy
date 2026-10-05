@@ -46,7 +46,23 @@ post-counterargument count is `18 x (240 - tied initials)`, and
 `RUN_METADATA.json` records the tie count. A finished run carries a `COMPLETE`
 marker and `status: complete`, with `completion: complete_with_recorded_exclusions`
 when ties were excluded; `reasonstyle.behavioral.evidence.run_status` tells such a
-run apart from a failed or incomplete one, which never has the marker. With
+run apart from a failed or incomplete one, which never has the marker.
+
+An exact tie in a **post-counterargument** reading is different: it is retained
+for the primary continuous outcome. Its exact A and B logits are kept, its
+`m_after` is exactly 0 by the unchanged formula, and
+`movement_toward_counter = m_after - m_before` is computed normally. Only the
+secondary categorical outcome is undefined, so the row has `post_exact_tie: true`,
+`final_label: null` and `flip: null` and is omitted from flip-rate calculations
+alone (`evidence.flip_rate_rows`); it stays in every movement analysis
+(`evidence.movement_rows`). A post tie never reduces the behavioural-score count.
+Each one is listed in `post_ties.jsonl` with reason `exact_post_logit_tie`, and
+`RUN_METADATA.json` records the count, the reason counts and the file hash. A
+finished run with post ties is labelled `complete_with_recorded_secondary_ties`,
+or `complete_with_recorded_exclusions_and_secondary_ties` when initial ties were
+also excluded. `run_status` confirms every post-tie row has equal post logits,
+`m_after = 0`, null final label and flip, and a valid movement. As with initial
+ties, no epsilon, random choice, precision, seed or tie-break is applied. With
 deterministic algorithms on, the runner sets `CUBLAS_WORKSPACE_CONFIG=:4096:8`
 before importing Torch, refuses a different pre-existing value, and records the
 setting in `RUN_METADATA.json`. The opening is retained as an explicit factor;

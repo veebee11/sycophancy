@@ -4,8 +4,9 @@ records, and the completeness test analysis must apply before reading a run.
 A run directory is complete only when it carries a ``COMPLETE`` marker and a
 ``RUN_METADATA.json`` with ``status: complete`` whose counts and file hashes
 agree with the files on disk. A complete run may still record exclusions
-(exact initial ties under ``exact_tie: refuse``); that is a finished run, not a
-failed one. Anything else — no marker, an ``.incomplete.`` directory, a count or
+(exact initial ties under ``exact_tie: refuse``) and secondary post ties (exact
+post-counterargument ties, kept for movement, undefined for flip); either is a
+finished run, not a failed one. Anything else — no marker, an ``.incomplete.`` directory, a count or
 hash mismatch — is not a run to analyse.
 """
 
@@ -24,7 +25,60 @@ CUBLAS_REQUIRED = ":4096:8"
 
 COMPLETE = "complete"
 COMPLETE_WITH_EXCLUSIONS = "complete_with_recorded_exclusions"
+COMPLETE_WITH_SECONDARY_TIES = "complete_with_recorded_secondary_ties"
+COMPLETE_WITH_EXCLUSIONS_AND_SECONDARY_TIES = (
+    "complete_with_recorded_exclusions_and_secondary_ties")
 INCOMPLETE = "incomplete_or_failed"
+POST_TIE_REASON = "exact_post_logit_tie"
+
+
+def completion_label(n_initial_ties: int, n_post_ties: int) -> str:
+    """How a finished run is labelled, by which kinds of recorded tie it holds."""
+    if n_initial_ties and n_post_ties:
+        return COMPLETE_WITH_EXCLUSIONS_AND_SECONDARY_TIES
+    if n_initial_ties:
+        return COMPLETE_WITH_EXCLUSIONS
+    if n_post_ties:
+        return COMPLETE_WITH_SECONDARY_TIES
+    return COMPLETE
+
+
+def post_tie_records(selected: list[dict[str, Any]], score_rows: list[dict[str, Any]]
+                     ) -> list[dict[str, Any]]:
+    """One record per behavioural-score row whose post reading is an exact tie.
+
+    The score row itself stays in ``behavioral_scores.jsonl`` for the primary
+    movement analysis; this file only records which rows have no flip value."""
+    branch = {row["branch_id"]: row for row in selected}
+    out = []
+    for row in score_rows:
+        if not row.get("post_exact_tie"):
+            continue
+        source = branch[row["branch_id"]]
+        out.append({
+            **{key: row[key] for key in (
+                "run_id", "model_variant", "branch_id", "initial_id", "stimulus_id",
+                "decision_id", "domain", "scenario_id", "variant_id", "supported_option",
+                "condition", "marker_id", "opening_id", "order_id", "counter_target_label",
+                "initial_label", "initial_logit_a", "initial_logit_b", "after_logit_a",
+                "after_logit_b", "m_before", "m_after", "movement_toward_counter")},
+            "label_to_option": dict(source["label_to_option"]),
+            "final_label": None, "flip": None,
+            "exclusion_reason": POST_TIE_REASON,
+            "excluded_from": ["flip_rate"],
+            "retained_in": ["movement_toward_counter"],
+        })
+    return out
+
+
+def movement_rows(score_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Every behavioural-score row: post ties are part of the primary outcome."""
+    return list(score_rows)
+
+
+def flip_rate_rows(score_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rows with a defined flip: exact post ties are omitted, and only here."""
+    return [row for row in score_rows if not row.get("post_exact_tie")]
 
 
 def configure_cublas_workspace(deterministic: bool, environ: MutableMapping[str, str],
@@ -86,9 +140,36 @@ def _lines(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
+def _post_tie_problems(scores: list[dict[str, Any]], post_ties: list[dict[str, Any]]
+                       ) -> list[str]:
+    problems = []
+    tied_rows = {x["branch_id"]: x for x in scores if x.get("post_exact_tie")}
+    recorded = {x["branch_id"]: x for x in post_ties}
+    if set(tied_rows) != set(recorded) or len(recorded) != len(post_ties):
+        problems.append("post_ties.jsonl does not list exactly the post-tie score rows")
+    for branch_id, row in tied_rows.items():
+        movement = row.get("movement_toward_counter")
+        if not (row.get("after_logit_a") == row.get("after_logit_b")
+                and row.get("m_after") == 0 and row.get("final_label") is None
+                and row.get("flip") is None and isinstance(movement, (int, float))
+                and movement == movement and movement == row["m_after"] - row["m_before"]):
+            problems.append(f"{branch_id}: post-tie row is not equal logits, m_after 0, null "
+                            f"final label and flip, with a valid movement")
+        if branch_id in recorded and recorded[branch_id].get("exclusion_reason") != POST_TIE_REASON:
+            problems.append(f"{branch_id}: post tie recorded with the wrong reason")
+    for row in scores:
+        if not row.get("post_exact_tie") and (row.get("final_label") not in ("A", "B")
+                                              or not isinstance(row.get("flip"), bool)):
+            problems.append(f"{row.get('branch_id')}: untied row lacks a final label or flip")
+    return problems
+
+
 def run_status(directory: str | Path) -> tuple[str, list[str]]:
     """``(status, problems)`` for a run directory: ``complete``,
-    ``complete_with_recorded_exclusions``, or ``incomplete_or_failed``."""
+    ``complete_with_recorded_exclusions`` (initial ties),
+    ``complete_with_recorded_secondary_ties`` (post ties),
+    ``complete_with_recorded_exclusions_and_secondary_ties`` (both), or
+    ``incomplete_or_failed``."""
     directory = Path(directory)
     problems: list[str] = []
     if ".incomplete." in directory.name:
@@ -111,21 +192,31 @@ def run_status(directory: str | Path) -> tuple[str, list[str]]:
     initial = _lines(directory / "initial_scores.jsonl")
     scores = _lines(directory / "behavioral_scores.jsonl")
     exclusions = _lines(directory / "initial_exclusions.jsonl")
+    has_post_file = "post_ties.jsonl" in (meta.get("files") or {})
+    post_ties = _lines(directory / "post_ties.jsonl") if has_post_file else []
     ties = [x for x in exclusions if x.get("exclusion_reason") == TIE_REASON]
     want = expected_post_counterargument(len(initial), len(ties))
-    checks = (
+    checks = [
         (len(initial), counts.get("initial"), "initial"),
         (len(ties), counts.get("excluded_exact_initial_ties"), "excluded ties"),
         (len(scores), counts.get("post_counterargument"), "post-counterargument"),
         (want, counts.get("expected_post_counterargument"), "expected post-counterargument"),
         (len(scores), want, "post-counterargument against 18 x (initials - ties)"),
         (sum(1 for x in initial if x.get("excluded")), len(ties), "excluded initial records"),
-    )
+    ]
+    if has_post_file:
+        checks.append((len(post_ties), counts.get("post_exact_ties"), "post exact ties"))
     for got, recorded, label in checks:
         if got != recorded:
             problems.append(f"{label}: {got} != {recorded}")
     if {x["initial_id"] for x in scores} & {x["initial_id"] for x in ties}:
         problems.append("a tied initial has post-counterargument scores")
+    if not has_post_file and any(x.get("post_exact_tie") for x in scores):
+        problems.append("post-tie rows exist but no post_ties.jsonl is recorded")
+    problems += _post_tie_problems(scores, post_ties)
+    label = completion_label(len(ties), len(post_ties))
+    if meta.get("completion") is not None and meta["completion"] != label:
+        problems.append(f"metadata completion {meta['completion']!r} != {label!r}")
     if problems:
         return INCOMPLETE, problems
-    return (COMPLETE_WITH_EXCLUSIONS if ties else COMPLETE), []
+    return label, []
