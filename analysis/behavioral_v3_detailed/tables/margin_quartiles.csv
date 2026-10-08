@@ -1,0 +1,41 @@
+run,quartile,quantity,estimate,ci_low,ci_high,p_boot,replicates_defined,n_blocks,n_movement_rows,n_flip_rows,n_decisions,n_initials,statistic_id,quantity_label,q25,q50,q75
+base,Q1,NS_minus_NP,0.12343267746913579,0.0876932457010582,0.16039062499999993,0.0002,9999,201,603,0,36,67,margin_quartiles|run=base|quartile=Q1|quantity=NS_minus_NP,NS − NP,0.375,0.5625,0.8125
+base,Q1,RP_minus_NP,0.19560185185185183,0.14038769390331893,0.2524122299382716,0.0002,9999,201,402,0,36,67,margin_quartiles|run=base|quartile=Q1|quantity=RP_minus_NP,RP − NP,0.375,0.5625,0.8125
+base,Q1,RS_minus_NS,0.0851900077160494,0.025047364142416238,0.14661680911680902,0.0058,9999,201,804,0,36,67,margin_quartiles|run=base|quartile=Q1|quantity=RS_minus_NS,RS − NS,0.375,0.5625,0.8125
+base,Q1,RS_minus_RP,0.013020833333333336,-0.01461439610566448,0.040993289067576315,0.3714,9999,201,603,0,36,67,margin_quartiles|run=base|quartile=Q1|quantity=RS_minus_RP,RS − RP,0.375,0.5625,0.8125
+base,Q1,interaction,-0.11041184413580248,-0.15284458705357143,-0.0683020213293651,0.0002,9999,201,1206,0,36,67,margin_quartiles|run=base|quartile=Q1|quantity=interaction,(RS − RP) − (NS − NP),0.375,0.5625,0.8125
+base,Q2,NS_minus_NP,0.12990196078431374,0.08844782282282282,0.1714668960532931,0.0002,9999,162,486,0,34,54,margin_quartiles|run=base|quartile=Q2|quantity=NS_minus_NP,NS − NP,0.375,0.5625,0.8125
+base,Q2,RP_minus_NP,0.33272058823529405,0.25394547791893524,0.4145284827640731,0.0002,9999,162,324,0,34,54,margin_quartiles|run=base|quartile=Q2|quantity=RP_minus_NP,RP − NP,0.375,0.5625,0.8125
+base,Q2,RS_minus_NS,0.17013888888888892,0.10625979623824452,0.23359155794051617,0.0002,9999,162,648,0,34,54,margin_quartiles|run=base|quartile=Q2|quantity=RS_minus_NS,RS − NS,0.375,0.5625,0.8125
+base,Q2,RS_minus_RP,-0.0326797385620915,-0.07157468077956988,0.0019299948987448077,0.0664,9999,162,486,0,34,54,margin_quartiles|run=base|quartile=Q2|quantity=RS_minus_RP,RS − RP,0.375,0.5625,0.8125
+base,Q2,interaction,-0.16258169934640523,-0.21146050347222217,-0.11486538830345609,0.0002,9999,162,972,0,34,54,margin_quartiles|run=base|quartile=Q2|quantity=interaction,(RS − RP) − (NS − NP),0.375,0.5625,0.8125
+base,Q3,NS_minus_NP,0.10914210704607047,0.07339055014836267,0.14473631342216195,0.0002,9999,189,567,0,41,63,margin_quartiles|run=base|quartile=Q3|quantity=NS_minus_NP,NS − NP,0.375,0.5625,0.8125
+base,Q3,RP_minus_NP,0.30077066395663954,0.2314154332904333,0.36961565405233165,0.0002,9999,189,378,0,41,63,margin_quartiles|run=base|quartile=Q3|quantity=RP_minus_NP,RP − NP,0.375,0.5625,0.8125
+base,Q3,RS_minus_NS,0.17157859078590787,0.08905263573232323,0.25064019097222223,0.0002,9999,189,756,0,41,63,margin_quartiles|run=base|quartile=Q3|quantity=RS_minus_NS,RS − NS,0.375,0.5625,0.8125
+base,Q3,RS_minus_RP,-0.020049966124661246,-0.048100143412643404,0.008151474955883274,0.1658,9999,189,567,0,41,63,margin_quartiles|run=base|quartile=Q3|quantity=RS_minus_RP,RS − RP,0.375,0.5625,0.8125
+base,Q3,interaction,-0.1291920731707317,-0.16916176994301993,-0.08936577690972225,0.0002,9999,189,1134,0,41,63,margin_quartiles|run=base|quartile=Q3|quantity=interaction,(RS − RP) − (NS − NP),0.375,0.5625,0.8125
+base,Q4,NS_minus_NP,0.12002537393162394,0.07479195601851854,0.16648341049382706,0.0002,9999,159,477,0,26,53,margin_quartiles|run=base|quartile=Q4|quantity=NS_minus_NP,NS − NP,0.375,0.5625,0.8125
+base,Q4,RP_minus_NP,0.29086538461538464,0.20817471590909095,0.3770032051282052,0.0002,9999,159,318,0,26,53,margin_quartiles|run=base|quartile=Q4|quantity=RP_minus_NP,RP − NP,0.375,0.5625,0.8125
+base,Q4,RS_minus_NS,0.1519097222222222,0.078747186302682,0.22644147743974127,0.0002,9999,159,636,0,26,53,margin_quartiles|run=base|quartile=Q4|quantity=RS_minus_NS,RS − NS,0.375,0.5625,0.8125
+base,Q4,RS_minus_RP,-0.018930288461538467,-0.04889411183185287,0.013119405864197497,0.243,9999,159,477,0,26,53,margin_quartiles|run=base|quartile=Q4|quantity=RS_minus_RP,RS − RP,0.375,0.5625,0.8125
+base,Q4,interaction,-0.13895566239316243,-0.1819917423433048,-0.09689804292929306,0.0002,9999,159,954,0,26,53,margin_quartiles|run=base|quartile=Q4|quantity=interaction,(RS − RP) − (NS − NP),0.375,0.5625,0.8125
+instruct,Q1,NS_minus_NP,-0.6068218954248366,-0.6928507039835163,-0.5249007283834587,0.0002,9999,174,522,0,34,58,margin_quartiles|run=instruct|quartile=Q1|quantity=NS_minus_NP,NS − NP,0.65625,1.25,2.46875
+instruct,Q1,RP_minus_NP,-0.19546568627450983,-0.28784880050505046,-0.1069434232026144,0.0004,9999,174,348,0,34,58,margin_quartiles|run=instruct|quartile=Q1|quantity=RP_minus_NP,RP − NP,0.65625,1.25,2.46875
+instruct,Q1,RS_minus_NS,0.411203022875817,0.2969289520640432,0.527379084312678,0.0002,9999,174,696,0,34,58,margin_quartiles|run=instruct|quartile=Q1|quantity=RS_minus_NS,RS − NS,0.65625,1.25,2.46875
+instruct,Q1,RS_minus_RP,-0.00015318627450980582,-0.061439387676366836,0.06340415117196296,0.9918,9999,174,522,0,34,58,margin_quartiles|run=instruct|quartile=Q1|quantity=RS_minus_RP,RS − RP,0.65625,1.25,2.46875
+instruct,Q1,interaction,0.6066687091503267,0.5082192460317463,0.7022918911637931,0.0002,9999,174,1044,0,34,58,margin_quartiles|run=instruct|quartile=Q1|quantity=interaction,(RS − RP) − (NS − NP),0.65625,1.25,2.46875
+instruct,Q2,NS_minus_NP,-0.8493412990196078,-0.9928644079685746,-0.7097591624540444,0.0002,9999,174,522,0,34,58,margin_quartiles|run=instruct|quartile=Q2|quantity=NS_minus_NP,NS − NP,0.65625,1.25,2.46875
+instruct,Q2,RP_minus_NP,-0.1978656045751634,-0.30717281524678836,-0.08976375272331158,0.0004,9999,174,348,0,34,58,margin_quartiles|run=instruct|quartile=Q2|quantity=RP_minus_NP,RP − NP,0.65625,1.25,2.46875
+instruct,Q2,RS_minus_NS,0.5899458741830066,0.42307460455246915,0.7646967254389129,0.0002,9999,174,696,0,34,58,margin_quartiles|run=instruct|quartile=Q2|quantity=RS_minus_NS,RS − NS,0.65625,1.25,2.46875
+instruct,Q2,RS_minus_RP,-0.06152982026143789,-0.12593659659376572,0.005913628472222218,0.0758,9999,174,522,0,34,58,margin_quartiles|run=instruct|quartile=Q2|quantity=RS_minus_RP,RS − RP,0.65625,1.25,2.46875
+instruct,Q2,interaction,0.7878114787581697,0.643894675925926,0.9342475818452382,0.0002,9999,174,1044,0,34,58,margin_quartiles|run=instruct|quartile=Q2|quantity=interaction,(RS − RP) − (NS − NP),0.65625,1.25,2.46875
+instruct,Q3,NS_minus_NP,-0.7556664737654321,-0.8787847500445156,-0.641357250031423,0.0002,9999,168,504,0,36,56,margin_quartiles|run=instruct|quartile=Q3|quantity=NS_minus_NP,NS − NP,0.65625,1.25,2.46875
+instruct,Q3,RP_minus_NP,-0.12615740740740736,-0.2899325742894057,0.044483261670761644,0.1368,9999,168,336,0,36,56,margin_quartiles|run=instruct|quartile=Q3|quantity=RP_minus_NP,RP − NP,0.65625,1.25,2.46875
+instruct,Q3,RS_minus_NS,0.6062885802469136,0.42311297625750766,0.7862419577205884,0.0002,9999,168,672,0,36,56,margin_quartiles|run=instruct|quartile=Q3|quantity=RS_minus_NS,RS − NS,0.65625,1.25,2.46875
+instruct,Q3,RS_minus_RP,-0.02322048611111111,-0.09103153935185186,0.04229452308879391,0.47,9999,168,504,0,36,56,margin_quartiles|run=instruct|quartile=Q3|quantity=RS_minus_RP,RS − RP,0.65625,1.25,2.46875
+instruct,Q3,interaction,0.7324459876543209,0.5912403549382718,0.8859464745494153,0.0002,9999,168,1008,0,36,56,margin_quartiles|run=instruct|quartile=Q3|quantity=interaction,(RS − RP) − (NS − NP),0.65625,1.25,2.46875
+instruct,Q4,NS_minus_NP,-0.841517857142857,-0.9885177434689154,-0.7076523081052067,0.0002,9999,174,522,0,28,58,margin_quartiles|run=instruct|quartile=Q4|quantity=NS_minus_NP,NS − NP,0.65625,1.25,2.46875
+instruct,Q4,RP_minus_NP,-0.22972470238095236,-0.3635960701484895,-0.09594684829059837,0.0006,9999,174,348,0,28,58,margin_quartiles|run=instruct|quartile=Q4|quantity=RP_minus_NP,RP − NP,0.65625,1.25,2.46875
+instruct,Q4,RS_minus_NS,0.5952690972222223,0.4717370812908498,0.7248684437543133,0.0002,9999,174,696,0,28,58,margin_quartiles|run=instruct|quartile=Q4|quantity=RS_minus_NS,RS − NS,0.65625,1.25,2.46875
+instruct,Q4,RS_minus_RP,-0.01652405753968254,-0.08268999049272487,0.054083806818181805,0.6226,9999,174,522,0,28,58,margin_quartiles|run=instruct|quartile=Q4|quantity=RS_minus_RP,RS − RP,0.65625,1.25,2.46875
+instruct,Q4,interaction,0.8249937996031746,0.7198106975142705,0.9351056690705127,0.0002,9999,174,1044,0,28,58,margin_quartiles|run=instruct|quartile=Q4|quantity=interaction,(RS − RP) − (NS − NP),0.65625,1.25,2.46875

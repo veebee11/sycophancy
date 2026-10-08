@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "scripts/analyze_behavioral_v3.py",
+    "configs/analysis/behavioral_v3_detailed_v1.yaml",
+    "--overwrite"
+  ],
+  "cwd": "/data/vidhi/reasonstyle",
+  "host": "localhost.localdomain",
+  "platform": "Linux-5.15.0-88-generic-x86_64-with-glibc2.35",
+  "python_executable": "/data/vidhi/venvs/reasonstyle-analysis-v1/bin/python",
+  "software": {
+    "matplotlib": "3.10.9",
+    "numpy": "2.2.6",
+    "python": "3.11.16",
+    "pyyaml": "6.0.3"
+  },
+  "utc_time": "2026-10-05T09:52:49.663356+00:00",
+  "volatile": true
+}

@@ -343,16 +343,19 @@ def decision_markdown(decision_id: str, records: Sequence[ScenarioRecord],
                 L.append(f"| **{condition}** | {'present' if condition[0] == 'R' else 'absent'} "
                          f"| {'explicit' if condition[1] == 'S' else 'plain'} | {wc} | {sc} |")
 
-            L += ["\n#### Verbatim counterargument bodies\n",
-                  "*Canonical experimental text, exactly as stored.*\n"]
+            L += ["\n#### Verbatim full counterarguments\n",
+                  "*Canonical experimental text: the fixed opening followed by the "
+                  "stored condition body.*\n"]
             for condition in CORE_CONDITIONS:
                 L += [f"**{condition}** — {CONDITION_GLOSS[condition]}\n",
-                      "```text\n" + block.cells[condition].body + "\n```\n"]
+                      "```text\n" + record.counterargument_opening + " "
+                      + block.cells[condition].body + "\n```\n"]
 
             L += ["#### Marker highlighting — display only\n",
                   f"*Bolding “{block.marker_string}”. The blocks above are canonical; this "
                   f"rendering is never used as experimental input.*\n"]
-            L += [f"- **{c}**: {highlight_markers(block.cells[c].body, block.marker_string)}"
+            L += [f"- **{c}**: {record.counterargument_opening} "
+                  f"{highlight_markers(block.cells[c].body, block.marker_string)}"
                   for c in CORE_CONDITIONS]
             L += _comparison_lines(record, option)
             L += ["#### Machine findings\n", *_findings_lines(report, record.scenario_id, option), ""]

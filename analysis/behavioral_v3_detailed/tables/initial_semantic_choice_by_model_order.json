@@ -1,0 +1,194 @@
+[
+  {
+    "count": 115,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 95.83333333333333,
+    "run": "ab_bfirst"
+  },
+  {
+    "count": 3,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 2.5,
+    "run": "ab_bfirst"
+  },
+  {
+    "count": 2,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 1.6666666666666667,
+    "run": "ab_bfirst"
+  },
+  {
+    "count": 16,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 13.333333333333334,
+    "run": "ab_bfirst"
+  },
+  {
+    "count": 100,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 83.33333333333333,
+    "run": "ab_bfirst"
+  },
+  {
+    "count": 4,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 3.3333333333333335,
+    "run": "ab_bfirst"
+  },
+  {
+    "count": 120,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 100.0,
+    "run": "base"
+  },
+  {
+    "count": 0,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 0.0,
+    "run": "base"
+  },
+  {
+    "count": 0,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 0.0,
+    "run": "base"
+  },
+  {
+    "count": 5,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 4.166666666666667,
+    "run": "base"
+  },
+  {
+    "count": 112,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 93.33333333333333,
+    "run": "base"
+  },
+  {
+    "count": 3,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 2.5,
+    "run": "base"
+  },
+  {
+    "count": 75,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 62.5,
+    "run": "instruct"
+  },
+  {
+    "count": 39,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 32.5,
+    "run": "instruct"
+  },
+  {
+    "count": 6,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 5.0,
+    "run": "instruct"
+  },
+  {
+    "count": 59,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 49.166666666666664,
+    "run": "instruct"
+  },
+  {
+    "count": 57,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 47.5,
+    "run": "instruct"
+  },
+  {
+    "count": 4,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 3.3333333333333335,
+    "run": "instruct"
+  },
+  {
+    "count": 85,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 70.83333333333333,
+    "run": "minimal_ab"
+  },
+  {
+    "count": 19,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 15.833333333333334,
+    "run": "minimal_ab"
+  },
+  {
+    "count": 16,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 13.333333333333334,
+    "run": "minimal_ab"
+  },
+  {
+    "count": 23,
+    "initial_option": "opt_1",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 19.166666666666668,
+    "run": "minimal_ab"
+  },
+  {
+    "count": 81,
+    "initial_option": "opt_2",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 67.5,
+    "run": "minimal_ab"
+  },
+  {
+    "count": 16,
+    "initial_option": "tie",
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 13.333333333333334,
+    "run": "minimal_ab"
+  }
+]

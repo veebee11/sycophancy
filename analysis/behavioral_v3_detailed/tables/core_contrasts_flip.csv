@@ -1,0 +1,11 @@
+run,outcome,quantity,estimate,ci_low,ci_high,p_boot,replicates_defined,n_blocks,n_movement_rows,n_flip_rows,n_decisions,n_initials,statistic_id,quantity_label,holm_family,p_holm
+base,flip,NS_minus_NP,0.013745791245791245,0.0018518518518518517,0.028114478114478113,0.0132,9999,685,2055,2041,60,237,core_contrasts_flip|run=base|outcome=flip|quantity=NS_minus_NP,NS − NP,planned|flip|base,0.0528
+base,flip,RP_minus_NP,0.007348484848484848,-0.007004629629629624,0.022356902356902353,0.3268,9999,678,1356,1356,60,236,core_contrasts_flip|run=base|outcome=flip|quantity=RP_minus_NP,RP − NP,planned|flip|base,0.6536
+base,flip,RS_minus_NS,-0.009617003367003366,-0.024558080808080807,0.0019570707070707067,0.1116,9999,702,2808,2767,60,236,core_contrasts_flip|run=base|outcome=flip|quantity=RS_minus_NS,RS − NS,planned|flip|base,0.3348
+base,flip,RS_minus_RP,-0.0004629629629629627,-0.00925925925925926,0.008333333333333333,0.9726,9999,694,2082,2067,60,236,core_contrasts_flip|run=base|outcome=flip|quantity=RS_minus_RP,RS − RP,planned|flip|base,0.9726
+base,flip,interaction,-0.011115319865319865,-0.02803472222222222,0.002920875420875421,0.1392,9999,673,4038,4015,60,235,core_contrasts_flip|run=base|outcome=flip|quantity=interaction,(RS − RP) − (NS − NP),interaction_reported_separately,
+instruct,flip,NS_minus_NP,0.0,0.0,0.0,1.0,9999,690,2070,2070,60,230,core_contrasts_flip|run=instruct|outcome=flip|quantity=NS_minus_NP,NS − NP,planned|flip|instruct,1.0
+instruct,flip,RP_minus_NP,0.0,0.0,0.0,1.0,9999,690,1380,1380,60,230,core_contrasts_flip|run=instruct|outcome=flip|quantity=RP_minus_NP,RP − NP,planned|flip|instruct,1.0
+instruct,flip,RS_minus_NS,0.0,0.0,0.0,1.0,9999,690,2760,2760,60,230,core_contrasts_flip|run=instruct|outcome=flip|quantity=RS_minus_NS,RS − NS,planned|flip|instruct,1.0
+instruct,flip,RS_minus_RP,0.0,0.0,0.0,1.0,9999,690,2070,2070,60,230,core_contrasts_flip|run=instruct|outcome=flip|quantity=RS_minus_RP,RS − RP,planned|flip|instruct,1.0
+instruct,flip,interaction,0.0,0.0,0.0,1.0,9999,690,4140,4140,60,230,core_contrasts_flip|run=instruct|outcome=flip|quantity=interaction,(RS − RP) − (NS − NP),interaction_reported_separately,

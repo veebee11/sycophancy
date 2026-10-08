@@ -1,0 +1,1003 @@
+[
+  {
+    "check": "answer_continuation",
+    "expected": "{'A': ' A', 'B': ' B'}",
+    "observed": "{'A': ' A', 'B': ' B'}",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "answer_token_ids",
+    "expected": "{'A': 362, 'B': 426}",
+    "observed": "{'A': 362, 'B': 426}",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "api_calls",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "behavioral_config_content_hash",
+    "expected": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "observed": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "behavioral_config_file_sha256",
+    "expected": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "observed": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "behavioral_version",
+    "expected": "full_v3_llama31_8b_behavioral_v1",
+    "observed": "full_v3_llama31_8b_behavioral_v1",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "completion",
+    "expected": "complete_with_recorded_exclusions_and_secondary_ties",
+    "observed": "complete_with_recorded_exclusions_and_secondary_ties",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "counts.excluded_exact_initial_ties",
+    "expected": 6,
+    "observed": 6,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "counts.flip_defined",
+    "expected": 3924,
+    "observed": 3924,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "counts.initial",
+    "expected": 240,
+    "observed": 240,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "counts.post_counterargument",
+    "expected": 4212,
+    "observed": 4212,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "counts.post_exact_ties",
+    "expected": 288,
+    "observed": 288,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "deterministic_algorithms",
+    "expected": true,
+    "observed": true,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "device",
+    "expected": "cuda",
+    "observed": "cuda",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "dtype",
+    "expected": "bfloat16",
+    "observed": "bfloat16",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "free_form_generation",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "mode",
+    "expected": "full",
+    "observed": "full",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "prompt_digest",
+    "expected": "9301af728163d0aaf9ad4ce3b38322aa2ee1ee58609c56592876f97a91aed4de",
+    "observed": "9301af728163d0aaf9ad4ce3b38322aa2ee1ee58609c56592876f97a91aed4de",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "prompt_variant.name",
+    "expected": "ab_bfirst",
+    "observed": "ab_bfirst",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "repo_id",
+    "expected": "meta-llama/Llama-3.1-8B",
+    "observed": "meta-llama/Llama-3.1-8B",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "revision",
+    "expected": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "observed": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "run_id",
+    "expected": "base-ab-bfirst-v1",
+    "observed": "base-ab-bfirst-v1",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "run_status",
+    "expected": "complete_with_recorded_exclusions_and_secondary_ties",
+    "observed": "complete_with_recorded_exclusions_and_secondary_ties",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "sha256 RUN_METADATA.json",
+    "expected": "994f428f2a5eb54abbe2bee2ca68c7e586e2dc4fb161c33713344b50a6269a77",
+    "observed": "994f428f2a5eb54abbe2bee2ca68c7e586e2dc4fb161c33713344b50a6269a77",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "sha256 behavioral_scores.jsonl",
+    "expected": "4219e6fc7144a45808dae737fe213487c28ad328160f57238a6c7b5bb05bc76f",
+    "observed": "4219e6fc7144a45808dae737fe213487c28ad328160f57238a6c7b5bb05bc76f",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "sha256 initial_exclusions.jsonl",
+    "expected": "d477d90a720a6fb707cf60ad23312e5e018bf7e8f1a12c1ab8021bd37eace1d6",
+    "observed": "d477d90a720a6fb707cf60ad23312e5e018bf7e8f1a12c1ab8021bd37eace1d6",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "sha256 initial_scores.jsonl",
+    "expected": "1193d47ad5733753ac4da9d7468f56a60b239e4ae3d72742c2e25e82720b98f0",
+    "observed": "1193d47ad5733753ac4da9d7468f56a60b239e4ae3d72742c2e25e82720b98f0",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "sha256 post_ties.jsonl",
+    "expected": "b32ef7b7921b1493c7a2e1c581e9b8a3d0d8cfb66029bfe3cc86a63e7e568c62",
+    "observed": "b32ef7b7921b1493c7a2e1c581e9b8a3d0d8cfb66029bfe3cc86a63e7e568c62",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "status",
+    "expected": "complete",
+    "observed": "complete",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "stimuli_sha256",
+    "expected": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "observed": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "variant",
+    "expected": "base",
+    "observed": "base",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "variant config source hash",
+    "expected": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "observed": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "variant_config_file_sha256",
+    "expected": "3c92ba2ed3722286df093d66d129ff8b71da2c32ee540e6e99c53f527a3d36f8",
+    "observed": "3c92ba2ed3722286df093d66d129ff8b71da2c32ee540e6e99c53f527a3d36f8",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "variant_definition_hash",
+    "expected": "ebb8fd482f69e73bd98855fa7a70d3c10fc0463141d12cbbc7dc65da0c959db3",
+    "observed": "ebb8fd482f69e73bd98855fa7a70d3c10fc0463141d12cbbc7dc65da0c959db3",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "variants file hash",
+    "expected": "dfc0a9a6dad99a73f87f54b1939e3e952e4482230b30586a5a569d4dc0fef2fa",
+    "observed": "dfc0a9a6dad99a73f87f54b1939e3e952e4482230b30586a5a569d4dc0fef2fa",
+    "passed": true,
+    "run": "ab_bfirst"
+  },
+  {
+    "check": "answer_continuation",
+    "expected": "{'A': ' A', 'B': ' B'}",
+    "observed": "{'A': ' A', 'B': ' B'}",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "answer_token_ids",
+    "expected": "{'A': 362, 'B': 426}",
+    "observed": "{'A': 362, 'B': 426}",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "api_calls",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "behavioral_config_content_hash",
+    "expected": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "observed": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "behavioral_config_file_sha256",
+    "expected": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "observed": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "behavioral_version",
+    "expected": "full_v3_llama31_8b_behavioral_v1",
+    "observed": "full_v3_llama31_8b_behavioral_v1",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "completion",
+    "expected": "complete_with_recorded_exclusions_and_secondary_ties",
+    "observed": "complete_with_recorded_exclusions_and_secondary_ties",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "counts.excluded_exact_initial_ties",
+    "expected": 3,
+    "observed": 3,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "counts.flip_defined",
+    "expected": 4165,
+    "observed": 4165,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "counts.initial",
+    "expected": 240,
+    "observed": 240,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "counts.post_counterargument",
+    "expected": 4266,
+    "observed": 4266,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "counts.post_exact_ties",
+    "expected": 101,
+    "observed": 101,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "deterministic_algorithms",
+    "expected": true,
+    "observed": true,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "device",
+    "expected": "cuda",
+    "observed": "cuda",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "dtype",
+    "expected": "bfloat16",
+    "observed": "bfloat16",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "free_form_generation",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "mode",
+    "expected": "full",
+    "observed": "full",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "pinned answer_token_ids",
+    "expected": "{'A': 362, 'B': 426}",
+    "observed": "{'A': 362, 'B': 426}",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "pinned revision",
+    "expected": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "observed": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "repo_id",
+    "expected": "meta-llama/Llama-3.1-8B",
+    "observed": "meta-llama/Llama-3.1-8B",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "revision",
+    "expected": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "observed": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "run_id",
+    "expected": "base-full-v3",
+    "observed": "base-full-v3",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "run_status",
+    "expected": "complete_with_recorded_exclusions_and_secondary_ties",
+    "observed": "complete_with_recorded_exclusions_and_secondary_ties",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "sha256 RUN_METADATA.json",
+    "expected": "9bd395646329c6fe2c56f9155b780b4602e9f46e35717a2f1f0dc93ba06bd461",
+    "observed": "9bd395646329c6fe2c56f9155b780b4602e9f46e35717a2f1f0dc93ba06bd461",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "sha256 behavioral_scores.jsonl",
+    "expected": "e958822a78a853f9a28a6c3f3bcce2238b1cd9d49963588468ab3ab0467d9d25",
+    "observed": "e958822a78a853f9a28a6c3f3bcce2238b1cd9d49963588468ab3ab0467d9d25",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "sha256 initial_exclusions.jsonl",
+    "expected": "aba83d87fee725230760a3724defbe8faa0af3b3a7b6d3093f54f580236c998d",
+    "observed": "aba83d87fee725230760a3724defbe8faa0af3b3a7b6d3093f54f580236c998d",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "sha256 initial_scores.jsonl",
+    "expected": "0fe4bcc6126c83300aa5f65d31cf2c3298e29ee9284f9dc1b2a88a5c7df3c4b9",
+    "observed": "0fe4bcc6126c83300aa5f65d31cf2c3298e29ee9284f9dc1b2a88a5c7df3c4b9",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "sha256 post_ties.jsonl",
+    "expected": "3799fc23d4fc12c6ea71a905167b38849b6248197a8228c7379017af734c0261",
+    "observed": "3799fc23d4fc12c6ea71a905167b38849b6248197a8228c7379017af734c0261",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "status",
+    "expected": "complete",
+    "observed": "complete",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "stimuli_sha256",
+    "expected": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "observed": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "variant",
+    "expected": "base",
+    "observed": "base",
+    "passed": true,
+    "run": "base"
+  },
+  {
+    "check": "behavioral_version",
+    "expected": "full_v3_llama31_8b_behavioral_v1",
+    "observed": "full_v3_llama31_8b_behavioral_v1",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "content_hash behavioral_config",
+    "expected": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "observed": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "near-tie tau",
+    "expected": 0.4054651081,
+    "observed": 0.4054651081,
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "pinned config stimuli hash",
+    "expected": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "observed": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "sha256 ab_bfirst variant config",
+    "expected": "3c92ba2ed3722286df093d66d129ff8b71da2c32ee540e6e99c53f527a3d36f8",
+    "observed": "3c92ba2ed3722286df093d66d129ff8b71da2c32ee540e6e99c53f527a3d36f8",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "sha256 behavioral_config",
+    "expected": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "observed": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "sha256 dataset_manifest",
+    "expected": "f5daadb61ba53aee0b108cba5e30c5ec96878e8cec4f75060d9bdaed8b2a8da4",
+    "observed": "f5daadb61ba53aee0b108cba5e30c5ec96878e8cec4f75060d9bdaed8b2a8da4",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "sha256 minimal_ab variant config",
+    "expected": "e2201430b35ca68dc6fe3668c05bcfc27ef02901443313ec6e68c056c2030246",
+    "observed": "e2201430b35ca68dc6fe3668c05bcfc27ef02901443313ec6e68c056c2030246",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "sha256 numeric_12 diagnostic",
+    "expected": "b10731bcf2fa2a1655401bc7fd5cf266cc74e297cc48c6aba4899e0c54b36f9f",
+    "observed": "b10731bcf2fa2a1655401bc7fd5cf266cc74e297cc48c6aba4899e0c54b36f9f",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "sha256 numeric_12 refusal record",
+    "expected": "afd6527a18b7c44161dd6a4e7270e0b0965e23a9d8b99a8bf9ec42f9dca1c94f",
+    "observed": "afd6527a18b7c44161dd6a4e7270e0b0965e23a9d8b99a8bf9ec42f9dca1c94f",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "sha256 stimuli",
+    "expected": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "observed": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "passed": true,
+    "run": "inputs"
+  },
+  {
+    "check": "answer_continuation",
+    "expected": "{'A': ' A', 'B': ' B'}",
+    "observed": "{'A': ' A', 'B': ' B'}",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "answer_token_ids",
+    "expected": "{'A': 362, 'B': 426}",
+    "observed": "{'A': 362, 'B': 426}",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "api_calls",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "behavioral_config_content_hash",
+    "expected": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "observed": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "behavioral_config_file_sha256",
+    "expected": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "observed": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "behavioral_version",
+    "expected": "full_v3_llama31_8b_behavioral_v1",
+    "observed": "full_v3_llama31_8b_behavioral_v1",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "completion",
+    "expected": "complete_with_recorded_exclusions",
+    "observed": "complete_with_recorded_exclusions",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "counts.excluded_exact_initial_ties",
+    "expected": 10,
+    "observed": 10,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "counts.flip_defined",
+    "expected": 4140,
+    "observed": 4140,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "counts.initial",
+    "expected": 240,
+    "observed": 240,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "counts.post_counterargument",
+    "expected": 4140,
+    "observed": 4140,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "counts.post_exact_ties",
+    "expected": 0,
+    "observed": 0,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "deterministic_algorithms",
+    "expected": true,
+    "observed": true,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "device",
+    "expected": "cuda",
+    "observed": "cuda",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "dtype",
+    "expected": "bfloat16",
+    "observed": "bfloat16",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "free_form_generation",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "mode",
+    "expected": "full",
+    "observed": "full",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "pinned answer_token_ids",
+    "expected": "{'A': 362, 'B': 426}",
+    "observed": "{'A': 362, 'B': 426}",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "pinned revision",
+    "expected": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "observed": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "repo_id",
+    "expected": "meta-llama/Llama-3.1-8B-Instruct",
+    "observed": "meta-llama/Llama-3.1-8B-Instruct",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "revision",
+    "expected": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "observed": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "run_id",
+    "expected": "instruct-full-v3",
+    "observed": "instruct-full-v3",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "run_status",
+    "expected": "complete_with_recorded_exclusions",
+    "observed": "complete_with_recorded_exclusions",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "sha256 RUN_METADATA.json",
+    "expected": "de5c88e628836f9b0d60fd36065677d69791ceb181b875a617f3e7e9f6923548",
+    "observed": "de5c88e628836f9b0d60fd36065677d69791ceb181b875a617f3e7e9f6923548",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "sha256 behavioral_scores.jsonl",
+    "expected": "0db96e735637bb5eb47a34eec203e6a3ae5f7e4885e5f9d4190b5e78183c2398",
+    "observed": "0db96e735637bb5eb47a34eec203e6a3ae5f7e4885e5f9d4190b5e78183c2398",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "sha256 initial_exclusions.jsonl",
+    "expected": "a07217ba66458af09e21ec9e0db704ce1bae1de4633ba1d141b60493b020106c",
+    "observed": "a07217ba66458af09e21ec9e0db704ce1bae1de4633ba1d141b60493b020106c",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "sha256 initial_scores.jsonl",
+    "expected": "3d23a886f9251025fd543975b8d0e13b3d6562e6ba3d8d17b02080470fc7ad24",
+    "observed": "3d23a886f9251025fd543975b8d0e13b3d6562e6ba3d8d17b02080470fc7ad24",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "sha256 post_ties.jsonl",
+    "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "observed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "status",
+    "expected": "complete",
+    "observed": "complete",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "stimuli_sha256",
+    "expected": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "observed": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "variant",
+    "expected": "instruct",
+    "observed": "instruct",
+    "passed": true,
+    "run": "instruct"
+  },
+  {
+    "check": "answer_continuation",
+    "expected": "{'A': ' A', 'B': ' B'}",
+    "observed": "{'A': ' A', 'B': ' B'}",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "answer_token_ids",
+    "expected": "{'A': 362, 'B': 426}",
+    "observed": "{'A': 362, 'B': 426}",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "api_calls",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "behavioral_config_content_hash",
+    "expected": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "observed": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "behavioral_config_file_sha256",
+    "expected": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "observed": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "behavioral_version",
+    "expected": "full_v3_llama31_8b_behavioral_v1",
+    "observed": "full_v3_llama31_8b_behavioral_v1",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "completion",
+    "expected": "complete_with_recorded_exclusions_and_secondary_ties",
+    "observed": "complete_with_recorded_exclusions_and_secondary_ties",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "counts.excluded_exact_initial_ties",
+    "expected": 32,
+    "observed": 32,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "counts.flip_defined",
+    "expected": 3497,
+    "observed": 3497,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "counts.initial",
+    "expected": 240,
+    "observed": 240,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "counts.post_counterargument",
+    "expected": 3744,
+    "observed": 3744,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "counts.post_exact_ties",
+    "expected": 247,
+    "observed": 247,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "deterministic_algorithms",
+    "expected": true,
+    "observed": true,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "device",
+    "expected": "cuda",
+    "observed": "cuda",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "dtype",
+    "expected": "bfloat16",
+    "observed": "bfloat16",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "free_form_generation",
+    "expected": false,
+    "observed": false,
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "mode",
+    "expected": "full",
+    "observed": "full",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "prompt_digest",
+    "expected": "47771f9b63e4166ca4683eb0e7eeb3aff0cd4f4b469a68af1106b96aed5d2d25",
+    "observed": "47771f9b63e4166ca4683eb0e7eeb3aff0cd4f4b469a68af1106b96aed5d2d25",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "prompt_variant.name",
+    "expected": "minimal_ab",
+    "observed": "minimal_ab",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "repo_id",
+    "expected": "meta-llama/Llama-3.1-8B",
+    "observed": "meta-llama/Llama-3.1-8B",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "revision",
+    "expected": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "observed": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "run_id",
+    "expected": "base-minimal-ab-v1",
+    "observed": "base-minimal-ab-v1",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "run_status",
+    "expected": "complete_with_recorded_exclusions_and_secondary_ties",
+    "observed": "complete_with_recorded_exclusions_and_secondary_ties",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "sha256 RUN_METADATA.json",
+    "expected": "255f4beb17b2582d2bab3659d27d7c653af9497fb43c008c35b540c3297d2712",
+    "observed": "255f4beb17b2582d2bab3659d27d7c653af9497fb43c008c35b540c3297d2712",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "sha256 behavioral_scores.jsonl",
+    "expected": "023ace2a3db6589219906c30469dd8e4d0ecb461bb1de528809ff96f9526e749",
+    "observed": "023ace2a3db6589219906c30469dd8e4d0ecb461bb1de528809ff96f9526e749",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "sha256 initial_exclusions.jsonl",
+    "expected": "417d1f493658de0233d7c804b2af8f3803216f6268b388928811f2d64e761048",
+    "observed": "417d1f493658de0233d7c804b2af8f3803216f6268b388928811f2d64e761048",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "sha256 initial_scores.jsonl",
+    "expected": "3276a6b36deb7862eefa9a58feff36e0bfa4f2420bdadc22c592f6467b06e2f4",
+    "observed": "3276a6b36deb7862eefa9a58feff36e0bfa4f2420bdadc22c592f6467b06e2f4",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "sha256 post_ties.jsonl",
+    "expected": "846aef33852091aedffb9fb5550805a1aa41870f522c50e08c5b9bec1293aeb8",
+    "observed": "846aef33852091aedffb9fb5550805a1aa41870f522c50e08c5b9bec1293aeb8",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "status",
+    "expected": "complete",
+    "observed": "complete",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "stimuli_sha256",
+    "expected": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "observed": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "variant",
+    "expected": "base",
+    "observed": "base",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "variant config source hash",
+    "expected": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "observed": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "variant_config_file_sha256",
+    "expected": "e2201430b35ca68dc6fe3668c05bcfc27ef02901443313ec6e68c056c2030246",
+    "observed": "e2201430b35ca68dc6fe3668c05bcfc27ef02901443313ec6e68c056c2030246",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "variant_definition_hash",
+    "expected": "77e35ff68874d8685525400964a9a176712cad785e19288181c24160efa58e07",
+    "observed": "77e35ff68874d8685525400964a9a176712cad785e19288181c24160efa58e07",
+    "passed": true,
+    "run": "minimal_ab"
+  },
+  {
+    "check": "variants file hash",
+    "expected": "dfc0a9a6dad99a73f87f54b1939e3e952e4482230b30586a5a569d4dc0fef2fa",
+    "observed": "dfc0a9a6dad99a73f87f54b1939e3e952e4482230b30586a5a569d4dc0fef2fa",
+    "passed": true,
+    "run": "minimal_ab"
+  }
+]

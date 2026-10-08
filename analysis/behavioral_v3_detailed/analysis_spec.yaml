@@ -1,0 +1,242 @@
+# Detailed behavioural analysis of the completed full-v3 Llama-3.1-8B runs.
+#
+# Frozen before any behavioural result table was computed. The two reference
+# runs were validated (run_status, recomputed hashes, counts, exact re-scoring)
+# without computing any estimate. The robustness-run entries under
+# `inputs.robustness_runs` were pinned after those runs completed and passed
+# run_status, and before any analysis table was computed from them.
+#
+# This file authorises no model run, no mechanistic analysis and no dataset edit.
+
+analysis_version: behavioral_v3_detailed_v1
+status: developmental_draft_dataset
+created: "2026-10-05"
+source_git_commit: cc3baebc4fb4d8c3755e5f316395dd6ee9a2e266
+
+inputs:
+  stimuli: {path: data/full_v3/stimuli_full_v3.jsonl,
+            sha256: 9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c}
+  dataset_manifest: {path: data/full_v3/manifest_full_v3.json,
+                     sha256: f5daadb61ba53aee0b108cba5e30c5ec96878e8cec4f75060d9bdaed8b2a8da4}
+  marker_config: {path: configs/full_v3_multimarker_openings.yaml}
+  behavioral_config:
+    path: configs/behavioral_v3_llama31_8b.pinned.yaml
+    sha256: f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25
+    content_hash: 4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238
+    behavioral_version: full_v3_llama31_8b_behavioral_v1
+  answer: {continuation: {A: " A", B: " B"}, token_ids: {A: 362, B: 426}}
+  runs:
+    base:
+      path: runs/behavioral_v3/base-full-v3
+      run_id: base-full-v3
+      repo_id: meta-llama/Llama-3.1-8B
+      revision: d04e592bb4f6aa9cfee91e2e20afa771667e1d4b
+      status: complete_with_recorded_exclusions_and_secondary_ties
+      behavioral_scores_sha256: e958822a78a853f9a28a6c3f3bcce2238b1cd9d49963588468ab3ab0467d9d25
+      run_metadata_sha256: 9bd395646329c6fe2c56f9155b780b4602e9f46e35717a2f1f0dc93ba06bd461
+      counts: {initial: 240, excluded_exact_initial_ties: 3, movement_rows: 4266,
+               post_exact_ties: 101, flip_defined: 4165}
+    instruct:
+      path: runs/behavioral_v3/instruct-full-v3
+      run_id: instruct-full-v3
+      repo_id: meta-llama/Llama-3.1-8B-Instruct
+      revision: 0e9e39f249a16976918f6564b8830bc894c89659
+      status: complete_with_recorded_exclusions
+      behavioral_scores_sha256: 0db96e735637bb5eb47a34eec203e6a3ae5f7e4885e5f9d4190b5e78183c2398
+      run_metadata_sha256: de5c88e628836f9b0d60fd36065677d69791ceb181b875a617f3e7e9f6923548
+      counts: {initial: 240, excluded_exact_initial_ties: 10, movement_rows: 4140,
+               post_exact_ties: 0, flip_defined: 4140}
+  evidence_archive:
+    server: /data/vidhi/archive/reasonstyle/behavioral_v3_full_evidence_v1
+    mac: runs/archive/behavioral_v3_full_evidence_v1
+    sha256sums_sha256: 71751a241576b4c21a058a451458d67fd884076bf57a3d831e8e1bb803476181
+  robustness_variants_file: configs/robustness/base_prompt_variants_v1.yaml
+  # Pinned 2026-10-05 after both runs completed and passed run_status, before any
+  # analysis table was computed. Slots A/B in these files are display-independent
+  # slots; prompt_variant in RUN_METADATA.json records what the model read.
+  robustness_runs:
+    ab_bfirst:
+      path: runs/behavioral_v3_robustness/base-ab-bfirst-v1
+      run_id: base-ab-bfirst-v1
+      repo_id: meta-llama/Llama-3.1-8B
+      revision: d04e592bb4f6aa9cfee91e2e20afa771667e1d4b
+      status: complete_with_recorded_exclusions_and_secondary_ties
+      behavioral_scores_sha256: 4219e6fc7144a45808dae737fe213487c28ad328160f57238a6c7b5bb05bc76f
+      run_metadata_sha256: 994f428f2a5eb54abbe2bee2ca68c7e586e2dc4fb161c33713344b50a6269a77
+      variant_config: {path: configs/robustness/base_ab_bfirst_v1.pinned.yaml,
+                       sha256: 3c92ba2ed3722286df093d66d129ff8b71da2c32ee540e6e99c53f527a3d36f8}
+      counts: {initial: 240, excluded_exact_initial_ties: 6, movement_rows: 4212,
+               post_exact_ties: 288, flip_defined: 3924}
+    minimal_ab:
+      path: runs/behavioral_v3_robustness/base-minimal-ab-v1
+      run_id: base-minimal-ab-v1
+      repo_id: meta-llama/Llama-3.1-8B
+      revision: d04e592bb4f6aa9cfee91e2e20afa771667e1d4b
+      status: complete_with_recorded_exclusions_and_secondary_ties
+      behavioral_scores_sha256: 023ace2a3db6589219906c30469dd8e4d0ecb461bb1de528809ff96f9526e749
+      run_metadata_sha256: 255f4beb17b2582d2bab3659d27d7c653af9497fb43c008c35b540c3297d2712
+      variant_config: {path: configs/robustness/base_minimal_ab_v1.pinned.yaml,
+                       sha256: e2201430b35ca68dc6fe3668c05bcfc27ef02901443313ec6e68c056c2030246}
+      counts: {initial: 240, excluded_exact_initial_ties: 32, movement_rows: 3744,
+               post_exact_ties: 247, flip_defined: 3497}
+  robustness_refusals:
+    numeric_12:
+      path: runs/behavioral_v3_robustness/compatibility/numeric_12.refused.json
+      sha256: afd6527a18b7c44161dd6a4e7270e0b0965e23a9d8b99a8bf9ec42f9dca1c94f
+      diagnostic: {path: runs/behavioral_v3_robustness/compatibility/numeric_12.tokenization_diagnostic.json,
+                   sha256: b10731bcf2fa2a1655401bc7fd5cf266cc74e297cc48c6aba4899e0c54b36f9f}
+  robustness_reference_check:
+    path: runs/behavioral_v3_robustness/base-reference-check-v1/REFERENCE_CHECK.json
+    sha256: 393d591f3b4aa9b2e3397333c60a8e54c538b793063b6dd918b78c3a139772b2
+  robustness_archive:
+    server: /data/vidhi/archive/reasonstyle/behavioral_v3_robustness_evidence_v1
+    mac: runs/archive/behavioral_v3_robustness_evidence_v1
+    sha256sums_sha256: c890f749cb98d433059b1291a203954183c9085f00096f4447df23d16f4d7d01
+
+design:
+  outcomes:
+    primary: movement_toward_counter   # m_after - m_before, continuous, exact logits
+    secondary: flip                    # defined only where the post reading is not an exact tie
+  analysis_unit: >-
+    block = run (model) x scenario_id x order_id x opening_id, for an initial prompt
+    that is not an exact tie. Its 6 rows are RS(m1), RS(m2), NS(m1), NS(m2), RP, NP,
+    where m1 and m2 are the group's two allocated markers, one per family.
+  cell_collapse:
+    RS: unweighted mean of the two allocated RS marker rows
+    NS: unweighted mean of the two allocated NS marker rows
+    RP: the one shared RP row, entered once
+    NP: the one shared NP row, entered once
+    duplicate_controls: never
+  independence_unit: decision_id
+  weighting: >-
+    contrasts are formed within each block; valid blocks are averaged with equal
+    weight within decision_id; each decision with at least one valid block has equal
+    weight in the final estimate (60 when all are valid). Every block has its three
+    openings, so the headline marginalises the openings equally; opening-specific,
+    order-specific and domain-specific estimates are always reported.
+  flip_cells: >-
+    flip cell value = mean of the cell's flip-defined rows (a styled cell may hold one
+    or two); a cell with no defined row is undefined; a block contrast is defined only
+    when every cell it uses is defined; exact post ties are never imputed.
+  contrasts:
+    NS_minus_NP: {RS: 0, RP: 0, NS: 1, NP: -1}
+    RS_minus_RP: {RS: 1, RP: -1, NS: 0, NP: 0}
+    RS_minus_NS: {RS: 1, RP: 0, NS: -1, NP: 0}
+    RP_minus_NP: {RS: 0, RP: 1, NS: 0, NP: -1}
+    interaction: {RS: 1, RP: -1, NS: -1, NP: 1}    # (RS - RP) - (NS - NP)
+  planned_simple_contrasts: [NS_minus_NP, RS_minus_RP, RS_minus_NS, RP_minus_NP]
+  marker_contrasts: >-
+    for marker m in a block that holds it: NS(m) - NP and RS(m) - RP with the block's
+    own shared control; RS(m) - NS(m) and the marker interaction are descriptive. The
+    shared control enters every marker contrast of its block; the decision cluster is
+    resampled jointly, so reuse never adds independent observations.
+  marker_family_summary: unweighted mean of the six marker estimates of the family
+  tie_policy:
+    initial_exact_tie: >-
+      no directional stance; kept in initial evidence and initial tables; its whole
+      branch set does not exist and it forms no block
+    post_exact_tie: kept in movement with m_after = 0; final_label and flip null; omitted only from flip
+    tie_breaking: none (no epsilon, precision, random, alphabetical or other rule)
+  common_valid_subset: >-
+    scenario_id x order_id initial prompts that are valid (not an exact tie) in both
+    models; used for paired Base-versus-Instruct differences
+  common_semantic_choice_subset: >-
+    initial prompts valid in the reference Base run and in every completed robustness
+    variant whose initial semantic choice (initial_option) is identical in all of them
+  model_comparison_language: >-
+    differences are associations between checkpoints and their prompt formats, never
+    causal effects of instruction tuning
+
+analyses:
+  core: "movement and flip x model x five contrasts, plus the four cell means"
+  by_model: full valid sample per model
+  by_domain: per model x domain (climate, energy, technology)
+  by_option_order: per model x order (o1, o2); order heterogeneity = estimate(o1) - estimate(o2)
+  by_opening: per model x opening; opening heterogeneity = each pairwise difference
+  by_marker_family: per model x family, unweighted mean of six marker estimates
+  by_individual_marker: per model x marker x contrast; marker x opening
+  margin:
+    descriptives: model-specific distribution of |m_before| over valid initials
+    quartiles: model-specific quartiles of |m_before| over valid initials (numpy.quantile, method linear); Q1 <= q25 < Q2 <= q50 < Q3 <= q75 < Q4
+    moderation: >-
+      per model and contrast, weighted least-squares slope of the block contrast on
+      |m_before| with weight 1/(valid blocks of the decision) times the bootstrap draw
+      count of the decision
+    near_tie_sensitivity: >-
+      exclude blocks whose initial |m_before| < 0.4054651081 (fixed a priori in the
+      design notes); labelled sensitivity; the full sample stays primary
+  model_common_subset: paired Base-versus-Instruct differences on the common valid subset
+  robustness: >-
+    each completed Base variant and the reference: initial token, first-listed and
+    semantic choice, exact ties, agreement with the reference semantic choice,
+    movement, flip, five contrasts, order stability, opening and marker estimates;
+    on each run's full valid sample and on the common semantic-choice subset, where
+    variant - reference differences compare identical stimuli
+
+inference:
+  bootstrap:
+    algorithm: stratified decision-cluster percentile bootstrap
+    replicates: 9999
+    seed: 20261005
+    bit_generator: numpy.random.PCG64
+    generator_call: >-
+      rng = numpy.random.Generator(PCG64(seed)); for each domain in sorted order
+      (climate, energy, technology): rng.integers(0, 20, size=(9999, 20)) indexes the
+      domain's sorted decision_ids; columns are concatenated in that domain order
+    stratification: domain, 20 draws per domain per replicate
+    joint_resampling: >-
+      a drawn decision carries both scenario variants, all openings, both orders, all
+      conditions and markers, and every run (Base, Instruct, robustness variants)
+    replicate_estimate: equal-weight mean over drawn decisions (with multiplicity) whose value is defined
+    interval: two-sided percentile, numpy.quantile method linear
+    confidence_level: 0.95
+    p_value: two-sided, min(1, 2 * min((#{b <= 0} + 1) / (B + 1), (#{b >= 0} + 1) / (B + 1)))
+    saved: draw matrix (decision_ids), summary, replicate estimates of every reported core statistic
+  multiplicity:
+    planned:
+      method: holm
+      family: the four planned simple contrasts
+      separately_by: [outcome, model]
+      models: [base, instruct]
+    interaction: reported separately, unadjusted
+    individual_markers:
+      method: holm
+      family: 48 = 12 markers x {NS_minus_NP, RS_minus_RP} x {base, instruct}, movement
+    exploratory: >-
+      domain, order, opening, family, marker x opening, margin, robustness and review
+      analyses are exploratory and unadjusted; an isolated uncorrected comparison is
+      never promoted
+
+review:
+  status: non-human assistant review; not human annotation, not a manipulation check, not reliability
+  candidate_rule: >-
+    an item is listed for later human or linguistic review if (a) an assistant
+    structural or linguistic observation applies to it, or (b) its estimate's sign
+    differs from its family average in some model x reason context. Listing never
+    authorises removal; an estimate's size, sign or significance alone is never a
+    reason to remove or revise a phrase.
+
+figures:
+  backend: Agg
+  formats: [svg, png]
+  dpi: 200
+  font: DejaVu Sans, 9 pt
+  size_inches: {single: [6.5, 4.0], wide: [9.0, 5.0], tall: [6.5, 8.5]}
+  palette: {base: "#0072B2", instruct: "#D55E00", ab_bfirst: "#009E73", minimal_ab: "#CC79A7", reference: "#0072B2", neutral: "#555555"}
+  rules: >-
+    every contrast plot has a visible zero line; intervals are drawn as lines with
+    point estimates; no significance is encoded by colour alone; svg.hashsalt fixed,
+    no creation date in SVG or PNG metadata
+
+outputs:
+  root: analysis/behavioral_v3_detailed
+  directories: [tables, figures, bootstrap, robustness, review]
+  serialization:
+    csv: UTF-8, "\n" line ends, header row, rows sorted by their key columns, floats as Python repr (shortest round-trip), missing as empty
+    json: sort_keys, indent 2, ensure_ascii false, no NaN (null)
+    gzip: mtime 0, no file name, compresslevel 9
+    volatile: execution timestamps and host details only in execution_environment.json, which is hashed but excluded from the determinism comparison
+  manifest: analysis_manifest.json hashes every output except itself; its own hash goes to analysis_manifest.sha256
+  overwrite: refused unless --overwrite and the existing directory's manifest names this analysis_version
+
+software_capture: [python, numpy, matplotlib, pyyaml, platform, analysis-environment requirements file hash]

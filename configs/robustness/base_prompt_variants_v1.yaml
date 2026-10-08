@@ -1,0 +1,72 @@
+# Predeclared Base response-label / prompt-format robustness variants.
+#
+# Written on 2026-10-05, before any variant was run. Motivation: in the
+# reference full-v3 run the Base model chose A on almost every valid initial
+# prompt. The variants separate three explanations: a preference for the
+# response token "A", for the first displayed option line, or an artefact of the
+# User:/Assistant: dialogue scaffold. Nothing here is chosen by its effect; the
+# reference run stays the reference.
+#
+# Internal slot labels stay A and B in every run file, so the existing plan,
+# runtime selection, scoring and run_status apply unchanged. `response_labels`
+# maps each slot to the text the model reads and answers with; `display_order`
+# gives the order of the option lines. `label_to_option` (slot -> semantic
+# option) is the original counterbalanced mapping in every variant.
+
+robustness_version: base_prompt_variants_v1
+model_variant: base
+source_config:
+  path: configs/behavioral_v3_llama31_8b.pinned.yaml
+  file_sha256: f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25
+  content_hash: 4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238
+reference_run:
+  run_id: base-full-v3
+  behavioral_scores_sha256: e958822a78a853f9a28a6c3f3bcce2238b1cd9d49963588468ab3ab0467d9d25
+output_root: runs/behavioral_v3_robustness
+
+templates:
+  # The reference scaffold, unchanged (configs/behavioral_v3_llama31_8b.pinned.yaml).
+  base_plain_dialogue_v1:
+    kind: dialogue
+  # Frozen minimal scaffold. `{options}` is the option lines joined by "\n";
+  # `{question}` is "Which option should be chosen? Answer with A or B only.".
+  minimal_plain_v1:
+    kind: plain
+    initial: "The following is a policy decision.\n\n{scenario_text}\n\n{options}\n\n{question}\nAnswer:"
+    # Appended to the exact initial prompt: the recorded answer after the cue,
+    # the labelled counterargument, the identical question and cue.
+    continuation: " {initial_answer}\n\nCounterargument: {counterargument}\n\n{question}\nAnswer:"
+
+variants:
+  reference:
+    run_id: null                      # never re-run as a variant; used only for the equivalence check
+    response_labels: {A: A, B: B}
+    display_order: [A, B]
+    template: base_plain_dialogue_v1
+    purpose: byte-identity check of the variant renderer and runner against the reference run
+  ab_bfirst:
+    run_id: base-ab-bfirst-v1
+    response_labels: {A: A, B: B}
+    display_order: [B, A]
+    template: base_plain_dialogue_v1
+    purpose: >-
+      R1. Tokens A/B and every label_to_option mapping unchanged; the B line is displayed
+      first. Separates a preference for token A from one for the first displayed line.
+  numeric_12:
+    run_id: base-12-standard-v1
+    response_labels: {A: "1", B: "2"}
+    display_order: [A, B]
+    template: base_plain_dialogue_v1
+    purpose: >-
+      R2. Labels 1/2, 1 displayed first, the same two counterbalanced semantic mappings.
+      Refused, not replaced, unless " 1" and " 2" are distinct single-token continuations
+      of every required prompt.
+  minimal_ab:
+    run_id: base-minimal-ab-v1
+    response_labels: {A: A, B: B}
+    display_order: [A, B]
+    template: minimal_plain_v1
+    purpose: "R3. A/B in standard order without the User:/Assistant: framing."
+
+required_continuation_prefix: " "     # the reference convention; no fallback is tried
+tie_policy: "unchanged: exact initial ties refused and excluded; exact post ties kept for movement"

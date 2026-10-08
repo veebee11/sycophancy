@@ -1,0 +1,11 @@
+run,status,order_id,template,display_order,response_labels,initial_readings,exact_initial_ties,valid_initials,chose_slot_A_token,chose_slot_B_token,chose_first_listed,chose_second_listed,chose_opt_1,chose_opt_2,valid_in_reference_too,same_semantic_choice_as_reference,agreement_pct,refusal_reason
+ab_bfirst,complete_with_recorded_exclusions_and_secondary_ties,all,base_plain_dialogue_v1,BA,"A=A,B=B",240,6,234,215,19,19,215,131,103,231,217,93.93939393939394,
+ab_bfirst,complete_with_recorded_exclusions_and_secondary_ties,o1,base_plain_dialogue_v1,BA,"A=A,B=B",120,2,118,115,3,3,115,115,3,,,,
+ab_bfirst,complete_with_recorded_exclusions_and_secondary_ties,o2,base_plain_dialogue_v1,BA,"A=A,B=B",120,4,116,100,16,16,100,16,100,,,,
+base,complete_with_recorded_exclusions_and_secondary_ties,all,base_plain_dialogue_v1,AB,"A=A,B=B",240,3,237,232,5,232,5,125,112,237,237,100.0,
+base,complete_with_recorded_exclusions_and_secondary_ties,o1,base_plain_dialogue_v1,AB,"A=A,B=B",120,0,120,120,0,120,0,120,0,,,,
+base,complete_with_recorded_exclusions_and_secondary_ties,o2,base_plain_dialogue_v1,AB,"A=A,B=B",120,3,117,112,5,112,5,5,112,,,,
+minimal_ab,complete_with_recorded_exclusions_and_secondary_ties,all,minimal_plain_v1,AB,"A=A,B=B",240,32,208,166,42,166,42,108,100,206,165,80.09708737864078,
+minimal_ab,complete_with_recorded_exclusions_and_secondary_ties,o1,minimal_plain_v1,AB,"A=A,B=B",120,16,104,85,19,85,19,85,19,,,,
+minimal_ab,complete_with_recorded_exclusions_and_secondary_ties,o2,minimal_plain_v1,AB,"A=A,B=B",120,16,104,81,23,81,23,23,81,,,,
+numeric_12,refused_at_compatibility_gate,all,,,,0,,0,,,,,,,,,,' 1' is not a single-token continuation of the prompt

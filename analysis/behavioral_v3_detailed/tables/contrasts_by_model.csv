@@ -1,0 +1,37 @@
+run,outcome,kind,quantity,estimate,ci_low,ci_high,p_boot,replicates_defined,n_blocks,n_movement_rows,n_flip_rows,n_decisions,n_initials,statistic_id,quantity_label
+base,flip,cell,NP,0.9638973063973064,0.9383661616161616,0.984682239057239,0.0002,9999,688,688,688,60,237,contrasts_by_model|run=base|outcome=flip|kind=cell|quantity=NP,
+base,flip,cell,NS,0.9822601010101011,0.9693181818181817,0.9930555555555556,0.0002,9999,708,1416,1392,60,237,contrasts_by_model|run=base|outcome=flip|kind=cell|quantity=NS,
+base,flip,cell,RP,0.9740909090909091,0.9544166666666666,0.9898989898989898,0.0002,9999,698,698,698,60,236,contrasts_by_model|run=base|outcome=flip|kind=cell|quantity=RP,
+base,flip,cell,RS,0.9781734006734006,0.960727904040404,0.9920833333333333,0.0002,9999,703,1406,1387,60,236,contrasts_by_model|run=base|outcome=flip|kind=cell|quantity=RS,
+base,flip,contrast,NS_minus_NP,0.013745791245791245,0.0018518518518518517,0.028114478114478113,0.0132,9999,685,2055,2041,60,237,contrasts_by_model|run=base|outcome=flip|kind=contrast|quantity=NS_minus_NP,NS − NP
+base,flip,contrast,RP_minus_NP,0.007348484848484848,-0.007004629629629624,0.022356902356902353,0.3268,9999,678,1356,1356,60,236,contrasts_by_model|run=base|outcome=flip|kind=contrast|quantity=RP_minus_NP,RP − NP
+base,flip,contrast,RS_minus_NS,-0.009617003367003366,-0.024558080808080807,0.0019570707070707067,0.1116,9999,702,2808,2767,60,236,contrasts_by_model|run=base|outcome=flip|kind=contrast|quantity=RS_minus_NS,RS − NS
+base,flip,contrast,RS_minus_RP,-0.0004629629629629627,-0.00925925925925926,0.008333333333333333,0.9726,9999,694,2082,2067,60,236,contrasts_by_model|run=base|outcome=flip|kind=contrast|quantity=RS_minus_RP,RS − RP
+base,flip,contrast,interaction,-0.011115319865319865,-0.02803472222222222,0.002920875420875421,0.1392,9999,673,4038,4015,60,235,contrasts_by_model|run=base|outcome=flip|kind=contrast|quantity=interaction,(RS − RP) − (NS − NP)
+base,movement,cell,NP,1.323813657407407,1.245745081018518,1.4049797453703705,0.0002,9999,711,711,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=cell|quantity=NP,
+base,movement,cell,NS,1.447236689814815,1.3726540798611113,1.5261299189814819,0.0002,9999,711,1422,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=cell|quantity=NS,
+base,movement,cell,RP,1.5966724537037036,1.5129904513888888,1.684700520833333,0.0002,9999,711,711,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=cell|quantity=RP,
+base,movement,cell,RS,1.584085648148148,1.5006278935185187,1.6706561053240734,0.0002,9999,711,1422,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=cell|quantity=RS,
+base,movement,contrast,NS_minus_NP,0.12342303240740742,0.10138816550925928,0.1469668692129629,0.0002,9999,711,2133,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=contrast|quantity=NS_minus_NP,NS − NP
+base,movement,contrast,RP_minus_NP,0.27285879629629634,0.23793402777777775,0.3083347800925926,0.0002,9999,711,1422,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=contrast|quantity=RP_minus_NP,RP − NP
+base,movement,contrast,RS_minus_NS,0.13684895833333333,0.1047106481481482,0.169603587962963,0.0002,9999,711,2844,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=contrast|quantity=RS_minus_NS,RS − NS
+base,movement,contrast,RS_minus_RP,-0.012586805555555554,-0.02565104166666667,0.0004361979166666355,0.059,9999,711,2133,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=contrast|quantity=RS_minus_RP,RS − RP
+base,movement,contrast,interaction,-0.13600983796296298,-0.15888310185185187,-0.11435112847222224,0.0002,9999,711,4266,0,60,237,contrasts_by_model|run=base|outcome=movement|kind=contrast|quantity=interaction,(RS − RP) − (NS − NP)
+instruct,flip,cell,NP,1.0,1.0,1.0,0.0002,9999,690,690,690,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=cell|quantity=NP,
+instruct,flip,cell,NS,1.0,1.0,1.0,0.0002,9999,690,1380,1380,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=cell|quantity=NS,
+instruct,flip,cell,RP,1.0,1.0,1.0,0.0002,9999,690,690,690,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=cell|quantity=RP,
+instruct,flip,cell,RS,1.0,1.0,1.0,0.0002,9999,690,1380,1380,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=cell|quantity=RS,
+instruct,flip,contrast,NS_minus_NP,0.0,0.0,0.0,1.0,9999,690,2070,2070,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=contrast|quantity=NS_minus_NP,NS − NP
+instruct,flip,contrast,RP_minus_NP,0.0,0.0,0.0,1.0,9999,690,1380,1380,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=contrast|quantity=RP_minus_NP,RP − NP
+instruct,flip,contrast,RS_minus_NS,0.0,0.0,0.0,1.0,9999,690,2760,2760,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=contrast|quantity=RS_minus_NS,RS − NS
+instruct,flip,contrast,RS_minus_RP,0.0,0.0,0.0,1.0,9999,690,2070,2070,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=contrast|quantity=RS_minus_RP,RS − RP
+instruct,flip,contrast,interaction,0.0,0.0,0.0,1.0,9999,690,4140,4140,60,230,contrasts_by_model|run=instruct|outcome=flip|kind=contrast|quantity=interaction,(RS − RP) − (NS − NP)
+instruct,movement,cell,NP,7.869155092592593,7.618949652777779,8.135619212962963,0.0002,9999,690,690,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=cell|quantity=NP,
+instruct,movement,cell,NS,7.1148437499999995,6.867385706018518,7.379762008101849,0.0002,9999,690,1380,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=cell|quantity=NS,
+instruct,movement,cell,RP,7.688483796296296,7.43113425925926,7.96214988425926,0.0002,9999,690,690,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=cell|quantity=RP,
+instruct,movement,cell,RS,7.668721064814816,7.424195601851856,7.931000434027777,0.0002,9999,690,1380,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=cell|quantity=RS,
+instruct,movement,contrast,NS_minus_NP,-0.7543113425925927,-0.8224392361111108,-0.6883955439814814,0.0002,9999,690,2070,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=contrast|quantity=NS_minus_NP,NS − NP
+instruct,movement,contrast,RP_minus_NP,-0.18067129629629627,-0.24942418981481482,-0.11252893518518521,0.0002,9999,690,1380,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=contrast|quantity=RP_minus_NP,RP − NP
+instruct,movement,contrast,RS_minus_NS,0.5538773148148148,0.4598083043981482,0.650206163194444,0.0002,9999,690,2760,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=contrast|quantity=RS_minus_NS,RS − NS
+instruct,movement,contrast,RS_minus_RP,-0.019762731481481485,-0.05276475694444444,0.014917534722222197,0.2594,9999,690,2070,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=contrast|quantity=RS_minus_RP,RS − RP
+instruct,movement,contrast,interaction,0.734548611111111,0.6630439814814815,0.8089431423611112,0.0002,9999,690,4140,0,60,230,contrasts_by_model|run=instruct|outcome=movement|kind=contrast|quantity=interaction,(RS − RP) − (NS − NP)

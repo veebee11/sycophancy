@@ -112,3 +112,6 @@ data/.DS_Store
 # Its allocation, approvals, correction ledgers, corpus and manifest stay tracked.
 data/full/run_v2/
 data/full/smoke*/
+
+# Isolated analysis environment (requirements/analysis.txt); never the GPU .venv
+.venv-analysis/

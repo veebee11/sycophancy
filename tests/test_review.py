@@ -190,13 +190,24 @@ def test_highlighting_is_reversible_and_never_alters_the_text(export, records):
                 assert strip_highlighting(highlight_markers(body, block.marker_string)) == body
 
 
-def test_the_canonical_text_appears_verbatim_in_a_fenced_block(export, records):
+def test_the_full_canonical_counterargument_appears_verbatim_in_a_fenced_block(
+        export, records):
     text = export.files["decisions/energy_fixture_001.md"]
     for record in records:
         for option in ("opt_1", "opt_2"):
             for condition in ("RS", "RP", "NS", "NP"):
                 body = record.counterarguments[option].cells[condition].body
-                assert f"```text\n{body}\n```" in text
+                full = f"{record.counterargument_opening} {body}"
+                assert f"```text\n{full}\n```" in text
+
+
+def test_every_displayed_counterargument_starts_with_the_fixed_opening(export, records):
+    text = export.files["decisions/energy_fixture_001.md"]
+    opening = records[0].counterargument_opening
+    before_appendix = text.split("## Appendix — canonical transcripts")[0]
+    fenced = before_appendix.split("```text\n")[1:]
+    assert len(fenced) == 16
+    assert all(block.startswith(opening + " ") for block in fenced)
 
 
 def test_highlighting_marks_the_marker_only_in_styled_cells(records):

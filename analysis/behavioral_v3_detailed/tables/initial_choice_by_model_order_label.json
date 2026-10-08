@@ -1,0 +1,242 @@
+[
+  {
+    "count": 115,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 95.83333333333333,
+    "response_label": "A",
+    "run": "ab_bfirst",
+    "slot": "A"
+  },
+  {
+    "count": 3,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 2.5,
+    "response_label": "B",
+    "run": "ab_bfirst",
+    "slot": "B"
+  },
+  {
+    "count": 2,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 1.6666666666666667,
+    "response_label": "tie",
+    "run": "ab_bfirst",
+    "slot": "tie"
+  },
+  {
+    "count": 100,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 83.33333333333333,
+    "response_label": "A",
+    "run": "ab_bfirst",
+    "slot": "A"
+  },
+  {
+    "count": 16,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 13.333333333333334,
+    "response_label": "B",
+    "run": "ab_bfirst",
+    "slot": "B"
+  },
+  {
+    "count": 4,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 3.3333333333333335,
+    "response_label": "tie",
+    "run": "ab_bfirst",
+    "slot": "tie"
+  },
+  {
+    "count": 120,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 100.0,
+    "response_label": "A",
+    "run": "base",
+    "slot": "A"
+  },
+  {
+    "count": 0,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 0.0,
+    "response_label": "B",
+    "run": "base",
+    "slot": "B"
+  },
+  {
+    "count": 0,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 0.0,
+    "response_label": "tie",
+    "run": "base",
+    "slot": "tie"
+  },
+  {
+    "count": 112,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 93.33333333333333,
+    "response_label": "A",
+    "run": "base",
+    "slot": "A"
+  },
+  {
+    "count": 5,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 4.166666666666667,
+    "response_label": "B",
+    "run": "base",
+    "slot": "B"
+  },
+  {
+    "count": 3,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 2.5,
+    "response_label": "tie",
+    "run": "base",
+    "slot": "tie"
+  },
+  {
+    "count": 75,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 62.5,
+    "response_label": "A",
+    "run": "instruct",
+    "slot": "A"
+  },
+  {
+    "count": 39,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 32.5,
+    "response_label": "B",
+    "run": "instruct",
+    "slot": "B"
+  },
+  {
+    "count": 6,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 5.0,
+    "response_label": "tie",
+    "run": "instruct",
+    "slot": "tie"
+  },
+  {
+    "count": 57,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 47.5,
+    "response_label": "A",
+    "run": "instruct",
+    "slot": "A"
+  },
+  {
+    "count": 59,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 49.166666666666664,
+    "response_label": "B",
+    "run": "instruct",
+    "slot": "B"
+  },
+  {
+    "count": 4,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 3.3333333333333335,
+    "response_label": "tie",
+    "run": "instruct",
+    "slot": "tie"
+  },
+  {
+    "count": 85,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 70.83333333333333,
+    "response_label": "A",
+    "run": "minimal_ab",
+    "slot": "A"
+  },
+  {
+    "count": 19,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 15.833333333333334,
+    "response_label": "B",
+    "run": "minimal_ab",
+    "slot": "B"
+  },
+  {
+    "count": 16,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o1",
+    "pct": 13.333333333333334,
+    "response_label": "tie",
+    "run": "minimal_ab",
+    "slot": "tie"
+  },
+  {
+    "count": 81,
+    "displayed_position": 1,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 67.5,
+    "response_label": "A",
+    "run": "minimal_ab",
+    "slot": "A"
+  },
+  {
+    "count": 23,
+    "displayed_position": 2,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 19.166666666666668,
+    "response_label": "B",
+    "run": "minimal_ab",
+    "slot": "B"
+  },
+  {
+    "count": 16,
+    "displayed_position": null,
+    "initial_readings": 120,
+    "order_id": "o2",
+    "pct": 13.333333333333334,
+    "response_label": "tie",
+    "run": "minimal_ab",
+    "slot": "tie"
+  }
+]

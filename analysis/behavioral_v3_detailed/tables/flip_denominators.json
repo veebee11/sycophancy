@@ -1,0 +1,362 @@
+[
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 62,
+    "flip_defined_rows": 640,
+    "level": "condition_rows",
+    "movement_rows": 702,
+    "quantity": "NP",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 111,
+    "flip_defined_rows": 1293,
+    "level": "condition_rows",
+    "movement_rows": 1404,
+    "quantity": "NS",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": 702,
+    "blocks_flip_defined": 630,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "NS_minus_NP",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 34,
+    "flip_defined_rows": 668,
+    "level": "condition_rows",
+    "movement_rows": 702,
+    "quantity": "RP",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": 702,
+    "blocks_flip_defined": 618,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RP_minus_NP",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 81,
+    "flip_defined_rows": 1323,
+    "level": "condition_rows",
+    "movement_rows": 1404,
+    "quantity": "RS",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": 702,
+    "blocks_flip_defined": 671,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_NS",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": 702,
+    "blocks_flip_defined": 659,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_RP",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": 702,
+    "blocks_flip_defined": 601,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "interaction",
+    "run": "ab_bfirst"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 23,
+    "flip_defined_rows": 688,
+    "level": "condition_rows",
+    "movement_rows": 711,
+    "quantity": "NP",
+    "run": "base"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 30,
+    "flip_defined_rows": 1392,
+    "level": "condition_rows",
+    "movement_rows": 1422,
+    "quantity": "NS",
+    "run": "base"
+  },
+  {
+    "blocks": 711,
+    "blocks_flip_defined": 685,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "NS_minus_NP",
+    "run": "base"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 13,
+    "flip_defined_rows": 698,
+    "level": "condition_rows",
+    "movement_rows": 711,
+    "quantity": "RP",
+    "run": "base"
+  },
+  {
+    "blocks": 711,
+    "blocks_flip_defined": 678,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RP_minus_NP",
+    "run": "base"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 35,
+    "flip_defined_rows": 1387,
+    "level": "condition_rows",
+    "movement_rows": 1422,
+    "quantity": "RS",
+    "run": "base"
+  },
+  {
+    "blocks": 711,
+    "blocks_flip_defined": 702,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_NS",
+    "run": "base"
+  },
+  {
+    "blocks": 711,
+    "blocks_flip_defined": 694,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_RP",
+    "run": "base"
+  },
+  {
+    "blocks": 711,
+    "blocks_flip_defined": 673,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "interaction",
+    "run": "base"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 0,
+    "flip_defined_rows": 690,
+    "level": "condition_rows",
+    "movement_rows": 690,
+    "quantity": "NP",
+    "run": "instruct"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 0,
+    "flip_defined_rows": 1380,
+    "level": "condition_rows",
+    "movement_rows": 1380,
+    "quantity": "NS",
+    "run": "instruct"
+  },
+  {
+    "blocks": 690,
+    "blocks_flip_defined": 690,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "NS_minus_NP",
+    "run": "instruct"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 0,
+    "flip_defined_rows": 690,
+    "level": "condition_rows",
+    "movement_rows": 690,
+    "quantity": "RP",
+    "run": "instruct"
+  },
+  {
+    "blocks": 690,
+    "blocks_flip_defined": 690,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RP_minus_NP",
+    "run": "instruct"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 0,
+    "flip_defined_rows": 1380,
+    "level": "condition_rows",
+    "movement_rows": 1380,
+    "quantity": "RS",
+    "run": "instruct"
+  },
+  {
+    "blocks": 690,
+    "blocks_flip_defined": 690,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_NS",
+    "run": "instruct"
+  },
+  {
+    "blocks": 690,
+    "blocks_flip_defined": 690,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_RP",
+    "run": "instruct"
+  },
+  {
+    "blocks": 690,
+    "blocks_flip_defined": 690,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "interaction",
+    "run": "instruct"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 70,
+    "flip_defined_rows": 554,
+    "level": "condition_rows",
+    "movement_rows": 624,
+    "quantity": "NP",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 85,
+    "flip_defined_rows": 1163,
+    "level": "condition_rows",
+    "movement_rows": 1248,
+    "quantity": "NS",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": 624,
+    "blocks_flip_defined": 547,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "NS_minus_NP",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 23,
+    "flip_defined_rows": 601,
+    "level": "condition_rows",
+    "movement_rows": 624,
+    "quantity": "RP",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": 624,
+    "blocks_flip_defined": 534,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RP_minus_NP",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": null,
+    "blocks_flip_defined": null,
+    "exact_post_ties": 69,
+    "flip_defined_rows": 1179,
+    "level": "condition_rows",
+    "movement_rows": 1248,
+    "quantity": "RS",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": 624,
+    "blocks_flip_defined": 609,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_NS",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": 624,
+    "blocks_flip_defined": 596,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "RS_minus_RP",
+    "run": "minimal_ab"
+  },
+  {
+    "blocks": 624,
+    "blocks_flip_defined": 523,
+    "exact_post_ties": null,
+    "flip_defined_rows": null,
+    "level": "block_contrast",
+    "movement_rows": null,
+    "quantity": "interaction",
+    "run": "minimal_ab"
+  }
+]

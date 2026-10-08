@@ -1,0 +1,189 @@
+{
+  "archive": {
+    "mac": "runs/archive/behavioral_v3_robustness_evidence_v1",
+    "server": "/data/vidhi/archive/reasonstyle/behavioral_v3_robustness_evidence_v1",
+    "sha256sums_sha256": "c890f749cb98d433059b1291a203954183c9085f00096f4447df23d16f4d7d01"
+  },
+  "completed": {
+    "ab_bfirst": {
+      "file_sha256": {
+        "COMPLETE": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1",
+        "RUN_METADATA.json": "994f428f2a5eb54abbe2bee2ca68c7e586e2dc4fb161c33713344b50a6269a77",
+        "behavioral_scores.jsonl": "4219e6fc7144a45808dae737fe213487c28ad328160f57238a6c7b5bb05bc76f",
+        "initial_exclusions.jsonl": "d477d90a720a6fb707cf60ad23312e5e018bf7e8f1a12c1ab8021bd37eace1d6",
+        "initial_scores.jsonl": "1193d47ad5733753ac4da9d7468f56a60b239e4ae3d72742c2e25e82720b98f0",
+        "post_ties.jsonl": "b32ef7b7921b1493c7a2e1c581e9b8a3d0d8cfb66029bfe3cc86a63e7e568c62"
+      },
+      "prompt_digest": "9301af728163d0aaf9ad4ce3b38322aa2ee1ee58609c56592876f97a91aed4de",
+      "prompt_variant": {
+        "display_order": [
+          "B",
+          "A"
+        ],
+        "name": "ab_bfirst",
+        "response_labels": {
+          "A": "A",
+          "B": "B"
+        },
+        "run_id": "base-ab-bfirst-v1",
+        "template": {
+          "kind": "dialogue"
+        },
+        "template_name": "base_plain_dialogue_v1"
+      },
+      "run_id": "base-ab-bfirst-v1",
+      "status": "complete_with_recorded_exclusions_and_secondary_ties",
+      "variant_definition_hash": "ebb8fd482f69e73bd98855fa7a70d3c10fc0463141d12cbbc7dc65da0c959db3"
+    },
+    "minimal_ab": {
+      "file_sha256": {
+        "COMPLETE": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1",
+        "RUN_METADATA.json": "255f4beb17b2582d2bab3659d27d7c653af9497fb43c008c35b540c3297d2712",
+        "behavioral_scores.jsonl": "023ace2a3db6589219906c30469dd8e4d0ecb461bb1de528809ff96f9526e749",
+        "initial_exclusions.jsonl": "417d1f493658de0233d7c804b2af8f3803216f6268b388928811f2d64e761048",
+        "initial_scores.jsonl": "3276a6b36deb7862eefa9a58feff36e0bfa4f2420bdadc22c592f6467b06e2f4",
+        "post_ties.jsonl": "846aef33852091aedffb9fb5550805a1aa41870f522c50e08c5b9bec1293aeb8"
+      },
+      "prompt_digest": "47771f9b63e4166ca4683eb0e7eeb3aff0cd4f4b469a68af1106b96aed5d2d25",
+      "prompt_variant": {
+        "display_order": [
+          "A",
+          "B"
+        ],
+        "name": "minimal_ab",
+        "response_labels": {
+          "A": "A",
+          "B": "B"
+        },
+        "run_id": "base-minimal-ab-v1",
+        "template": {
+          "continuation": " {initial_answer}\n\nCounterargument: {counterargument}\n\n{question}\nAnswer:",
+          "initial": "The following is a policy decision.\n\n{scenario_text}\n\n{options}\n\n{question}\nAnswer:",
+          "kind": "plain"
+        },
+        "template_name": "minimal_plain_v1"
+      },
+      "run_id": "base-minimal-ab-v1",
+      "status": "complete_with_recorded_exclusions_and_secondary_ties",
+      "variant_definition_hash": "77e35ff68874d8685525400964a9a176712cad785e19288181c24160efa58e07"
+    }
+  },
+  "reference_check": {
+    "answer_continuation": {
+      "A": " A",
+      "B": " B"
+    },
+    "answer_token_ids": {
+      "A": 362,
+      "B": 426
+    },
+    "api_calls": false,
+    "batch_size": 8,
+    "behavioral_config_content_hash": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "behavioral_config_file_sha256": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "behavioral_version": "full_v3_llama31_8b_behavioral_v1",
+    "bitwise_mismatches": [],
+    "cublas_workspace_config": {
+      "deterministic_algorithms": true,
+      "preexisting_value": null,
+      "required": ":4096:8",
+      "set_by_runner": true,
+      "value": ":4096:8",
+      "variable": "CUBLAS_WORKSPACE_CONFIG"
+    },
+    "cuda_visible_devices": "0",
+    "deterministic_algorithms": true,
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "files": {
+      "initial_scores.jsonl": "5b87bc8ad97138e109ed847d6b926ec9c69e206473dbd73186bdab39230124cf"
+    },
+    "free_form_generation": false,
+    "gpu": "NVIDIA RTX A6000",
+    "initials_compared": 240,
+    "libraries": {
+      "huggingface-hub": "0.36.2",
+      "tokenizers": "0.21.4",
+      "torch": "2.6.0+cu118",
+      "transformers": "4.51.3",
+      "vllm": "0.8.5.post1+cu118"
+    },
+    "mode": "full",
+    "network_access": false,
+    "phase": "reference-check",
+    "platform": "Linux-5.15.0-88-generic-x86_64-with-glibc2.35",
+    "prompt_digest": "44dd761d62756c5a82b2a26ee26ec2b851cb1af99a181cc01c6f799c4760a542",
+    "prompt_variant": {
+      "display_order": [
+        "A",
+        "B"
+      ],
+      "name": "reference",
+      "response_labels": {
+        "A": "A",
+        "B": "B"
+      },
+      "run_id": null,
+      "template": {
+        "kind": "dialogue"
+      },
+      "template_name": "base_plain_dialogue_v1"
+    },
+    "reference_initial_scores_sha256": "0fe4bcc6126c83300aa5f65d31cf2c3298e29ee9284f9dc1b2a88a5c7df3c4b9",
+    "reference_run": "runs/behavioral_v3/base-full-v3",
+    "repo_id": "meta-llama/Llama-3.1-8B",
+    "revision": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "run_id": "base-reference-check-v1",
+    "seed": 20261002,
+    "slot_semantics": "A/B in every file are slots; the model read and answered with prompt_variant.response_labels[slot]",
+    "status": "complete",
+    "stimuli_sha256": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+    "variant": "base",
+    "variant_config_file_sha256": "0141cf743cd2f4ae02dad63b2659dbfce9135609e6406e3a72ca23cbcbb0e81e",
+    "variant_definition_hash": "52b39a42ae8736bff8c39960782ce26b036e82d3539c96068161379029c2d841"
+  },
+  "refused": {
+    "numeric_12": {
+      "compatibility_status": "refused",
+      "diagnostic": {
+        "decision": "R2 refused under its predeclared rule; no replacement label or whitespace convention was tried",
+        "encodings": {
+          "Answer:": [
+            16533,
+            25
+          ],
+          "Answer: 1": [
+            16533,
+            25,
+            220,
+            16
+          ],
+          "Answer: 2": [
+            16533,
+            25,
+            220,
+            17
+          ],
+          "Answer: A": [
+            16533,
+            25,
+            362
+          ]
+        },
+        "model_forward_pass": false,
+        "network_access": false,
+        "observation": "Llama-3.1 tokenizer encodes the continuation \" 1\" after \"Answer:\" as two tokens: 220 (\" \") and 16 (\"1\"); \" 2\" as 220 and 17. \" A\" is the single token 362.",
+        "tokenizer_revision": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+        "variant": "numeric_12"
+      },
+      "model_forward_pass": false,
+      "network_access": false,
+      "path": "runs/behavioral_v3_robustness/compatibility/numeric_12.refused.json",
+      "reason": "' 1' is not a single-token continuation of the prompt",
+      "revision": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+      "sha256": "afd6527a18b7c44161dd6a4e7270e0b0965e23a9d8b99a8bf9ec42f9dca1c94f",
+      "variant": "numeric_12",
+      "variant_definition_hash": "44c435b74341554a844ae0cd293e6638625fb81422ebb671c3e97d30fc1dd05d"
+    }
+  }
+}

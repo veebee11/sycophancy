@@ -1,0 +1,1069 @@
+{
+  "analysis_script_sha256": "1cfb9e6209886ac1ad400bae9126e83098119d53cfab07231724dff37b0ebf9e",
+  "analysis_version": "behavioral_v3_detailed_v1",
+  "bootstrap": {
+    "algorithm": "stratified decision-cluster percentile bootstrap",
+    "bit_generator": "numpy.random.PCG64",
+    "confidence_level": 0.95,
+    "generator_call": "rng = numpy.random.Generator(PCG64(seed)); for each domain in sorted order (climate, energy, technology): rng.integers(0, 20, size=(9999, 20)) indexes the domain's sorted decision_ids; columns are concatenated in that domain order",
+    "interval": "two-sided percentile, numpy.quantile method linear",
+    "joint_resampling": "a drawn decision carries both scenario variants, all openings, both orders, all conditions and markers, and every run (Base, Instruct, robustness variants)",
+    "numpy_version": "2.2.6",
+    "p_value": "two-sided, min(1, 2 * min((#{b <= 0} + 1) / (B + 1), (#{b >= 0} + 1) / (B + 1)))",
+    "replicate_estimate": "equal-weight mean over drawn decisions (with multiplicity) whose value is defined",
+    "replicates": 9999,
+    "saved": "draw matrix (decision_ids), summary, replicate estimates of every reported core statistic",
+    "seed": 20261005,
+    "stratification": "domain, 20 draws per domain per replicate"
+  },
+  "code_sha256": {
+    "requirements/analysis.txt": "993bfce27ff31f578829cee1f7288a1e24456822bf1d341f782e5cf82b8722cf",
+    "scripts/analyze_behavioral_v3.py": "1cfb9e6209886ac1ad400bae9126e83098119d53cfab07231724dff37b0ebf9e",
+    "src/reasonstyle/behavioral/analysis/__init__.py": "db777a399a4132df6e9686900bf49d17f4d5222f2e4cc9b9305fef2bdfbef5fa",
+    "src/reasonstyle/behavioral/analysis/design.py": "35823cfa7cd5a9282bf0865fc418854df36c80738218d505f52ac9f322f8c206",
+    "src/reasonstyle/behavioral/analysis/estimate.py": "1b106e6fc8af57a167ddd8ed814250444a8b09a58757a570b10bc76089df8e36",
+    "src/reasonstyle/behavioral/analysis/figures.py": "40eb1f995132adceea3f37e21a2949f807f178c4f96dea1262077b7ae3b33975",
+    "src/reasonstyle/behavioral/analysis/report.py": "b4c157b2afaa53d7d3a1bafd5694e4a3eba9a9d98ff8b00ec38a17af5067517c",
+    "src/reasonstyle/behavioral/analysis/review.py": "74fc78946de93691a31102baff9a7db25b3a56a5f72d049ece2a7798a78cce08",
+    "src/reasonstyle/behavioral/analysis/tables.py": "34720fbb074018d448b0add670124b0acd1be7c39dfd964b248f50b5da64ec92",
+    "src/reasonstyle/behavioral/analysis/validate.py": "84564053a6852af386266d26ef60bedc59c80beddef927f95c229d9f18279eca",
+    "src/reasonstyle/behavioral/analysis/write.py": "9ae2d63c189a5f5c314cf771cca0c2dd46013d943611d71f617750ea66724fa7",
+    "src/reasonstyle/behavioral/evidence.py": "3f77997b8f4cae152e568402a5203b3979daf8ae70b997c28e13ea832c71033b",
+    "src/reasonstyle/behavioral/plan.py": "1171ab86f04f02e8f65b1f26797443c6f4a62573d9ce86e75c04e73d716ea594",
+    "src/reasonstyle/behavioral/robustness.py": "98ddfcac6b7573c7962e2eeb0b4a5baf85f238cad7160ac9617967c3bce78fd5",
+    "src/reasonstyle/behavioral/runtime.py": "d4e2e3843f33c6a569363fa54a482eeaa0b76e5451305df96acce21111f7c04b",
+    "src/reasonstyle/behavioral/score.py": "c1b7b3b2588629d1a42304636e808b51aaec4e999da9bb6eb65ac115e8eaebb0"
+  },
+  "completeness": {
+    "expected_files_present": true,
+    "figures": 14,
+    "missing": [],
+    "tables": 29
+  },
+  "evidence_checks_passed": 143,
+  "human_annotation": false,
+  "input_paths": {
+    "ab_bfirst": "runs/behavioral_v3_robustness/base-ab-bfirst-v1",
+    "base": "runs/behavioral_v3/base-full-v3",
+    "instruct": "runs/behavioral_v3/instruct-full-v3",
+    "minimal_ab": "runs/behavioral_v3_robustness/base-minimal-ab-v1"
+  },
+  "inputs": {
+    "ab_bfirst/COMPLETE": {
+      "path": "ab_bfirst/COMPLETE",
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "ab_bfirst/RUN_METADATA.json": {
+      "path": "ab_bfirst/RUN_METADATA.json",
+      "sha256": "994f428f2a5eb54abbe2bee2ca68c7e586e2dc4fb161c33713344b50a6269a77"
+    },
+    "ab_bfirst/behavioral_scores.jsonl": {
+      "path": "ab_bfirst/behavioral_scores.jsonl",
+      "sha256": "4219e6fc7144a45808dae737fe213487c28ad328160f57238a6c7b5bb05bc76f"
+    },
+    "ab_bfirst/initial_exclusions.jsonl": {
+      "path": "ab_bfirst/initial_exclusions.jsonl",
+      "sha256": "d477d90a720a6fb707cf60ad23312e5e018bf7e8f1a12c1ab8021bd37eace1d6"
+    },
+    "ab_bfirst/initial_scores.jsonl": {
+      "path": "ab_bfirst/initial_scores.jsonl",
+      "sha256": "1193d47ad5733753ac4da9d7468f56a60b239e4ae3d72742c2e25e82720b98f0"
+    },
+    "ab_bfirst/post_ties.jsonl": {
+      "path": "ab_bfirst/post_ties.jsonl",
+      "sha256": "b32ef7b7921b1493c7a2e1c581e9b8a3d0d8cfb66029bfe3cc86a63e7e568c62"
+    },
+    "ab_bfirst/variant_config": {
+      "path": "ab_bfirst/variant_config",
+      "sha256": "3c92ba2ed3722286df093d66d129ff8b71da2c32ee540e6e99c53f527a3d36f8"
+    },
+    "analysis_spec": {
+      "path": "analysis_spec",
+      "sha256": "a6ccad93d871d130bb74183af360033c4d89778d3b8721fa68f32ee4dbb75dd8"
+    },
+    "base/COMPLETE": {
+      "path": "base/COMPLETE",
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "base/RUN_METADATA.json": {
+      "path": "base/RUN_METADATA.json",
+      "sha256": "9bd395646329c6fe2c56f9155b780b4602e9f46e35717a2f1f0dc93ba06bd461"
+    },
+    "base/behavioral_scores.jsonl": {
+      "path": "base/behavioral_scores.jsonl",
+      "sha256": "e958822a78a853f9a28a6c3f3bcce2238b1cd9d49963588468ab3ab0467d9d25"
+    },
+    "base/initial_exclusions.jsonl": {
+      "path": "base/initial_exclusions.jsonl",
+      "sha256": "aba83d87fee725230760a3724defbe8faa0af3b3a7b6d3093f54f580236c998d"
+    },
+    "base/initial_scores.jsonl": {
+      "path": "base/initial_scores.jsonl",
+      "sha256": "0fe4bcc6126c83300aa5f65d31cf2c3298e29ee9284f9dc1b2a88a5c7df3c4b9"
+    },
+    "base/post_ties.jsonl": {
+      "path": "base/post_ties.jsonl",
+      "sha256": "3799fc23d4fc12c6ea71a905167b38849b6248197a8228c7379017af734c0261"
+    },
+    "behavioral_config": {
+      "path": "behavioral_config",
+      "sha256": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25"
+    },
+    "dataset_manifest": {
+      "path": "dataset_manifest",
+      "sha256": "f5daadb61ba53aee0b108cba5e30c5ec96878e8cec4f75060d9bdaed8b2a8da4"
+    },
+    "instruct/COMPLETE": {
+      "path": "instruct/COMPLETE",
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "instruct/RUN_METADATA.json": {
+      "path": "instruct/RUN_METADATA.json",
+      "sha256": "de5c88e628836f9b0d60fd36065677d69791ceb181b875a617f3e7e9f6923548"
+    },
+    "instruct/behavioral_scores.jsonl": {
+      "path": "instruct/behavioral_scores.jsonl",
+      "sha256": "0db96e735637bb5eb47a34eec203e6a3ae5f7e4885e5f9d4190b5e78183c2398"
+    },
+    "instruct/initial_exclusions.jsonl": {
+      "path": "instruct/initial_exclusions.jsonl",
+      "sha256": "a07217ba66458af09e21ec9e0db704ce1bae1de4633ba1d141b60493b020106c"
+    },
+    "instruct/initial_scores.jsonl": {
+      "path": "instruct/initial_scores.jsonl",
+      "sha256": "3d23a886f9251025fd543975b8d0e13b3d6562e6ba3d8d17b02080470fc7ad24"
+    },
+    "instruct/post_ties.jsonl": {
+      "path": "instruct/post_ties.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "marker_config": {
+      "path": "marker_config",
+      "sha256": "50b0f41bbb5dd93f4043def61543217d4cf6243bb38506e1d86948375c1c36f7"
+    },
+    "minimal_ab/COMPLETE": {
+      "path": "minimal_ab/COMPLETE",
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "minimal_ab/RUN_METADATA.json": {
+      "path": "minimal_ab/RUN_METADATA.json",
+      "sha256": "255f4beb17b2582d2bab3659d27d7c653af9497fb43c008c35b540c3297d2712"
+    },
+    "minimal_ab/behavioral_scores.jsonl": {
+      "path": "minimal_ab/behavioral_scores.jsonl",
+      "sha256": "023ace2a3db6589219906c30469dd8e4d0ecb461bb1de528809ff96f9526e749"
+    },
+    "minimal_ab/initial_exclusions.jsonl": {
+      "path": "minimal_ab/initial_exclusions.jsonl",
+      "sha256": "417d1f493658de0233d7c804b2af8f3803216f6268b388928811f2d64e761048"
+    },
+    "minimal_ab/initial_scores.jsonl": {
+      "path": "minimal_ab/initial_scores.jsonl",
+      "sha256": "3276a6b36deb7862eefa9a58feff36e0bfa4f2420bdadc22c592f6467b06e2f4"
+    },
+    "minimal_ab/post_ties.jsonl": {
+      "path": "minimal_ab/post_ties.jsonl",
+      "sha256": "846aef33852091aedffb9fb5550805a1aa41870f522c50e08c5b9bec1293aeb8"
+    },
+    "minimal_ab/variant_config": {
+      "path": "minimal_ab/variant_config",
+      "sha256": "e2201430b35ca68dc6fe3668c05bcfc27ef02901443313ec6e68c056c2030246"
+    },
+    "numeric_12/diagnostic": {
+      "path": "numeric_12/diagnostic",
+      "sha256": "b10731bcf2fa2a1655401bc7fd5cf266cc74e297cc48c6aba4899e0c54b36f9f"
+    },
+    "numeric_12/refusal": {
+      "path": "numeric_12/refusal",
+      "sha256": "afd6527a18b7c44161dd6a4e7270e0b0965e23a9d8b99a8bf9ec42f9dca1c94f"
+    },
+    "robustness_variants_file": {
+      "path": "robustness_variants_file",
+      "sha256": "dfc0a9a6dad99a73f87f54b1939e3e952e4482230b30586a5a569d4dc0fef2fa"
+    },
+    "stimuli": {
+      "path": "stimuli",
+      "sha256": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c"
+    }
+  },
+  "mechanistic_analysis": false,
+  "model_revisions": {
+    "ab_bfirst": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "base": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+    "instruct": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "minimal_ab": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b"
+  },
+  "model_run": false,
+  "outputs": {
+    "README.md": {
+      "bytes": 1187,
+      "rows": null,
+      "sha256": "b1923dd5509d1ed98899bd13809d9d01a299ae65d09ab1f06a2b5a662d6f797c"
+    },
+    "analysis_spec.yaml": {
+      "bytes": 13881,
+      "rows": null,
+      "sha256": "a6ccad93d871d130bb74183af360033c4d89778d3b8721fa68f32ee4dbb75dd8"
+    },
+    "bootstrap/draws.csv.gz": {
+      "bytes": 681816,
+      "rows": 9999,
+      "sha256": "717242bc6554347307025f84c6bf3351a3305835f67d9a3e580a48790370ad00"
+    },
+    "bootstrap/replicate_estimates.csv.gz": {
+      "bytes": 13328743,
+      "rows": 9999,
+      "sha256": "b09010555d18480f605fca0f94c8750c97b2dec9de813a3125fce7fbdbea2e7e"
+    },
+    "bootstrap/settings.json": {
+      "bytes": 3488,
+      "rows": null,
+      "sha256": "b061e025134ac28a63559004fc5df34b5d1ad9da29ce477981449bb22e2f7027"
+    },
+    "bootstrap/summary.csv": {
+      "bytes": 386298,
+      "rows": 1337,
+      "sha256": "425ca8d9192c4a110f8822570d10de824b5fc73cbfb58d6c1b096267e4c21543"
+    },
+    "execution_environment.json": {
+      "bytes": 534,
+      "rows": null,
+      "sha256": "2c122c63604d3d9c7592d04f8ba622664513bd432bbc8fcf147a90591588f2cf"
+    },
+    "figures/fig01_condition_movement_means.png": {
+      "bytes": 51977,
+      "rows": null,
+      "sha256": "79663eeb82fa3d8a9433570248f00224750ffddab02a8c1836c4a5fb503eb436"
+    },
+    "figures/fig01_condition_movement_means.svg": {
+      "bytes": 49142,
+      "rows": null,
+      "sha256": "98f095a4936d97825a6af7b3b8318bd5eced734ea47155620b87f30916e1d720"
+    },
+    "figures/fig02_core_contrasts_forest.png": {
+      "bytes": 76019,
+      "rows": null,
+      "sha256": "46ac080b6a1a51893c302a5786b0e960bcbc362e3b0f20002a56ba8e48ea34fe"
+    },
+    "figures/fig02_core_contrasts_forest.svg": {
+      "bytes": 56670,
+      "rows": null,
+      "sha256": "0d1979b34cc3020f5139736336a3dbbc1a7ffc1ed016492221a85ed72b7b9907"
+    },
+    "figures/fig03_flip_rates_ceiling.png": {
+      "bytes": 59714,
+      "rows": null,
+      "sha256": "cd7585f9111e8124a76fafd9f50ddff0fc3c1629278e2d00a498f2ad5fb210f2"
+    },
+    "figures/fig03_flip_rates_ceiling.svg": {
+      "bytes": 52844,
+      "rows": null,
+      "sha256": "7e4c0fe6de9a27912a4bd41cb3efc4dbe6eca9955f1dc2586ba465268dac9438"
+    },
+    "figures/fig04_contrasts_by_option_order.png": {
+      "bytes": 80566,
+      "rows": null,
+      "sha256": "989fca2a42e3d60d8e3753ca13b453cf77bb07c50a0d16edc0bad2fbd339ad16"
+    },
+    "figures/fig04_contrasts_by_option_order.svg": {
+      "bytes": 63028,
+      "rows": null,
+      "sha256": "684e4b1ba43ceded82d2925e77be92fd1d42a14c27c42e308911c179be841525"
+    },
+    "figures/fig05_order_heterogeneity.png": {
+      "bytes": 76878,
+      "rows": null,
+      "sha256": "e11da82d24c718f2103c1da5b766f1ce80b4c6562b92e00a75bb4d1d7bec97ec"
+    },
+    "figures/fig05_order_heterogeneity.svg": {
+      "bytes": 55693,
+      "rows": null,
+      "sha256": "9fa45fcade2dec5d1d56fd9da0c607d65c2e68c75a4296c6e017f2dfacf8b0c7"
+    },
+    "figures/fig06_contrasts_by_domain.png": {
+      "bytes": 119935,
+      "rows": null,
+      "sha256": "47a0b7dac91c35464015be420d8dd6920b571215d0be38f0943e0891d83d05c3"
+    },
+    "figures/fig06_contrasts_by_domain.svg": {
+      "bytes": 79797,
+      "rows": null,
+      "sha256": "ff91e64a5bbbe260d68ce7b4c0e258407a0a0fd0800cf7ff465a686c7e171d79"
+    },
+    "figures/fig07_contrasts_by_opening.png": {
+      "bytes": 162426,
+      "rows": null,
+      "sha256": "44e764d747ea61d85e1826fb11c63c4b1780c69435d41797470f34aa81c934f5"
+    },
+    "figures/fig07_contrasts_by_opening.svg": {
+      "bytes": 95170,
+      "rows": null,
+      "sha256": "ca33cfe857f4c1657455f69fd202849a9cbd739e3ce3da63a33cd2787247ce18"
+    },
+    "figures/fig08_marker_forest.png": {
+      "bytes": 191842,
+      "rows": null,
+      "sha256": "c9e56c406ab1642d2fcfbcf5ce35638ffb026ea0349af2e8164accf25e384eee"
+    },
+    "figures/fig08_marker_forest.svg": {
+      "bytes": 123516,
+      "rows": null,
+      "sha256": "7c90ea17c09ebae855536d2ce3157509c32674847c94b2cac8ab7e34896ee53f"
+    },
+    "figures/fig09_marker_family.png": {
+      "bytes": 116548,
+      "rows": null,
+      "sha256": "df544879fe26b44064e26504639a3a7b8037efba6678388da518b4c6f598cdc0"
+    },
+    "figures/fig09_marker_family.svg": {
+      "bytes": 95902,
+      "rows": null,
+      "sha256": "d8c8ea1d75ee4d3d2615a902d93b7f3648ba71777c25c80cda3a25883da9355d"
+    },
+    "figures/fig10_marker_opening_heatmaps.png": {
+      "bytes": 282353,
+      "rows": null,
+      "sha256": "30b253b30cebc94d24e458a3de95fde1cd650d467e6de5914ae8eecbd70c1328"
+    },
+    "figures/fig10_marker_opening_heatmaps.svg": {
+      "bytes": 224003,
+      "rows": null,
+      "sha256": "28f0dbffb90e26fd3180d881e92c23942ce8540f8c843721d89d19f882e1fb01"
+    },
+    "figures/fig11_margin_quartiles.png": {
+      "bytes": 122815,
+      "rows": null,
+      "sha256": "e72f87bfcb3b5f29ea30816a7591f45431028ed7f299910001a2f7bd5f352847"
+    },
+    "figures/fig11_margin_quartiles.svg": {
+      "bytes": 90621,
+      "rows": null,
+      "sha256": "565b141d73586138b117dc91fbfab859405f2f02ad432c9f973123e90139db9a"
+    },
+    "figures/fig12_initial_choices.png": {
+      "bytes": 92375,
+      "rows": null,
+      "sha256": "445581155a71999c11643b4eaaeb424e48288639d45eebab632495cc5f02bcb1"
+    },
+    "figures/fig12_initial_choices.svg": {
+      "bytes": 133778,
+      "rows": null,
+      "sha256": "50a079ac2f1c6ee13bd7614830505af65101426915f6e7136f8b24ffff795598"
+    },
+    "figures/fig13_robustness_diagnostics.png": {
+      "bytes": 63430,
+      "rows": null,
+      "sha256": "5da90e795a8361de18fe7a4288919b6b0fbd179ac45f14bdb28afebd9f68d80e"
+    },
+    "figures/fig13_robustness_diagnostics.svg": {
+      "bytes": 45587,
+      "rows": null,
+      "sha256": "4bbcbbebd99ee394873c744a551c41f0d4130a3438a7c175e6558bb6a00301c9"
+    },
+    "figures/fig14_robustness_contrasts.png": {
+      "bytes": 128633,
+      "rows": null,
+      "sha256": "240ff203cc8848f0b1010f14a7e9c69a93e7266eae1f741437b1bed66bacc796"
+    },
+    "figures/fig14_robustness_contrasts.svg": {
+      "bytes": 100730,
+      "rows": null,
+      "sha256": "a5c44fe59e9b0194bedf122e68374c9f4d3a90219fa9646dabe20cd02aa2f637"
+    },
+    "figures/index.md": {
+      "bytes": 5589,
+      "rows": null,
+      "sha256": "b2ce6de11d5c8d2bea45b79c108bbcd9e3290d6b52f10e23a00bbc1bd7b9034b"
+    },
+    "report.md": {
+      "bytes": 26525,
+      "rows": null,
+      "sha256": "7520dbaa0e39e29f88dc052030e207192f01c99182c2f373e7a12fae76ab9aba"
+    },
+    "review/marker_opening_effects.csv": {
+      "bytes": 95880,
+      "rows": 408,
+      "sha256": "ebd03ea388b11183765f2dd1248b7981b6fa5fc9ebe18758c3b54cb3002b7fba"
+    },
+    "review/marker_opening_review.md": {
+      "bytes": 16086,
+      "rows": null,
+      "sha256": "52a9615d03b63e644d887fa5228a5038da860d8a80fad69cd9c9e6fc1e31faea"
+    },
+    "review/rendered_examples.md": {
+      "bytes": 31075,
+      "rows": null,
+      "sha256": "23fba49b0bd66db364b59564c021618de51123b029e60779baafcab660662cdb"
+    },
+    "review/revision_candidates.yaml": {
+      "bytes": 13138,
+      "rows": null,
+      "sha256": "f2a14587180dd3131fdf969f54dca8bc248b6de2f9fc6d2f1743dcc78d36752e"
+    },
+    "robustness/robustness_common_semantic_choice_subset.csv": {
+      "bytes": 27448,
+      "rows": 90,
+      "sha256": "186781127bd0c91423954e1e1bad8ce194ad881799f007eacbfbd349c5bc4393"
+    },
+    "robustness/robustness_common_semantic_choice_subset.json": {
+      "bytes": 60138,
+      "rows": 90,
+      "sha256": "3f1d44247c1307acbbe58fdd90feff7aabc12b19a8edb40daf2b9dd1e1194a50"
+    },
+    "robustness/robustness_contrasts.csv": {
+      "bytes": 77184,
+      "rows": 273,
+      "sha256": "11cbbf7bf8918353d01b188836f60abc0d720277bd9a7b437f9a3b33e7564180"
+    },
+    "robustness/robustness_contrasts.json": {
+      "bytes": 171115,
+      "rows": 273,
+      "sha256": "9d670dcf323f5ff229433bacb0f13368c311050a8fd62877b5846dddb15c8043"
+    },
+    "robustness/robustness_initial_diagnostics.csv": {
+      "bytes": 1665,
+      "rows": 10,
+      "sha256": "bb3673b52e5d68efd904cf6e44fdc175d0ff6039f9931d58e7bc3ddc4cf3591b"
+    },
+    "robustness/robustness_initial_diagnostics.json": {
+      "bytes": 5658,
+      "rows": 10,
+      "sha256": "095ebd2403498d35ca105bb73a1e13c2f231c4d3204cefa3288a03898f42b584"
+    },
+    "robustness/run_status.json": {
+      "bytes": 7232,
+      "rows": null,
+      "sha256": "aa76f407e436de229ab8c5caf38057a80b505162454ff30ada81afdfcf0a85fd"
+    },
+    "tables/base_vs_instruct.csv": {
+      "bytes": 5384,
+      "rows": 18,
+      "sha256": "abb0dc7a51df9ac463c40b63040d8309a1417084a7fe193b7a3bc620f2fcbb9e"
+    },
+    "tables/base_vs_instruct.json": {
+      "bytes": 12017,
+      "rows": 18,
+      "sha256": "8709f2cc234c80ab35a3fd50bf87a8754a91f94f906f2ef0a4e2ef17e67a76c2"
+    },
+    "tables/condition_descriptives_flip.csv": {
+      "bytes": 2972,
+      "rows": 16,
+      "sha256": "07ee23a9adc4184b40a6fffee38266c06c8cc652a983d0cb9da4103583479d6a"
+    },
+    "tables/condition_descriptives_flip.json": {
+      "bytes": 8593,
+      "rows": 16,
+      "sha256": "066d42a8128bdc51ad8b58580aadae0dbf6e741816585c568ee4d99dbaccdfdb"
+    },
+    "tables/condition_descriptives_movement.csv": {
+      "bytes": 3896,
+      "rows": 16,
+      "sha256": "93d9964b21892524452ad68caf99364bbd890974a9baab5286b5b096eb6f7aa2"
+    },
+    "tables/condition_descriptives_movement.json": {
+      "bytes": 10194,
+      "rows": 16,
+      "sha256": "a2eb3fa07ac5cd1825c514ec6a3275719160570525e071ac00cb275bd1f74a4a"
+    },
+    "tables/contrasts_by_domain.csv": {
+      "bytes": 22674,
+      "rows": 108,
+      "sha256": "86331e2a3d468b6e0f8dcca9d1e28ecb81ca48e88e6d16b2f520418a3afb2883"
+    },
+    "tables/contrasts_by_domain.json": {
+      "bytes": 56790,
+      "rows": 108,
+      "sha256": "e323c607ecfa0de3b3d21b8743a5d1eaca1d8a1f0bfa9ae9aac8763d16dbb3ed"
+    },
+    "tables/contrasts_by_individual_marker.csv": {
+      "bytes": 54845,
+      "rows": 192,
+      "sha256": "74271ba3b7e67940777708b7b2305aa27da7e8f7175d5a26e7e96abc5c94cf28"
+    },
+    "tables/contrasts_by_individual_marker.json": {
+      "bytes": 133538,
+      "rows": 192,
+      "sha256": "f689392eb02dba248cf1eee63b007e196366e1c916629ae2dbc2241fab89f132"
+    },
+    "tables/contrasts_by_marker_family.csv": {
+      "bytes": 14279,
+      "rows": 48,
+      "sha256": "c6520102d3bd3934d785b7e5cd785b9be72c1bc9698169fc6a0091604c2a62e9"
+    },
+    "tables/contrasts_by_marker_family.json": {
+      "bytes": 30467,
+      "rows": 48,
+      "sha256": "9dc95ec57a7c104b099fcdd33182987a1fc22e0f539d896e171f32c1817e9ed1"
+    },
+    "tables/contrasts_by_model.csv": {
+      "bytes": 6979,
+      "rows": 36,
+      "sha256": "e708ed76f5e141ad0affdaf1e0393e9eeaccff0a029b123ce9043f973178a12b"
+    },
+    "tables/contrasts_by_model.json": {
+      "bytes": 17634,
+      "rows": 36,
+      "sha256": "54a891a985745ca37a6663dec83772c4c2123920735cc1ff4fd003161e7b5a01"
+    },
+    "tables/contrasts_by_opening.csv": {
+      "bytes": 26201,
+      "rows": 108,
+      "sha256": "c5d522a0d0c7e1a52e49547a82b03ee17a636f42d37ed159a8da2e2641a6cb78"
+    },
+    "tables/contrasts_by_opening.json": {
+      "bytes": 60745,
+      "rows": 108,
+      "sha256": "6e12254e2af1e3b2c7028ba01a6d5a687dcf28b409d11b0c9f6dd6906abf6289"
+    },
+    "tables/contrasts_by_option_order.csv": {
+      "bytes": 15103,
+      "rows": 72,
+      "sha256": "1d0430b6a4b01cc33a17702683bafe36e23aeb7e786c7267c4fd3619d75a7946"
+    },
+    "tables/contrasts_by_option_order.json": {
+      "bytes": 37933,
+      "rows": 72,
+      "sha256": "4c3ace5827c32e45eec95b893b9a0e1afebae517342cb88a32358849c77e9d80"
+    },
+    "tables/core_contrasts_flip.csv": {
+      "bytes": 2172,
+      "rows": 10,
+      "sha256": "8f60eb3cdad48bc0eef750879fadccb8528aa54b8e28339286500a937409d9c9"
+    },
+    "tables/core_contrasts_flip.json": {
+      "bytes": 5345,
+      "rows": 10,
+      "sha256": "4931b8d01d9c395d3fb7fd3bc3606afa9bc03faff048cfb1d7010032db586158"
+    },
+    "tables/core_contrasts_movement.csv": {
+      "bytes": 2538,
+      "rows": 10,
+      "sha256": "391f0038043bf8de696f42ba05029f4f7f28e53eece2d9391f48871b8727113c"
+    },
+    "tables/core_contrasts_movement.json": {
+      "bytes": 5711,
+      "rows": 10,
+      "sha256": "fcf705bc45cb1d451537fa0b42ef3c5954656ca351e0e533b1a59dfa5c7a91cf"
+    },
+    "tables/evidence_validation.csv": {
+      "bytes": 14407,
+      "rows": 143,
+      "sha256": "956708cc89c29c46fffeb6dc4f19cbce371b2afe0c415e7bdb77dc73c5007794"
+    },
+    "tables/evidence_validation.json": {
+      "bytes": 27216,
+      "rows": 143,
+      "sha256": "cf21f5cdb150c6e50b5c640d56a9c975946e20c0e18d567dbc228541f76922a9"
+    },
+    "tables/flip_denominators.csv": {
+      "bytes": 1678,
+      "rows": 36,
+      "sha256": "dc3a31ac6560a5cd40741c24313435fb05d5971eb7c2229f4d08ac3ebf529f79"
+    },
+    "tables/flip_denominators.json": {
+      "bytes": 8147,
+      "rows": 36,
+      "sha256": "bed04d3d867f19be9c88eca0e2482325068f338b14c4b8b63c16feb9e4e8cdb4"
+    },
+    "tables/initial_choice_by_model_order_label.csv": {
+      "bytes": 999,
+      "rows": 24,
+      "sha256": "250d7d27ee5ce19c88889b452a76e878896f74814f60980401eb74ab9596b017"
+    },
+    "tables/initial_choice_by_model_order_label.json": {
+      "bytes": 4771,
+      "rows": 24,
+      "sha256": "1f9254ed96eab4b1931180df64606571f58d022ebc1848bf828617ea026c945a"
+    },
+    "tables/initial_margin_descriptives.csv": {
+      "bytes": 454,
+      "rows": 4,
+      "sha256": "afdd66318fd27d7958e788322136ba80083fadf37eff296e8b4e3193d25d17af"
+    },
+    "tables/initial_margin_descriptives.json": {
+      "bytes": 1071,
+      "rows": 4,
+      "sha256": "5fb89cd2dbd16866f0e2c7294998bd3ef7b3f7a3a031e6b52aaf99d344c58b4c"
+    },
+    "tables/initial_semantic_choice_by_model_order.csv": {
+      "bytes": 935,
+      "rows": 24,
+      "sha256": "872e1cae3a11169367b9d32436e06c606a0499524fba241da3501b5cf3dab13d"
+    },
+    "tables/initial_semantic_choice_by_model_order.json": {
+      "bytes": 3691,
+      "rows": 24,
+      "sha256": "562f8ffc86d01b6c873ab0bfa9db324444f22b2810d2af91bf3ee32b79e86f5b"
+    },
+    "tables/initial_ties.csv": {
+      "bytes": 8225,
+      "rows": 51,
+      "sha256": "9c29d30e7ced1252e38f22264cbd8c1f965173cb817135ec9712db250604a2f2"
+    },
+    "tables/initial_ties.json": {
+      "bytes": 21336,
+      "rows": 51,
+      "sha256": "8309272fd16d069c450801860614b1500a346b9e57e5cd05e2461487ced02825"
+    },
+    "tables/margin_moderation.csv": {
+      "bytes": 4529,
+      "rows": 20,
+      "sha256": "2b5fc9e9ff569e901edfdebfe5df6a156e59cf116f1335f50e6bb3c6db6e8c4c"
+    },
+    "tables/margin_moderation.json": {
+      "bytes": 10256,
+      "rows": 20,
+      "sha256": "71a77305cbaa4047dc8df7b7a851c6f9807a0cbe6b11ef5e3e374dc15bd1f174"
+    },
+    "tables/margin_quartiles.csv": {
+      "bytes": 8389,
+      "rows": 40,
+      "sha256": "c1320abdb8e7ac9198388cf34a5deaf821924c0b37241dbc689743eee282744b"
+    },
+    "tables/margin_quartiles.json": {
+      "bytes": 21580,
+      "rows": 40,
+      "sha256": "b2f3ef5e736211856de184894864834784ca16ddc9e73c8f5c130dea0449f634"
+    },
+    "tables/marker_by_opening.csv": {
+      "bytes": 39759,
+      "rows": 144,
+      "sha256": "4eec4f84d6f6edb96530772b2e61cb3adf4bb947f58841889cf943c39936e865"
+    },
+    "tables/marker_by_opening.json": {
+      "bytes": 89112,
+      "rows": 144,
+      "sha256": "5c011da99e2ddbd5c7c7930a3534371d50251add46f24b2cce269ae92c8ed337"
+    },
+    "tables/model_common_subset.csv": {
+      "bytes": 7022,
+      "rows": 36,
+      "sha256": "a342f8598ce0766c319f98432311428e7b4a7a5b660303bfb5ddc973c71438c6"
+    },
+    "tables/model_common_subset.json": {
+      "bytes": 17677,
+      "rows": 36,
+      "sha256": "4501892eeb7c90d6649bda541256d1ade8f7dd9bff7d9eaeb575ecfff54cf0f5"
+    },
+    "tables/multiplicity_adjustments.csv": {
+      "bytes": 12992,
+      "rows": 64,
+      "sha256": "2af8a91bc40c4c816db83f379bb8e13db9150305efaf2ae1c3be113449acdc33"
+    },
+    "tables/multiplicity_adjustments.json": {
+      "bytes": 23543,
+      "rows": 64,
+      "sha256": "86c389530f3ad49f72234d688b750b251d7b615a1380b787ca44f904545151db"
+    },
+    "tables/near_tie_sensitivity.csv": {
+      "bytes": 5343,
+      "rows": 20,
+      "sha256": "01748f21f4a43da791fb345fdd60e6c94a038b4f1f91763cd85e0c640de1b24c"
+    },
+    "tables/near_tie_sensitivity.json": {
+      "bytes": 12152,
+      "rows": 20,
+      "sha256": "3fd42b14ef2d779c05dc14eaa35c3c7a7b6c1ba5dbca7e9818812aefa6636a50"
+    },
+    "tables/opening_heterogeneity.csv": {
+      "bytes": 19909,
+      "rows": 60,
+      "sha256": "df9809c21b8cf6c273f1ae07c4bf8e1d54e0345d0f2be73f295a90533dd15f7b"
+    },
+    "tables/opening_heterogeneity.json": {
+      "bytes": 41611,
+      "rows": 60,
+      "sha256": "0673f092433a89e5720b708c38e1b3e1f5af7f1050f65d47c87e975c400136ab"
+    },
+    "tables/order_heterogeneity.csv": {
+      "bytes": 5541,
+      "rows": 20,
+      "sha256": "2f7b0ac4b8a05a0ec2f78859a9ce97f33ab13ecff2210a873438a1ad4d8a3e2d"
+    },
+    "tables/order_heterogeneity.json": {
+      "bytes": 13875,
+      "rows": 20,
+      "sha256": "e0aa48b3f504c4eb147c27b51d6f3db63754fcbd00468146875c8ada408dae3e"
+    },
+    "tables/post_ties_by_model_condition_marker_opening.csv": {
+      "bytes": 21640,
+      "rows": 312,
+      "sha256": "4224b8a0de4a2cf45ce5863aa5493557f7693444dcbbfb8f1e24517334b12469"
+    },
+    "tables/post_ties_by_model_condition_marker_opening.json": {
+      "bytes": 78636,
+      "rows": 312,
+      "sha256": "301c82d6e03e178cb686852ffc8837fd2d89ad2afa1d92033d424ac4d005c7c6"
+    },
+    "tables/robustness_common_semantic_choice_subset.csv": {
+      "bytes": 27448,
+      "rows": 90,
+      "sha256": "186781127bd0c91423954e1e1bad8ce194ad881799f007eacbfbd349c5bc4393"
+    },
+    "tables/robustness_common_semantic_choice_subset.json": {
+      "bytes": 60138,
+      "rows": 90,
+      "sha256": "3f1d44247c1307acbbe58fdd90feff7aabc12b19a8edb40daf2b9dd1e1194a50"
+    },
+    "tables/robustness_contrasts.csv": {
+      "bytes": 77184,
+      "rows": 273,
+      "sha256": "11cbbf7bf8918353d01b188836f60abc0d720277bd9a7b437f9a3b33e7564180"
+    },
+    "tables/robustness_contrasts.json": {
+      "bytes": 171115,
+      "rows": 273,
+      "sha256": "9d670dcf323f5ff229433bacb0f13368c311050a8fd62877b5846dddb15c8043"
+    },
+    "tables/robustness_initial_diagnostics.csv": {
+      "bytes": 1665,
+      "rows": 10,
+      "sha256": "bb3673b52e5d68efd904cf6e44fdc175d0ff6039f9931d58e7bc3ddc4cf3591b"
+    },
+    "tables/robustness_initial_diagnostics.json": {
+      "bytes": 5658,
+      "rows": 10,
+      "sha256": "095ebd2403498d35ca105bb73a1e13c2f231c4d3204cefa3288a03898f42b584"
+    }
+  },
+  "prompt_and_config_hashes": {
+    "ab_bfirst_prompt_digest": "9301af728163d0aaf9ad4ce3b38322aa2ee1ee58609c56592876f97a91aed4de",
+    "ab_bfirst_variant_config_sha256": "3c92ba2ed3722286df093d66d129ff8b71da2c32ee540e6e99c53f527a3d36f8",
+    "behavioral_config_content_hash": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+    "behavioral_config_sha256": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+    "minimal_ab_prompt_digest": "47771f9b63e4166ca4683eb0e7eeb3aff0cd4f4b469a68af1106b96aed5d2d25",
+    "minimal_ab_variant_config_sha256": "e2201430b35ca68dc6fe3668c05bcfc27ef02901443313ec6e68c056c2030246",
+    "robustness_variants_file_sha256": "dfc0a9a6dad99a73f87f54b1939e3e952e4482230b30586a5a569d4dc0fef2fa"
+  },
+  "robustness": {
+    "archive": {
+      "mac": "runs/archive/behavioral_v3_robustness_evidence_v1",
+      "server": "/data/vidhi/archive/reasonstyle/behavioral_v3_robustness_evidence_v1",
+      "sha256sums_sha256": "c890f749cb98d433059b1291a203954183c9085f00096f4447df23d16f4d7d01"
+    },
+    "completed": {
+      "ab_bfirst": {
+        "file_sha256": {
+          "COMPLETE": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1",
+          "RUN_METADATA.json": "994f428f2a5eb54abbe2bee2ca68c7e586e2dc4fb161c33713344b50a6269a77",
+          "behavioral_scores.jsonl": "4219e6fc7144a45808dae737fe213487c28ad328160f57238a6c7b5bb05bc76f",
+          "initial_exclusions.jsonl": "d477d90a720a6fb707cf60ad23312e5e018bf7e8f1a12c1ab8021bd37eace1d6",
+          "initial_scores.jsonl": "1193d47ad5733753ac4da9d7468f56a60b239e4ae3d72742c2e25e82720b98f0",
+          "post_ties.jsonl": "b32ef7b7921b1493c7a2e1c581e9b8a3d0d8cfb66029bfe3cc86a63e7e568c62"
+        },
+        "prompt_digest": "9301af728163d0aaf9ad4ce3b38322aa2ee1ee58609c56592876f97a91aed4de",
+        "prompt_variant": {
+          "display_order": [
+            "B",
+            "A"
+          ],
+          "name": "ab_bfirst",
+          "response_labels": {
+            "A": "A",
+            "B": "B"
+          },
+          "run_id": "base-ab-bfirst-v1",
+          "template": {
+            "kind": "dialogue"
+          },
+          "template_name": "base_plain_dialogue_v1"
+        },
+        "run_id": "base-ab-bfirst-v1",
+        "status": "complete_with_recorded_exclusions_and_secondary_ties",
+        "variant_definition_hash": "ebb8fd482f69e73bd98855fa7a70d3c10fc0463141d12cbbc7dc65da0c959db3"
+      },
+      "minimal_ab": {
+        "file_sha256": {
+          "COMPLETE": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1",
+          "RUN_METADATA.json": "255f4beb17b2582d2bab3659d27d7c653af9497fb43c008c35b540c3297d2712",
+          "behavioral_scores.jsonl": "023ace2a3db6589219906c30469dd8e4d0ecb461bb1de528809ff96f9526e749",
+          "initial_exclusions.jsonl": "417d1f493658de0233d7c804b2af8f3803216f6268b388928811f2d64e761048",
+          "initial_scores.jsonl": "3276a6b36deb7862eefa9a58feff36e0bfa4f2420bdadc22c592f6467b06e2f4",
+          "post_ties.jsonl": "846aef33852091aedffb9fb5550805a1aa41870f522c50e08c5b9bec1293aeb8"
+        },
+        "prompt_digest": "47771f9b63e4166ca4683eb0e7eeb3aff0cd4f4b469a68af1106b96aed5d2d25",
+        "prompt_variant": {
+          "display_order": [
+            "A",
+            "B"
+          ],
+          "name": "minimal_ab",
+          "response_labels": {
+            "A": "A",
+            "B": "B"
+          },
+          "run_id": "base-minimal-ab-v1",
+          "template": {
+            "continuation": " {initial_answer}\n\nCounterargument: {counterargument}\n\n{question}\nAnswer:",
+            "initial": "The following is a policy decision.\n\n{scenario_text}\n\n{options}\n\n{question}\nAnswer:",
+            "kind": "plain"
+          },
+          "template_name": "minimal_plain_v1"
+        },
+        "run_id": "base-minimal-ab-v1",
+        "status": "complete_with_recorded_exclusions_and_secondary_ties",
+        "variant_definition_hash": "77e35ff68874d8685525400964a9a176712cad785e19288181c24160efa58e07"
+      }
+    },
+    "reference_check": {
+      "answer_continuation": {
+        "A": " A",
+        "B": " B"
+      },
+      "answer_token_ids": {
+        "A": 362,
+        "B": 426
+      },
+      "api_calls": false,
+      "batch_size": 8,
+      "behavioral_config_content_hash": "4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238",
+      "behavioral_config_file_sha256": "f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25",
+      "behavioral_version": "full_v3_llama31_8b_behavioral_v1",
+      "bitwise_mismatches": [],
+      "cublas_workspace_config": {
+        "deterministic_algorithms": true,
+        "preexisting_value": null,
+        "required": ":4096:8",
+        "set_by_runner": true,
+        "value": ":4096:8",
+        "variable": "CUBLAS_WORKSPACE_CONFIG"
+      },
+      "cuda_visible_devices": "0",
+      "deterministic_algorithms": true,
+      "device": "cuda",
+      "dtype": "bfloat16",
+      "files": {
+        "initial_scores.jsonl": "5b87bc8ad97138e109ed847d6b926ec9c69e206473dbd73186bdab39230124cf"
+      },
+      "free_form_generation": false,
+      "gpu": "NVIDIA RTX A6000",
+      "initials_compared": 240,
+      "libraries": {
+        "huggingface-hub": "0.36.2",
+        "tokenizers": "0.21.4",
+        "torch": "2.6.0+cu118",
+        "transformers": "4.51.3",
+        "vllm": "0.8.5.post1+cu118"
+      },
+      "mode": "full",
+      "network_access": false,
+      "phase": "reference-check",
+      "platform": "Linux-5.15.0-88-generic-x86_64-with-glibc2.35",
+      "prompt_digest": "44dd761d62756c5a82b2a26ee26ec2b851cb1af99a181cc01c6f799c4760a542",
+      "prompt_variant": {
+        "display_order": [
+          "A",
+          "B"
+        ],
+        "name": "reference",
+        "response_labels": {
+          "A": "A",
+          "B": "B"
+        },
+        "run_id": null,
+        "template": {
+          "kind": "dialogue"
+        },
+        "template_name": "base_plain_dialogue_v1"
+      },
+      "reference_initial_scores_sha256": "0fe4bcc6126c83300aa5f65d31cf2c3298e29ee9284f9dc1b2a88a5c7df3c4b9",
+      "reference_run": "runs/behavioral_v3/base-full-v3",
+      "repo_id": "meta-llama/Llama-3.1-8B",
+      "revision": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+      "run_id": "base-reference-check-v1",
+      "seed": 20261002,
+      "slot_semantics": "A/B in every file are slots; the model read and answered with prompt_variant.response_labels[slot]",
+      "status": "complete",
+      "stimuli_sha256": "9922fd402b31a54265b6c9abd72b175d65f430bd29dc3829a937f13a62b1661c",
+      "variant": "base",
+      "variant_config_file_sha256": "0141cf743cd2f4ae02dad63b2659dbfce9135609e6406e3a72ca23cbcbb0e81e",
+      "variant_definition_hash": "52b39a42ae8736bff8c39960782ce26b036e82d3539c96068161379029c2d841"
+    },
+    "refused": {
+      "numeric_12": {
+        "compatibility_status": "refused",
+        "diagnostic": {
+          "decision": "R2 refused under its predeclared rule; no replacement label or whitespace convention was tried",
+          "encodings": {
+            "Answer:": [
+              16533,
+              25
+            ],
+            "Answer: 1": [
+              16533,
+              25,
+              220,
+              16
+            ],
+            "Answer: 2": [
+              16533,
+              25,
+              220,
+              17
+            ],
+            "Answer: A": [
+              16533,
+              25,
+              362
+            ]
+          },
+          "model_forward_pass": false,
+          "network_access": false,
+          "observation": "Llama-3.1 tokenizer encodes the continuation \" 1\" after \"Answer:\" as two tokens: 220 (\" \") and 16 (\"1\"); \" 2\" as 220 and 17. \" A\" is the single token 362.",
+          "tokenizer_revision": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+          "variant": "numeric_12"
+        },
+        "model_forward_pass": false,
+        "network_access": false,
+        "path": "runs/behavioral_v3_robustness/compatibility/numeric_12.refused.json",
+        "reason": "' 1' is not a single-token continuation of the prompt",
+        "revision": "d04e592bb4f6aa9cfee91e2e20afa771667e1d4b",
+        "sha256": "afd6527a18b7c44161dd6a4e7270e0b0965e23a9d8b99a8bf9ec42f9dca1c94f",
+        "variant": "numeric_12",
+        "variant_definition_hash": "44c435b74341554a844ae0cd293e6638625fb81422ebb671c3e97d30fc1dd05d"
+      }
+    }
+  },
+  "software": {
+    "matplotlib": "3.10.9",
+    "numpy": "2.2.6",
+    "python": "3.11.16",
+    "pyyaml": "6.0.3"
+  },
+  "source_git_commit": "cc3baebc4fb4d8c3755e5f316395dd6ee9a2e266",
+  "specification": {
+    "content_hash": "ef25f6d6612aa27c1b3d22efb22f4abdcc6dd62c73b48d79477ec47ce05c1e59",
+    "path": "configs/analysis/behavioral_v3_detailed_v1.yaml",
+    "sha256": "a6ccad93d871d130bb74183af360033c4d89778d3b8721fa68f32ee4dbb75dd8"
+  },
+  "working_tree_status": [
+    " M docs/behavioral_v3_setup.md",
+    "?? analysis/behavioral_v3_detailed/README.md",
+    "?? analysis/behavioral_v3_detailed/analysis_manifest.json",
+    "?? analysis/behavioral_v3_detailed/analysis_manifest.sha256",
+    "?? analysis/behavioral_v3_detailed/analysis_spec.yaml",
+    "?? analysis/behavioral_v3_detailed/bootstrap/draws.csv.gz",
+    "?? analysis/behavioral_v3_detailed/bootstrap/replicate_estimates.csv.gz",
+    "?? analysis/behavioral_v3_detailed/bootstrap/settings.json",
+    "?? analysis/behavioral_v3_detailed/bootstrap/summary.csv",
+    "?? analysis/behavioral_v3_detailed/execution_environment.json",
+    "?? analysis/behavioral_v3_detailed/figures/fig01_condition_movement_means.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig01_condition_movement_means.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig02_core_contrasts_forest.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig02_core_contrasts_forest.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig03_flip_rates_ceiling.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig03_flip_rates_ceiling.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig04_contrasts_by_option_order.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig04_contrasts_by_option_order.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig05_order_heterogeneity.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig05_order_heterogeneity.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig06_contrasts_by_domain.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig06_contrasts_by_domain.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig07_contrasts_by_opening.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig07_contrasts_by_opening.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig08_marker_forest.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig08_marker_forest.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig09_marker_family.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig09_marker_family.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig10_marker_opening_heatmaps.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig10_marker_opening_heatmaps.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig11_margin_quartiles.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig11_margin_quartiles.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig12_initial_choices.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig12_initial_choices.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig13_robustness_diagnostics.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig13_robustness_diagnostics.svg",
+    "?? analysis/behavioral_v3_detailed/figures/fig14_robustness_contrasts.png",
+    "?? analysis/behavioral_v3_detailed/figures/fig14_robustness_contrasts.svg",
+    "?? analysis/behavioral_v3_detailed/figures/index.md",
+    "?? analysis/behavioral_v3_detailed/report.md",
+    "?? analysis/behavioral_v3_detailed/robustness/robustness_common_semantic_choice_subset.csv",
+    "?? analysis/behavioral_v3_detailed/robustness/robustness_common_semantic_choice_subset.json",
+    "?? analysis/behavioral_v3_detailed/robustness/robustness_contrasts.csv",
+    "?? analysis/behavioral_v3_detailed/robustness/robustness_contrasts.json",
+    "?? analysis/behavioral_v3_detailed/robustness/robustness_initial_diagnostics.csv",
+    "?? analysis/behavioral_v3_detailed/robustness/robustness_initial_diagnostics.json",
+    "?? analysis/behavioral_v3_detailed/robustness/run_status.json",
+    "?? analysis/behavioral_v3_detailed/tables/base_vs_instruct.csv",
+    "?? analysis/behavioral_v3_detailed/tables/base_vs_instruct.json",
+    "?? analysis/behavioral_v3_detailed/tables/condition_descriptives_flip.csv",
+    "?? analysis/behavioral_v3_detailed/tables/condition_descriptives_flip.json",
+    "?? analysis/behavioral_v3_detailed/tables/condition_descriptives_movement.csv",
+    "?? analysis/behavioral_v3_detailed/tables/condition_descriptives_movement.json",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_domain.csv",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_domain.json",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_individual_marker.csv",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_individual_marker.json",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_marker_family.csv",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_marker_family.json",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_model.csv",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_model.json",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_opening.csv",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_opening.json",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_option_order.csv",
+    "?? analysis/behavioral_v3_detailed/tables/contrasts_by_option_order.json",
+    "?? analysis/behavioral_v3_detailed/tables/core_contrasts_flip.csv",
+    "?? analysis/behavioral_v3_detailed/tables/core_contrasts_flip.json",
+    "?? analysis/behavioral_v3_detailed/tables/core_contrasts_movement.csv",
+    "?? analysis/behavioral_v3_detailed/tables/core_contrasts_movement.json",
+    "?? analysis/behavioral_v3_detailed/tables/evidence_validation.csv",
+    "?? analysis/behavioral_v3_detailed/tables/evidence_validation.json",
+    "?? analysis/behavioral_v3_detailed/tables/flip_denominators.csv",
+    "?? analysis/behavioral_v3_detailed/tables/flip_denominators.json",
+    "?? analysis/behavioral_v3_detailed/tables/initial_choice_by_model_order_label.csv",
+    "?? analysis/behavioral_v3_detailed/tables/initial_choice_by_model_order_label.json",
+    "?? analysis/behavioral_v3_detailed/tables/initial_margin_descriptives.csv",
+    "?? analysis/behavioral_v3_detailed/tables/initial_margin_descriptives.json",
+    "?? analysis/behavioral_v3_detailed/tables/initial_semantic_choice_by_model_order.csv",
+    "?? analysis/behavioral_v3_detailed/tables/initial_semantic_choice_by_model_order.json",
+    "?? analysis/behavioral_v3_detailed/tables/initial_ties.csv",
+    "?? analysis/behavioral_v3_detailed/tables/initial_ties.json",
+    "?? analysis/behavioral_v3_detailed/tables/margin_moderation.csv",
+    "?? analysis/behavioral_v3_detailed/tables/margin_moderation.json",
+    "?? analysis/behavioral_v3_detailed/tables/margin_quartiles.csv",
+    "?? analysis/behavioral_v3_detailed/tables/margin_quartiles.json",
+    "?? analysis/behavioral_v3_detailed/tables/marker_by_opening.csv",
+    "?? analysis/behavioral_v3_detailed/tables/marker_by_opening.json",
+    "?? analysis/behavioral_v3_detailed/tables/model_common_subset.csv",
+    "?? analysis/behavioral_v3_detailed/tables/model_common_subset.json",
+    "?? analysis/behavioral_v3_detailed/tables/multiplicity_adjustments.csv",
+    "?? analysis/behavioral_v3_detailed/tables/multiplicity_adjustments.json",
+    "?? analysis/behavioral_v3_detailed/tables/near_tie_sensitivity.csv",
+    "?? analysis/behavioral_v3_detailed/tables/near_tie_sensitivity.json",
+    "?? analysis/behavioral_v3_detailed/tables/opening_heterogeneity.csv",
+    "?? analysis/behavioral_v3_detailed/tables/opening_heterogeneity.json",
+    "?? analysis/behavioral_v3_detailed/tables/order_heterogeneity.csv",
+    "?? analysis/behavioral_v3_detailed/tables/order_heterogeneity.json",
+    "?? analysis/behavioral_v3_detailed/tables/post_ties_by_model_condition_marker_opening.csv",
+    "?? analysis/behavioral_v3_detailed/tables/post_ties_by_model_condition_marker_opening.json",
+    "?? analysis/behavioral_v3_detailed/tables/robustness_common_semantic_choice_subset.csv",
+    "?? analysis/behavioral_v3_detailed/tables/robustness_common_semantic_choice_subset.json",
+    "?? analysis/behavioral_v3_detailed/tables/robustness_contrasts.csv",
+    "?? analysis/behavioral_v3_detailed/tables/robustness_contrasts.json",
+    "?? analysis/behavioral_v3_detailed/tables/robustness_initial_diagnostics.csv",
+    "?? analysis/behavioral_v3_detailed/tables/robustness_initial_diagnostics.json",
+    "?? configs/analysis/behavioral_v3_detailed_v1.yaml",
+    "?? configs/behavioral_v3_llama31_8b.pinned.yaml",
+    "?? configs/robustness/base_ab_bfirst_v1.pinned.yaml",
+    "?? configs/robustness/base_minimal_ab_v1.pinned.yaml",
+    "?? configs/robustness/base_prompt_variants_v1.yaml",
+    "?? configs/robustness/base_reference_v1.pinned.yaml",
+    "?? requirements/analysis.in",
+    "?? requirements/analysis.txt",
+    "?? scripts/analyze_behavioral_v3.py",
+    "?? scripts/behavioral_v3_robustness_gate.py",
+    "?? scripts/run_behavioral_v3_robustness.py",
+    "?? src/reasonstyle/behavioral/analysis/__init__.py",
+    "?? src/reasonstyle/behavioral/analysis/design.py",
+    "?? src/reasonstyle/behavioral/analysis/estimate.py",
+    "?? src/reasonstyle/behavioral/analysis/figures.py",
+    "?? src/reasonstyle/behavioral/analysis/report.py",
+    "?? src/reasonstyle/behavioral/analysis/review.py",
+    "?? src/reasonstyle/behavioral/analysis/tables.py",
+    "?? src/reasonstyle/behavioral/analysis/validate.py",
+    "?? src/reasonstyle/behavioral/analysis/write.py",
+    "?? src/reasonstyle/behavioral/robustness.py",
+    "?? tests/test_behavioral_v3_analysis.py",
+    "?? tests/test_behavioral_v3_robustness.py"
+  ]
+}

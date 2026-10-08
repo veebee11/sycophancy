@@ -1,0 +1,35 @@
+robustness_version: base_prompt_variants_v1
+status: ready_for_robustness_run
+variant:
+  name: ab_bfirst
+  run_id: base-ab-bfirst-v1
+  response_labels:
+    A: A
+    B: B
+  display_order:
+  - B
+  - A
+  template_name: base_plain_dialogue_v1
+  template:
+    kind: dialogue
+variant_definition_hash: ebb8fd482f69e73bd98855fa7a70d3c10fc0463141d12cbbc7dc65da0c959db3
+variants_file:
+  path: configs/robustness/base_prompt_variants_v1.yaml
+  sha256: dfc0a9a6dad99a73f87f54b1939e3e952e4482230b30586a5a569d4dc0fef2fa
+source_config:
+  path: configs/behavioral_v3_llama31_8b.pinned.yaml
+  file_sha256: f682fcad2749fb298c196997e01729a09b0e40db589075d9e99a1cf8a18c1d25
+  content_hash: 4e18a0cf09dc31def4030e19e0f30072474d888214924f7b7042e20fc9735238
+model:
+  repo_id: meta-llama/Llama-3.1-8B
+  revision: d04e592bb4f6aa9cfee91e2e20afa771667e1d4b
+answer_continuation:
+  A: ' A'
+  B: ' B'
+answer_token_ids:
+  A: 362
+  B: 426
+prompt_digest: 9301af728163d0aaf9ad4ce3b38322aa2ee1ee58609c56592876f97a91aed4de
+compatibility_report:
+  path: runs/behavioral_v3_robustness/compatibility/ab_bfirst.json
+  sha256: 80cdc6cf4431840a44cb4fd18f02480dfa030d9f694788378605265b70708f5a

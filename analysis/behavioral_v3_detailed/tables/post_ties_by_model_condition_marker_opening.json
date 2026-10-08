@@ -1,0 +1,3122 @@
+[
+  {
+    "condition": "NS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 12.5,
+    "flip_defined_rows": 35,
+    "marker_id": "m01_therefore",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m01_therefore",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 7,
+    "exact_post_ties_pct": 17.073170731707318,
+    "flip_defined_rows": 34,
+    "marker_id": "m02_consequently",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 9.75609756097561,
+    "flip_defined_rows": 37,
+    "marker_id": "m02_consequently",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.142857142857143,
+    "flip_defined_rows": 39,
+    "marker_id": "m03_thus",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.142857142857143,
+    "flip_defined_rows": 39,
+    "marker_id": "m03_thus",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 6,
+    "exact_post_ties_pct": 16.666666666666668,
+    "flip_defined_rows": 30,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 11.11111111111111,
+    "flip_defined_rows": 32,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.405405405405405,
+    "flip_defined_rows": 35,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.405405405405405,
+    "flip_defined_rows": 35,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.6923076923076925,
+    "flip_defined_rows": 36,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.128205128205129,
+    "flip_defined_rows": 37,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.2631578947368425,
+    "flip_defined_rows": 36,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.894736842105263,
+    "flip_defined_rows": 35,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.6923076923076925,
+    "flip_defined_rows": 36,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 10.81081081081081,
+    "flip_defined_rows": 33,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 8.108108108108109,
+    "flip_defined_rows": 34,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.878048780487805,
+    "flip_defined_rows": 39,
+    "marker_id": "m11_given_this",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m11_given_this",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 7,
+    "exact_post_ties_pct": 17.5,
+    "flip_defined_rows": 33,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 29,
+    "exact_post_ties_pct": 12.393162393162394,
+    "flip_defined_rows": 205,
+    "marker_id": "none",
+    "movement_rows": 234,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 11,
+    "exact_post_ties_pct": 4.700854700854701,
+    "flip_defined_rows": 223,
+    "marker_id": "none",
+    "movement_rows": 234,
+    "opening_id": "directive_reconsideration",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5,
+    "flip_defined_rows": 39,
+    "marker_id": "m01_therefore",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.5,
+    "flip_defined_rows": 37,
+    "marker_id": "m01_therefore",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.317073170731708,
+    "flip_defined_rows": 38,
+    "marker_id": "m02_consequently",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.4390243902439024,
+    "flip_defined_rows": 40,
+    "marker_id": "m02_consequently",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.761904761904762,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.761904761904762,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 11.11111111111111,
+    "flip_defined_rows": 32,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 13.88888888888889,
+    "flip_defined_rows": 31,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 10.81081081081081,
+    "flip_defined_rows": 33,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.405405405405405,
+    "flip_defined_rows": 35,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 6,
+    "exact_post_ties_pct": 15.384615384615385,
+    "flip_defined_rows": 33,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.6923076923076925,
+    "flip_defined_rows": 36,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 10.526315789473685,
+    "flip_defined_rows": 34,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.6923076923076925,
+    "flip_defined_rows": 36,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.128205128205129,
+    "flip_defined_rows": 37,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 10.81081081081081,
+    "flip_defined_rows": 33,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.7027027027027026,
+    "flip_defined_rows": 36,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.878048780487805,
+    "flip_defined_rows": 39,
+    "marker_id": "m11_given_this",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.4390243902439024,
+    "flip_defined_rows": 40,
+    "marker_id": "m11_given_this",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.5,
+    "flip_defined_rows": 37,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.5,
+    "flip_defined_rows": 37,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 18,
+    "exact_post_ties_pct": 7.6923076923076925,
+    "flip_defined_rows": 216,
+    "marker_id": "none",
+    "movement_rows": 234,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 13,
+    "exact_post_ties_pct": 5.555555555555555,
+    "flip_defined_rows": 221,
+    "marker_id": "none",
+    "movement_rows": 234,
+    "opening_id": "stance_alternative",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 10.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m01_therefore",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5,
+    "flip_defined_rows": 39,
+    "marker_id": "m01_therefore",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.317073170731708,
+    "flip_defined_rows": 38,
+    "marker_id": "m02_consequently",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.878048780487805,
+    "flip_defined_rows": 39,
+    "marker_id": "m02_consequently",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.142857142857143,
+    "flip_defined_rows": 39,
+    "marker_id": "m03_thus",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 11.904761904761905,
+    "flip_defined_rows": 37,
+    "marker_id": "m03_thus",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 8.333333333333334,
+    "flip_defined_rows": 33,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 8.333333333333334,
+    "flip_defined_rows": 33,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.894736842105263,
+    "flip_defined_rows": 35,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 13.513513513513514,
+    "flip_defined_rows": 32,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.405405405405405,
+    "flip_defined_rows": 35,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 7,
+    "exact_post_ties_pct": 17.94871794871795,
+    "flip_defined_rows": 32,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 10.256410256410257,
+    "flip_defined_rows": 35,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.894736842105263,
+    "flip_defined_rows": 35,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 7.6923076923076925,
+    "flip_defined_rows": 36,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.7027027027027026,
+    "flip_defined_rows": 36,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.405405405405405,
+    "flip_defined_rows": 35,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m11_given_this",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m11_given_this",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5,
+    "flip_defined_rows": 39,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 15,
+    "exact_post_ties_pct": 6.410256410256411,
+    "flip_defined_rows": 219,
+    "marker_id": "none",
+    "movement_rows": 234,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 10,
+    "exact_post_ties_pct": 4.273504273504273,
+    "flip_defined_rows": 224,
+    "marker_id": "none",
+    "movement_rows": 234,
+    "opening_id": "stance_disagreement",
+    "run": "ab_bfirst"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.380952380952381,
+    "flip_defined_rows": 41,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.380952380952381,
+    "flip_defined_rows": 41,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m02_consequently",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 9.523809523809524,
+    "flip_defined_rows": 38,
+    "marker_id": "m02_consequently",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m03_thus",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.878048780487805,
+    "flip_defined_rows": 39,
+    "marker_id": "m03_thus",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.555555555555555,
+    "flip_defined_rows": 34,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.7777777777777777,
+    "flip_defined_rows": 35,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 8.108108108108109,
+    "flip_defined_rows": 34,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 10.81081081081081,
+    "flip_defined_rows": 33,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.878048780487805,
+    "flip_defined_rows": 39,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 41,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m11_given_this",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.128205128205129,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 13,
+    "exact_post_ties_pct": 5.485232067510548,
+    "flip_defined_rows": 224,
+    "marker_id": "none",
+    "movement_rows": 237,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 1.6877637130801688,
+    "flip_defined_rows": 233,
+    "marker_id": "none",
+    "movement_rows": 237,
+    "opening_id": "directive_reconsideration",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.380952380952381,
+    "flip_defined_rows": 41,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.761904761904762,
+    "flip_defined_rows": 40,
+    "marker_id": "m02_consequently",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.761904761904762,
+    "flip_defined_rows": 40,
+    "marker_id": "m02_consequently",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.878048780487805,
+    "flip_defined_rows": 39,
+    "marker_id": "m03_thus",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.4390243902439024,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.7777777777777777,
+    "flip_defined_rows": 35,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.405405405405405,
+    "flip_defined_rows": 35,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5,
+    "flip_defined_rows": 39,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5,
+    "flip_defined_rows": 39,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.4390243902439024,
+    "flip_defined_rows": 40,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 41,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.6315789473684212,
+    "flip_defined_rows": 37,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m11_given_this",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.128205128205129,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 2.109704641350211,
+    "flip_defined_rows": 232,
+    "marker_id": "none",
+    "movement_rows": 237,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 1.2658227848101267,
+    "flip_defined_rows": 234,
+    "marker_id": "none",
+    "movement_rows": 237,
+    "opening_id": "stance_alternative",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.380952380952381,
+    "flip_defined_rows": 41,
+    "marker_id": "m02_consequently",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.761904761904762,
+    "flip_defined_rows": 40,
+    "marker_id": "m02_consequently",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m03_thus",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.878048780487805,
+    "flip_defined_rows": 39,
+    "marker_id": "m03_thus",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 41,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.4390243902439024,
+    "flip_defined_rows": 40,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 41,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m11_given_this",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.5641025641025643,
+    "flip_defined_rows": 38,
+    "marker_id": "m11_given_this",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 39,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 2.109704641350211,
+    "flip_defined_rows": 232,
+    "marker_id": "none",
+    "movement_rows": 237,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 6,
+    "exact_post_ties_pct": 2.5316455696202533,
+    "flip_defined_rows": 231,
+    "marker_id": "none",
+    "movement_rows": 237,
+    "opening_id": "stance_disagreement",
+    "run": "base"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m02_consequently",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m02_consequently",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 28,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 28,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 48,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 48,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 38,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 48,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 48,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 40,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 37,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 34,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 34,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 34,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 34,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 230,
+    "marker_id": "none",
+    "movement_rows": 230,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 230,
+    "marker_id": "none",
+    "movement_rows": 230,
+    "opening_id": "directive_reconsideration",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m02_consequently",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m02_consequently",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 28,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 28,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 48,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 48,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 38,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 48,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 48,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 40,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 37,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 34,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 34,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 34,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 34,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 230,
+    "marker_id": "none",
+    "movement_rows": 230,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 230,
+    "marker_id": "none",
+    "movement_rows": 230,
+    "opening_id": "stance_alternative",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 42,
+    "marker_id": "m01_therefore",
+    "movement_rows": 42,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m02_consequently",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m02_consequently",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m03_thus",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 28,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 28,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 48,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 48,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 38,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 38,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 48,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 48,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 48,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 40,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 40,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 37,
+    "marker_id": "m11_given_this",
+    "movement_rows": 37,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 34,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 34,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 34,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 34,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 230,
+    "marker_id": "none",
+    "movement_rows": 230,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 230,
+    "marker_id": "none",
+    "movement_rows": 230,
+    "opening_id": "stance_disagreement",
+    "run": "instruct"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 32,
+    "marker_id": "m01_therefore",
+    "movement_rows": 32,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 6.25,
+    "flip_defined_rows": 30,
+    "marker_id": "m01_therefore",
+    "movement_rows": 32,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m02_consequently",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m02_consequently",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m03_thus",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m03_thus",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 35,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 35,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.857142857142857,
+    "flip_defined_rows": 34,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 35,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 8.333333333333334,
+    "flip_defined_rows": 33,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.128205128205129,
+    "flip_defined_rows": 37,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.128205128205129,
+    "flip_defined_rows": 37,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 39,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 6.0606060606060606,
+    "flip_defined_rows": 31,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.3478260869565215,
+    "flip_defined_rows": 44,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 46,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 8.695652173913043,
+    "flip_defined_rows": 42,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 46,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.7777777777777777,
+    "flip_defined_rows": 35,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 8.333333333333334,
+    "flip_defined_rows": 33,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 36,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.125,
+    "flip_defined_rows": 31,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 32,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.125,
+    "flip_defined_rows": 31,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 32,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m11_given_this",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 6.0606060606060606,
+    "flip_defined_rows": 31,
+    "marker_id": "m11_given_this",
+    "movement_rows": 33,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 28,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 28,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 25,
+    "exact_post_ties_pct": 12.01923076923077,
+    "flip_defined_rows": 183,
+    "marker_id": "none",
+    "movement_rows": 208,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 1.4423076923076923,
+    "flip_defined_rows": 205,
+    "marker_id": "none",
+    "movement_rows": 208,
+    "opening_id": "directive_reconsideration",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.125,
+    "flip_defined_rows": 31,
+    "marker_id": "m01_therefore",
+    "movement_rows": 32,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 9.375,
+    "flip_defined_rows": 29,
+    "marker_id": "m01_therefore",
+    "movement_rows": 32,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 6.0606060606060606,
+    "flip_defined_rows": 31,
+    "marker_id": "m02_consequently",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m02_consequently",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 6,
+    "exact_post_ties_pct": 18.181818181818183,
+    "flip_defined_rows": 27,
+    "marker_id": "m03_thus",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 6.0606060606060606,
+    "flip_defined_rows": 31,
+    "marker_id": "m03_thus",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 14.285714285714286,
+    "flip_defined_rows": 30,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 35,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.714285714285714,
+    "flip_defined_rows": 33,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 35,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 10,
+    "exact_post_ties_pct": 27.77777777777778,
+    "flip_defined_rows": 26,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 8.333333333333334,
+    "flip_defined_rows": 33,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 12.820512820512821,
+    "flip_defined_rows": 34,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 12.820512820512821,
+    "flip_defined_rows": 34,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 39,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 12.121212121212121,
+    "flip_defined_rows": 29,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 8,
+    "exact_post_ties_pct": 24.242424242424242,
+    "flip_defined_rows": 25,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 6.521739130434782,
+    "flip_defined_rows": 43,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 46,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 4.3478260869565215,
+    "flip_defined_rows": 44,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 46,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 8,
+    "exact_post_ties_pct": 22.22222222222222,
+    "flip_defined_rows": 28,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 11.11111111111111,
+    "flip_defined_rows": 32,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 36,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 12.5,
+    "flip_defined_rows": 28,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 32,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 9.375,
+    "flip_defined_rows": 29,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 32,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 6,
+    "exact_post_ties_pct": 18.181818181818183,
+    "flip_defined_rows": 27,
+    "marker_id": "m11_given_this",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m11_given_this",
+    "movement_rows": 33,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.5714285714285716,
+    "flip_defined_rows": 27,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 28,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 10.714285714285714,
+    "flip_defined_rows": 25,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 28,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 26,
+    "exact_post_ties_pct": 12.5,
+    "flip_defined_rows": 182,
+    "marker_id": "none",
+    "movement_rows": 208,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 14,
+    "exact_post_ties_pct": 6.730769230769231,
+    "flip_defined_rows": 194,
+    "marker_id": "none",
+    "movement_rows": 208,
+    "opening_id": "stance_alternative",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 32,
+    "marker_id": "m01_therefore",
+    "movement_rows": 32,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 32,
+    "marker_id": "m01_therefore",
+    "movement_rows": 32,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m02_consequently",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m02_consequently",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m03_thus",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m03_thus",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.857142857142857,
+    "flip_defined_rows": 34,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 35,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.857142857142857,
+    "flip_defined_rows": 34,
+    "marker_id": "m04_accordingly",
+    "movement_rows": 35,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 4,
+    "exact_post_ties_pct": 11.11111111111111,
+    "flip_defined_rows": 32,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 36,
+    "marker_id": "m05_for_this_reason",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 6,
+    "exact_post_ties_pct": 15.384615384615385,
+    "flip_defined_rows": 33,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 2,
+    "exact_post_ties_pct": 5.128205128205129,
+    "flip_defined_rows": 37,
+    "marker_id": "m06_that_is_why",
+    "movement_rows": 39,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 33,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m07_this_implies_that",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 46,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 46,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 3,
+    "exact_post_ties_pct": 6.521739130434782,
+    "flip_defined_rows": 43,
+    "marker_id": "m08_it_follows_that",
+    "movement_rows": 46,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 5,
+    "exact_post_ties_pct": 13.88888888888889,
+    "flip_defined_rows": 31,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 2.7777777777777777,
+    "flip_defined_rows": 35,
+    "marker_id": "m09_on_that_basis",
+    "movement_rows": 36,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.125,
+    "flip_defined_rows": 31,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 32,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.125,
+    "flip_defined_rows": 31,
+    "marker_id": "m10_based_on_this",
+    "movement_rows": 32,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m11_given_this",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.0303030303030303,
+    "flip_defined_rows": 32,
+    "marker_id": "m11_given_this",
+    "movement_rows": 33,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NS",
+    "exact_post_ties": 1,
+    "exact_post_ties_pct": 3.5714285714285716,
+    "flip_defined_rows": 27,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 28,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RS",
+    "exact_post_ties": 0,
+    "exact_post_ties_pct": 0.0,
+    "flip_defined_rows": 28,
+    "marker_id": "m12_in_view_of_this",
+    "movement_rows": 28,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "NP",
+    "exact_post_ties": 19,
+    "exact_post_ties_pct": 9.134615384615385,
+    "flip_defined_rows": 189,
+    "marker_id": "none",
+    "movement_rows": 208,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  },
+  {
+    "condition": "RP",
+    "exact_post_ties": 6,
+    "exact_post_ties_pct": 2.8846153846153846,
+    "flip_defined_rows": 202,
+    "marker_id": "none",
+    "movement_rows": 208,
+    "opening_id": "stance_disagreement",
+    "run": "minimal_ab"
+  }
+]

@@ -130,3 +130,53 @@ Repeat for `--variant instruct`. Inspect both smoke outputs, then repeat with
 logits for the initial readings, 18 selected post-counterargument readings per
 initial prompt, derived movement/flip fields, exact hashes, environment
 metadata, and a `COMPLETE` marker. No free-form text is generated.
+
+## Behavioural-result analysis and Base robustness (2026-10-05)
+
+**Evidence.** Both full runs passed `run_status`, every recorded hash and count, and an
+exact row-by-row re-scoring. They are archived read-only, with the pinned config and
+compatibility reports, at `/data/vidhi/archive/reasonstyle/behavioral_v3_full_evidence_v1`
+(server) and `runs/archive/behavioral_v3_full_evidence_v1` (Mac); `SHA256SUMS` hash
+`71751a24…`. The pinned config is copied, byte-identical, to the Mac's `configs/`.
+
+**Robustness variants.** Predeclared in `configs/robustness/base_prompt_variants_v1.yaml`:
+R1 `ab_bfirst` (B line displayed first), R2 `numeric_12` (labels 1/2), R3 `minimal_ab`
+(no User:/Assistant: scaffold). `src/reasonstyle/behavioral/robustness.py` re-renders the
+reference plan with one component changed and keeps slot labels A/B in every run file.
+`scripts/behavioral_v3_robustness_gate.py` checks every one of the 8,880 prompts with the
+cached tokenizer and pins a separate config; R2 was refused (`" 1"` is two tokens). The
+variant runner `scripts/run_behavioral_v3_robustness.py` first reproduced all 240
+reference Base initial logits bit for bit, then ran each variant's initial phase and
+full adaptive phase. Archive: `/data/vidhi/archive/reasonstyle/behavioral_v3_robustness_evidence_v1`
+and `runs/archive/behavioral_v3_robustness_evidence_v1`.
+
+```bash
+.venv/bin/python scripts/behavioral_v3_robustness_gate.py --variant ab_bfirst --hf-home "$HF_HOME"
+REASONSTYLE_ALLOW_BEHAVIORAL_EVAL=1 CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/run_behavioral_v3_robustness.py \
+  --variant-config configs/robustness/base_ab_bfirst_v1.pinned.yaml --phase initial \
+  --hf-home "$HF_HOME" --out runs/behavioral_v3_robustness/base-ab-bfirst-v1.initial
+```
+
+**Analysis.** Specification `configs/analysis/behavioral_v3_detailed_v1.yaml` (frozen
+before results; robustness hashes pinned after those runs passed `run_status`). Code:
+`src/reasonstyle/behavioral/analysis/`, `scripts/analyze_behavioral_v3.py`. Output:
+`analysis/behavioral_v3_detailed/` (report, tables, figures, bootstrap, robustness,
+review, manifest). The estimand averages the two RS and two NS marker rows within each
+model × scenario × order × opening block, keeps RP and NP once, averages blocks within
+`decision_id` and decisions equally; inference is a 9,999-replicate domain-stratified
+decision-cluster bootstrap (NumPy PCG64, seed 20261005).
+
+**Analysis environment.** NumPy and matplotlib are needed only here, so they live in a
+separate environment pinned with hashes in `requirements/analysis.txt`; `pyproject.toml`,
+`uv.lock` and the GPU `.venv` are unchanged.
+
+```bash
+uv venv .venv-analysis --python 3.11
+uv pip install --python .venv-analysis -r requirements/analysis.txt --require-hashes
+uv pip install --python .venv-analysis --no-deps -e .
+.venv-analysis/bin/python scripts/analyze_behavioral_v3.py configs/analysis/behavioral_v3_detailed_v1.yaml
+.venv-analysis/bin/python -m pytest --noconftest tests/test_behavioral_v3_analysis.py tests/test_behavioral_v3_robustness.py
+```
+
+The analysis tests skip in the main environment (no NumPy); `--noconftest` avoids the
+project conftest's pydantic import in the analysis environment.

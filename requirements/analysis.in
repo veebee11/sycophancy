@@ -1,0 +1,6 @@
+# Analysis-only environment (behavioural-result analysis and figures).
+# Isolated from the GPU inference .venv and from uv.lock; see docs/behavioral_v3_setup.md.
+numpy==2.2.6
+matplotlib>=3.10,<3.11
+pyyaml==6.0.3
+pytest>=8,<9
